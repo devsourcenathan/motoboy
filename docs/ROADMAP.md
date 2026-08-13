@@ -30,9 +30,11 @@ dans `apps/api`.
 | **Authentification** | inscription, OTP, session Sanctum, port SMS | idem |
 | **Réservation** | prise de places atomique, tenue, libération planifiée | idem |
 | **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | idem |
-| **Billet et QR** | émission par passager, charge signée, consultation | 67 tests, 202 assertions |
+| **Billet et QR** | émission par passager, charge signée, consultation | idem |
+| **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | 76 tests, 234 assertions |
 
-**Ce qui n'existe pas encore** : embarquement — et tout le back-office agence.
+**Ce qui n'existe pas encore** : la PWA elle-même, et tout le back-office
+agence. Le parcours passager de [§35](BRIEF.md) est complet côté API.
 
 ---
 
@@ -177,14 +179,22 @@ L'API renvoie le **contenu à encoder**, jamais une image : le client regénère
 QR localement, sans quoi le billet dépendrait du réseau au moment précis où il
 n'y en a pas ([I5](BRIEF.md)).
 
-### 3.6 Embarquement
+### 3.6 Embarquement — ✅ côté API
 
-*Dépend de* : billets.
+`BuildBoardingList`, `SyncTicketValidations`, plus les trois endpoints du
+contrat et l'**autorisation par agence**, qui n'existait pas encore : le rôle
+`AGENT` était en base, rien ne le faisait respecter.
 
-- `GET /v1/agency/trips/{reference}/boarding-list`
-- `POST .../validations` — synchronisation groupée, **résultat par élément**, jamais du tout-ou-rien
-- Détection des doublons hors ligne : signalés, pas bloqués ([B3](BRIEF.md))
-- PWA : service worker, cache de la liste, file locale des validations
+Un enseignement que [B3](BRIEF.md) ne disait pas : **un renvoi n'est pas un
+doublon**. B3 décide qu'une double validation hors ligne est signalée et non
+bloquée — deux agents ont scanné le même billet, c'est une anomalie. Mais un
+appareil qui synchronise, perd la réponse et resynchronise fait le même geste,
+pas un second. Sans les distinguer, chaque coupure réseau fabriquerait un faux
+doublon, et la statistique censée révéler un vrai problème d'exploitation
+deviendrait du bruit. D'où la colonne `client_id`, absente du schéma initial.
+
+Reste à écrire : **la PWA** — service worker, cache de la liste, file locale des
+validations. L'API qu'elle consomme est en place.
 
 ### 3.7 Annulation et remboursement
 

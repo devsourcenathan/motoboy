@@ -7,6 +7,7 @@ use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\WebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
+use App\Modules\Tickets\Http\Controllers\BoardingController;
 use App\Modules\Tickets\Http\Controllers\TicketController;
 use App\Modules\Trips\Http\Controllers\SearchController;
 use App\Modules\Trips\Http\Controllers\TripController;
@@ -63,6 +64,19 @@ Route::prefix('v1')->group(function (): void {
         // sans réseau, en gare (I5).
         Route::get('tickets', [TicketController::class, 'index']);
         Route::get('tickets/{reference}', [TicketController::class, 'show']);
+
+        /*
+         * Embarquement — rôle `AGENT`.
+         *
+         * L'autorisation est vérifiée **par départ**, pas par le groupe de
+         * routes : la permission est portée pour une agence donnée, et le
+         * départ est ce qui désigne laquelle (B3).
+         */
+        Route::prefix('agency')->group(function (): void {
+            Route::get('trips/{reference}/boarding-list', [BoardingController::class, 'list']);
+            Route::post('trips/{reference}/validations', [BoardingController::class, 'sync']);
+            Route::post('tickets/lookup', [BoardingController::class, 'lookup']);
+        });
     });
 
     /*

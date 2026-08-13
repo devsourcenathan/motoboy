@@ -72,6 +72,33 @@ final class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Détient-il cette permission **pour cette agence** ?
+     *
+     * La portée est le cœur du modèle : un agent d'embarquement porte son rôle
+     * pour une agence donnée. Sans elle, il validerait les billets de toutes les
+     * agences de la plateforme (B3).
+     *
+     * Les rôles globaux — passager, administration — ne répondent jamais oui
+     * ici : l'administration n'a délibérément pas `tickets.validate`.
+     */
+    public function hasPermissionForAgency(string $permission, int $agencyId): bool
+    {
+        return $this->roles()
+            ->wherePivot('agency_id', $agencyId)
+            ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
+            ->exists();
+    }
+
+    /** Permission portée par un rôle global — administration, propriétaire. */
+    public function hasGlobalPermission(string $permission): bool
+    {
+        return $this->roles()
+            ->wherePivotNull('agency_id')
+            ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
+            ->exists();
+    }
+
     public function fullName(): string
     {
         return "{$this->first_name} {$this->last_name}";

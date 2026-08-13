@@ -27,7 +27,7 @@ final class TicketValidation extends Model
 {
     protected $fillable = [
         'ticket_id', 'trip_id', 'validated_by', 'validated_at',
-        'method', 'device_id', 'synced_at', 'is_duplicate',
+        'method', 'device_id', 'client_id', 'synced_at', 'is_duplicate',
     ];
 
     /** @var array<string, string> */
