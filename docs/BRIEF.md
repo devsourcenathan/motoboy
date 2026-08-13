@@ -117,15 +117,17 @@ Le chauffeur n'a **pas d'application mobile dédiée** pour le moment.
 
 ### Application mobile
 
-Une seule application Flutter.
+Une seule application **Expo React Native**, en TypeScript.
 
 Elle est destinée **uniquement au passager** dans le MVP.
 
 ```text
-Flutter Mobile
+Expo React Native
       |
       └── Passager
 ```
+
+Le choix de React Native plutôt que Flutter est motivé par le **langage unique** avec l'application Web : il rend possible le partage des types du domaine, des schémas de validation et du client API ([§6](#6-architecture-générale)). Aucune décision des parties II et III n'en dépend — l'application passager ne fait qu'afficher un QR Code, le scan étant porté par la PWA web côté agent ([B3](#b3--validation-du-billet-à-lembarquement)).
 
 Elle permettra notamment de :
 
@@ -175,7 +177,7 @@ Si le produit grandit, les interfaces pourront être séparées ultérieurement.
 Le backend sera une API Laravel.
 
 ```text
-Flutter ───────┐
+Expo RN ───────┐
                |
 React Web ─────┼──→ Laravel API
                |
@@ -198,6 +200,43 @@ L'API constitue la source de vérité pour :
 ---
 
 ## 6. Architecture générale
+
+### Organisation du dépôt
+
+Le projet est un **monorepo**, géré par pnpm workspaces.
+
+```text
+motoboy/
+├── apps/
+│   ├── api/                 Laravel — hors du workspace JS
+│   ├── web/                 React + Vite + TS
+│   │                        public · passager · agence · propriétaire · admin
+│   └── mobile/              Expo React Native — passager
+├── packages/
+│   ├── api-client/          types générés + client typé — jamais édité à la main
+│   ├── shared/              domaine sans UI : formatage, libellés, jetons de design
+│   └── tsconfig/            configurations communes
+├── docs/
+└── pnpm-workspace.yaml
+```
+
+**Ce que le monorepo apporte réellement.** Le gain n'est pas le dépôt unique mais le **langage unique** entre web et mobile, qui rend possible le partage des types du domaine, des schémas de validation et du client API. L'application passager étant la plus simple des deux surfaces, le bénéfice ne se mesure pas en volume de code économisé mais en **impossibilité de dérive** : lorsqu'un statut de réservation change, les deux clients cassent à la compilation au lieu de diverger silencieusement.
+
+**Laravel est dans le dépôt mais hors du workspace JS.** Composer le gère, pnpm l'ignore. Une seule PR peut ainsi modifier un endpoint, le type généré et les deux clients.
+
+**Deux packages, séparés par la frontière du généré.** `api-client` est régénéré intégralement depuis la spécification OpenAPI produite par l'API et n'est jamais édité à la main ; `shared` est écrit à la main. Les mélanger rendrait toute régénération risquée.
+
+**Trois règles à tenir dès le départ :**
+
+1. **`shared` ne porte jamais de règle métier.** Le backend est la source de vérité pour la disponibilité, le prix final, le statut de réservation et la validité d'un billet ([§29](#29-principes-techniques)). `shared` porte des types et de l'affichage — le jour où l'on y recalcule des frais d'annulation, la règle existe en deux exemplaires et elles divergeront.
+2. **`shared` n'a aucune dépendance DOM ni React Native** — TypeScript et Zod, rien d'autre. Une dépendance web qui s'y glisse casse le build mobile. À vérifier en intégration continue, pas à la relecture.
+3. **Pas de package d'interface partagé.** shadcn repose sur Radix et le DOM ; les composants mobiles sont écrits séparément. Seuls les **jetons de design** — couleurs, espacements, échelle typographique — se partagent.
+
+**Turborepo n'est pas retenu au départ.** Avec deux applications et deux packages, pnpm workspaces suffit. Il s'ajoutera si les temps d'intégration continue le justifient.
+
+**Point d'attention connu** : Metro exige une configuration explicite en monorepo — dossiers surveillés et résolution des modules. Les versions récentes d'Expo le gèrent nettement mieux qu'avant, mais c'est l'accroc classique de la mise en place.
+
+### Backend — monolithe modulaire
 
 Le MVP sera construit comme un monolithe modulaire.
 
@@ -241,8 +280,9 @@ La séparation des domaines permettra d'extraire certains services plus tard si 
 
 ### Mobile
 
-- Flutter
-- Dart
+- Expo
+- React Native
+- TypeScript
 
 ### Web
 
@@ -269,6 +309,13 @@ La séparation des domaines permettra d'extraire certains services plus tard si 
 
 - Laravel Sanctum
 - OTP SMS
+
+### Monorepo
+
+- pnpm workspaces
+- spécification OpenAPI produite par l'API, types TypeScript générés
+
+Voir [§6](#6-architecture-générale).
 
 ### Frontend
 
@@ -1361,7 +1408,7 @@ Audit
                             │
              ┌──────────────┴──────────────┐
              │                             │
-      Flutter Mobile                    React Web
+     Expo React Native                  React Web
              │                             │
          PASSAGER        ┌───────────┬─────┴─────┬───────────┐
                          │           │           │           │
@@ -1405,8 +1452,9 @@ Audit
 
 ### Mobile
 
-- Flutter
-- Dart
+- Expo
+- React Native
+- TypeScript
 
 ### Backend
 
@@ -1472,7 +1520,7 @@ MOTOBOY MVP repose sur :
 
 ```text
 1 application mobile
-    → Flutter
+    → Expo React Native
     → Passager uniquement
 
 1 application Web
@@ -1489,9 +1537,11 @@ MOTOBOY MVP repose sur :
     → Redis
 ```
 
+Le tout dans un **monorepo pnpm**, l'API Laravel vivant dans le dépôt mais hors du workspace JS ([§6](#6-architecture-générale)).
+
 Le choix architectural central est :
 
-> Un monolithe modulaire pour le backend et une application Web unique basée sur les rôles et permissions.
+> Un monolithe modulaire pour le backend, une application Web unique basée sur les rôles et permissions, et un langage unique entre web et mobile permettant de partager types, schémas et client API.
 
 ---
 ---
@@ -2158,7 +2208,7 @@ Le produit s'utilise en gare routière, où la couverture n'est pas garantie. De
 
 **Côté agent** — réglé par [B3](#b3--validation-du-billet-à-lembarquement) : PWA, liste d'embarquement pré-téléchargée, validations mises en file et synchronisées au retour du réseau.
 
-**Côté passager** — le billet doit rester consultable **sans réseau** dans l'application Flutter. Cela suppose de le mettre en cache localement et de **regénérer le QR Code à partir des données stockées**, plutôt que de le télécharger comme une image : un billet dont le QR ne s'affiche pas en gare ne vaut rien.
+**Côté passager** — le billet doit rester consultable **sans réseau** dans l'application mobile. Cela suppose de le mettre en cache localement et de **regénérer le QR Code à partir des données stockées**, plutôt que de le télécharger comme une image : un billet dont le QR ne s'affiche pas en gare ne vaut rien.
 
 ## I6 — Un seul design system
 
