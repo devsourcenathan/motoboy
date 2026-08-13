@@ -1,6 +1,6 @@
 # MOTOBOY — Brief Projet MVP
 
-> **Statut du document** — Partie I consolidée et validée. **Partie II close : les 6 points bloquants sont tranchés.** Restent ouverts les points importants de la partie III, ainsi que deux sujets externes signalés en [B4](#b4--flux-financier-et-reversement-aux-agences) : le cadre réglementaire et le choix de l'agrégateur de paiement.
+> **Statut du document** — Partie I consolidée et validée. **Parties II et III closes : les 6 points bloquants et les 9 points importants sont tranchés.** Ne restent ouverts que deux sujets externes signalés en [B4](#b4--flux-financier-et-reversement-aux-agences) : le cadre réglementaire de la détention de fonds de tiers, et le choix de l'agrégateur de paiement.
 > **Dernière mise à jour** — 13 août 2026
 
 ---
@@ -95,7 +95,7 @@ Elle gère notamment :
 
 Utilisateur pouvant être associé à des véhicules et à leur activité.
 
-> Voir [I3](#i3--rôle-propriétaire) — le périmètre de ce rôle reste à trancher.
+Il dispose d'un espace **en consultation seule** — ses véhicules, les départs qu'ils ont assurés, le taux de remplissage. Aucun circuit financier ne le relie à la plateforme : une éventuelle rémunération se règle directement avec l'agence. Voir [I3](#i3--rôle-propriétaire).
 
 ### Administrateur
 
@@ -274,11 +274,14 @@ La séparation des domaines permettra d'extraire certains services plus tard si 
 
 - React Router
 - TanStack Query
+- TanStack Table
+- react-hook-form
+- react-day-picker
 - Zod
 - dayjs
-- Tailwind / shadcn ou Ant Design selon les interfaces
+- Tailwind + shadcn — **design system unique pour toute l'application Web**
 
-> Voir [I6](#i6--un-seul-design-system) — le choix doit être unique pour toute l'application Web.
+> Voir [I6](#i6--un-seul-design-system) — Ant Design est écarté ; les briques de tableaux, formulaires et dates qu'il aurait fournies sont explicitement ajoutées ci-dessus.
 
 ### Paiement
 
@@ -342,6 +345,17 @@ Roles
 ```
 
 Le rôle `AGENT` couvre l'embarquement. Il est créé par l'agence pour son personnel et ne dispose que des permissions strictement nécessaires — voir [B3](#b3--validation-du-billet-à-lembarquement).
+
+Le rôle `OWNER` est strictement en lecture — voir [I3](#i3--rôle-propriétaire).
+
+Partage entre `ADMIN` et `SUPER_ADMIN` :
+
+| Rôle | Périmètre |
+|---|---|
+| `ADMIN` | Exploitation quotidienne : validation des agences, modération des gares, remboursements, reversements, support. |
+| `SUPER_ADMIN` | Tout ce qui précède, plus la gestion des comptes administrateurs, la configuration de la plateforme et l'accès à l'AuditLog. |
+
+Voir [I4](#i4--administrateur-vs-super-administrateur).
 
 Les permissions seront indépendantes des rôles :
 
@@ -442,6 +456,10 @@ Pour le MVP, le prix sera un critère important du classement.
 
 L'algorithme exact pourra être amélioré pendant le développement.
 
+### Aucun résultat
+
+Une recherche sans résultat affiche les **dates proches disponibles** sur le même axe, ainsi que les **axes desservis** au départ de la même ville. Détail en [I9](#i9--cas-aucun-résultat).
+
 ---
 
 ## 12. Gestion des trajets
@@ -462,6 +480,12 @@ Il comporte notamment :
 - escales.
 
 L'agence est responsable de la publication et de la gestion de ses trajets.
+
+### Trajets récurrents
+
+Les horaires sont portés par un niveau `Schedule` rattaché à la `Route` — jours de la semaine, heure de départ, véhicule et tarif par défaut, période de validité. Un job quotidien génère les départs manquants sur un **horizon glissant de 30 jours**.
+
+La génération ne modifie jamais un départ existant, et modifier un `Schedule` n'affecte que les départs générés ensuite. Détail en [I1](#i1--trajets-récurrents).
 
 ### Lieux de départ et d'arrivée
 
@@ -518,6 +542,14 @@ A4
 Capacité   : 30
 Disponibles : 17
 ```
+
+### Changement de véhicule sur un départ réservé
+
+Vers une capacité supérieure ou égale, le changement est libre. Vers une capacité inférieure, il est bloqué tant que les réservations excédentaires n'ont pas été traitées. Un changement de plan de sièges constitue une modification importante au sens de [B5](#b5--annulation-et-remboursement).
+
+### Propriétaire
+
+Le véhicule est rattaché à un propriétaire par son numéro de téléphone. Celui-ci accède alors à un espace **en consultation seule**, sans aucun flux financier porté par la plateforme ([I3](#i3--rôle-propriétaire)).
 
 ---
 
@@ -655,6 +687,8 @@ Le système doit prévoir :
 - protection contre les doubles paiements ;
 - identifiant unique de transaction.
 
+Les ventes au guichet sont enregistrées avec la méthode `CASH` : elles ne transitent pas par l'agrégateur mais alimentent statistiques et compte courant ([I2](#i2--vente-au-guichet)).
+
 Une réservation porte **plusieurs tentatives de paiement**, dont une seule aboutie : un échec ne clôt pas la réservation et ne libère pas les places tant que le hold court. Détail en [B2](#b2--réservation-temporaire-des-places-pendant-le-paiement).
 
 ---
@@ -689,9 +723,11 @@ Il contient notamment :
 
 Le billet sera accessible :
 
-- dans l'application mobile ;
+- dans l'application mobile, **y compris sans réseau** — il est mis en cache localement et son QR Code est regénéré à partir des données stockées, jamais téléchargé comme image ([I5](#i5--réseau-faible-et-mode-hors-ligne)) ;
 - sur le web ;
 - et pourra être téléchargé/imprimé selon l'implémentation.
+
+Un billet vendu au guichet est imprimé au comptoir et envoyé par SMS ([I2](#i2--vente-au-guichet)).
 
 ---
 
@@ -824,6 +860,7 @@ Voir [B1](#b1--référentiel-géographique).
 
 - création ;
 - modification ;
+- **horaires récurrents (`Schedule`)** — jours, heure, véhicule et tarif par défaut, période de validité ([I1](#i1--trajets-récurrents)) ;
 - planification ;
 - itinéraire ;
 - escales ;
@@ -849,6 +886,13 @@ Le prix d'un trajet ne peut pas être modifié pour les réservations déjà con
 ### Vente au guichet
 
 L'agence peut enregistrer manuellement un passager et générer son billet.
+
+Le parcours doit tenir en **moins de 30 secondes** — départ, place, nom et téléphone. Au-delà, il est plus lent que le cahier et ne sera pas utilisé, ce qui ruine la fiabilité de la disponibilité affichée ([I2](#i2--vente-au-guichet)) :
+
+- **aucun compte passager** — nom et numéro de téléphone suffisent, sans inscription ni OTP ;
+- **réservation créée directement en `CONFIRMED`**, sans hold ni tunnel de paiement ;
+- **paiement de méthode `CASH`** enregistré, sans transiter par l'agrégateur ;
+- **billet imprimé au comptoir et envoyé par SMS**, l'envoi SMS étant désactivable par agence.
 
 Les places **tenues** par un paiement en ligne en cours apparaissent comme indisponibles, au même titre que les places vendues — mais avec leur **échéance affichée**, afin que l'agent sache s'il peut attendre quelques minutes ou s'il doit orienter son client vers un autre siège ([B2](#b2--réservation-temporaire-des-places-pendant-le-paiement)).
 
@@ -939,7 +983,7 @@ Le dashboard peut notamment afficher :
 - véhicules actifs ;
 - agences actives ;
 - transactions ;
-- **taux d'annulation par agence**, avec seuil déclenchant une revue ([B5](#b5--annulation-et-remboursement)) ;
+- **taux d'annulation par agence**, avec seuil déclenchant une revue ([B5](#b5--annulation-et-remboursement)) — seules comptent les annulations de départs portant des réservations confirmées ([I1](#i1--trajets-récurrents)) ;
 - remboursements en échec, remontés en alerte ;
 - doublons de validation détectés à la synchronisation ([B3](#b3--validation-du-billet-à-lembarquement)).
 
@@ -959,11 +1003,17 @@ Est considérée comme **modification importante** : un décalage d'horaire sup�
 
 L'annulation d'un départ par une agence est notifiée **immédiatement sur tous les canaux, SMS compris** — c'est le cas où le coût du SMS est pleinement justifié.
 
-Canaux :
+Canaux, arbitrés selon le coût du SMS ([I8](#i8--coût-des-sms)) :
 
-- Push ;
-- SMS lorsque nécessaire ;
-- email selon les cas.
+| Événement | Canal |
+|---|---|
+| OTP d'inscription | SMS — aucune alternative |
+| Annulation par l'agence | SMS — systématique |
+| Confirmation de réservation | Push si disponible, SMS en repli |
+| Rappel de départ | Push uniquement |
+| Billet de vente au guichet | SMS, désactivable par agence |
+
+Le repli SMS sur la confirmation est indispensable : un passager réservant depuis le web n'a pas l'application, donc pas de push. L'email est utilisé selon les cas, en complément.
 
 Les notifications non critiques seront traitées de manière asynchrone.
 
@@ -1103,6 +1153,16 @@ Booking confirmed
 
 dès le départ.
 
+### Observabilité
+
+Trois briques dès le MVP, la plateforme encaissant de l'argent et dépendant de webhooks tiers ([I7](#i7--observabilité)) :
+
+- suivi des erreurs, backend et frontend ;
+- supervision des files Laravel — un job de libération de places bloqué gèle l'inventaire sans alerte ;
+- journal traçable des webhooks de paiement : reçus, rejoués, échoués.
+
+Ce journal complète la réconciliation quotidienne de [B4](#b4--flux-financier-et-reversement-aux-agences) : la réconciliation détecte l'écart, le journal explique son origine.
+
 ---
 
 ## 30. Structure logique des données
@@ -1131,10 +1191,11 @@ et :
 
 ```text
 Agency
- ├── Vehicles
+ ├── Vehicles   (rattachés à un Owner, en lecture seule)
  ├── Drivers
  ├── Stations
  ├── Routes   (villes + gares départ/arrivée, escales[])
+ │      └── Schedules   (jours, heure, véhicule et tarif par défaut)
  └── Trips
         │
         ├── Seats
@@ -1210,7 +1271,8 @@ Pour garder un produit réellement lançable, les fonctionnalités suivantes son
 - marketplace de services de mobilité ;
 - **réservation par tronçon** — escales réservables (voir [B6](#b6--escales-et-réservation-par-tronçon)) ;
 - **transfert d'une réservation vers un autre départ** — en cas d'annulation, le passager est remboursé puis réserve à nouveau (voir [B5](#b5--annulation-et-remboursement)) ;
-- **rôles personnalisés définis par chaque agence** — le MVP se limite aux rôles par défaut de la plateforme (voir [B3](#b3--validation-du-billet-à-lembarquement)).
+- **rôles personnalisés définis par chaque agence** — le MVP se limite aux rôles par défaut de la plateforme (voir [B3](#b3--validation-du-billet-à-lembarquement)) ;
+- **alerte de disponibilité** — prévenir un passager lorsqu'une offre apparaît sur le trajet recherché ; à traiter juste après le MVP (voir [I9](#i9--cas-aucun-résultat)).
 
 ---
 
@@ -1258,6 +1320,20 @@ Passagers
 Paiements
 ```
 
+### Propriétaire — Web
+
+Consultation seule, sans aucun flux financier ([I3](#i3--rôle-propriétaire)) :
+
+```text
+Propriétaire
+ ↓
+Véhicules
+ ↓
+Départs assurés
+ ↓
+Taux de remplissage
+```
+
 ### Administration — Web
 
 ```text
@@ -1265,6 +1341,7 @@ Administration
  ↓
 Utilisateurs
 Agences
+Propriétaires
 Véhicules
 Chauffeurs
 Trajets
@@ -1286,11 +1363,11 @@ Audit
              │                             │
       Flutter Mobile                    React Web
              │                             │
-         PASSAGER              ┌───────────┼───────────┐
-                               │           │           │
-                           PASSAGER      AGENCE       ADMIN
-                               │           │           │
-                               └───────────┼───────────┘
+         PASSAGER        ┌───────────┬─────┴─────┬───────────┐
+                         │           │           │           │
+                     PASSAGER     AGENCE   PROPRIÉTAIRE    ADMIN
+                         │           │           │           │
+                         └───────────┴─────┬─────┴───────────┘
                                            │
                                       REST API
                                            │
@@ -1317,9 +1394,12 @@ Audit
 - React
 - TypeScript
 - Vite
-- Tailwind / shadcn ou Ant Design
+- Tailwind + shadcn
 - React Router
 - TanStack Query
+- TanStack Table
+- react-hook-form
+- react-day-picker
 - Zod
 - dayjs
 
@@ -1342,6 +1422,14 @@ Audit
 - Laravel Queue
 - Docker
 - stockage S3-compatible
+
+### Observabilité
+
+- suivi des erreurs, backend et frontend
+- supervision des files Laravel
+- journal traçable des webhooks de paiement
+
+Voir [I7](#i7--observabilité).
 
 ---
 
@@ -1389,7 +1477,7 @@ MOTOBOY MVP repose sur :
 
 1 application Web
     → React + TypeScript
-    → Passager + Agence + Administration
+    → Passager + Agence + Propriétaire + Administration
 
 1 API
     → Laravel
@@ -1861,7 +1949,7 @@ Le **transfert de réservation vers un autre départ** est reporté hors MVP ([�
 
 **Notification immédiate sur tous les canaux, SMS compris.** C'est précisément le cas où le coût du SMS ([I8](#i8--coût-des-sms)) est justifié : un passager qui se déplace vers une gare pour un car annulé est un passager perdu définitivement.
 
-**Garde-fou — taux d'annulation par agence.** Suivi en administration, avec un seuil déclenchant une revue. Une agence qui annule un départ sur cinq détruit la confiance dans la plateforme entière, pas seulement dans sa propre offre.
+**Garde-fou — taux d'annulation par agence.** Suivi en administration, avec un seuil déclenchant une revue. Seules les annulations de départs **portant des réservations confirmées** entrent dans la statistique : supprimer un départ généré non assuré relève de la gestion de planning ([I1](#i1--trajets-récurrents)), pas de l'incident. Une agence qui annule un départ sur cinq détruit la confiance dans la plateforme entière, pas seulement dans sa propre offre.
 
 **Interaction avec le reversement** : le délai d'éligibilité de 24 h après départ ([B4](#b4--flux-financier-et-reversement-aux-agences)) garantit qu'une annulation agence intervient toujours **avant** que les fonds ne soient sortis. Le compte courant absorbe l'opération sans créance à récupérer.
 
@@ -1939,51 +2027,194 @@ Conséquences retenues pour la conception :
 
 # Partie III — Points importants
 
-> Ces points ne bloquent pas la conception du modèle de données, mais chacun peut compromettre l'adoption, la marge ou l'exploitabilité du produit.
+> Ces points ne bloquaient pas la conception du modèle de données, mais chacun pouvait compromettre l'adoption, la marge ou l'exploitabilité du produit. **Tous sont désormais tranchés.**
+
+| | Point | Statut |
+|---|---|---|
+| I1 | Trajets récurrents | ✅ **tranché** — niveau `Schedule`, horizon glissant de 30 jours |
+| I2 | Vente au guichet | ✅ **tranché** — parcours en moins de 30 s, sans compte, paiement `CASH` |
+| I3 | Rôle Propriétaire | ✅ **tranché** — espace en lecture seule, sans circuit financier |
+| I4 | Administrateur vs Super administrateur | ✅ **tranché** — exploitation vs configuration |
+| I5 | Réseau faible et mode hors ligne | ✅ **tranché** — billet en cache, QR regénéré localement |
+| I6 | Un seul design system | ✅ **tranché** — Tailwind / shadcn |
+| I7 | Observabilité | ✅ **tranché** — erreurs, files, journal des webhooks |
+| I8 | Coût des SMS | ✅ **tranché** — SMS réservé au critique et au sans-alternative |
+| I9 | Cas « aucun résultat » | ✅ **tranché** — dates proches et axes desservis |
 
 ## I1 — Trajets récurrents
 
+**Décision arrêtée — 13 août 2026.**
+
 [§12](#12-gestion-des-trajets) définit un trajet comme un voyage daté. Si une agence doit ressaisir manuellement ses six départs quotidiens chaque matin, elle arrêtera au bout d'une semaine, et l'application affichera des données mortes — ce qui tue un comparateur plus sûrement qu'une absence d'offre.
 
-Il faut une génération automatique depuis un modèle récurrent : `Route` (itinéraire, véhicule type, tarif, horaires) + planning hebdomadaire → génération des `Trips` sur un horizon glissant. L'agence n'ajuste ensuite que les exceptions.
+### Niveau `Schedule`
+
+La `Route` porte l'itinéraire et les gares ([B1](#b1--référentiel-géographique)) ; un niveau intermédiaire porte les horaires.
+
+```text
+Route      itinéraire, gares, escales, durée de référence
+   └── Schedule    jours de la semaine, heure de départ,
+                   véhicule et tarif par défaut, période de validité
+          └── Trips   générés sur un horizon glissant
+```
+
+Le `Schedule` est distinct de la `Route` parce qu'une même liaison porte souvent plusieurs départs de nature différente : un VIP à 08:00 et un classique à 14:00 n'ont ni le même véhicule ni le même tarif.
+
+### Règles de génération
+
+- **Horizon glissant de 30 jours**, alimenté par un job quotidien. Un horizon plus court empêcherait de réserver à l'avance pour les périodes de fête, précisément lorsque la demande culmine.
+- **La génération ne modifie jamais un trajet existant.** Elle crée uniquement les départs manquants ; sans cette règle, une régénération écraserait un trajet portant déjà des réservations.
+- **Modifier un `Schedule` n'affecte pas les départs déjà générés.** Le changement s'applique aux trajets créés ensuite ; les départs existants se modifient individuellement. Même principe de figement qu'en [B4](#b4--flux-financier-et-reversement-aux-agences) et [B5](#b5--annulation-et-remboursement).
+
+### Exceptions de planning
+
+Supprimer un départ généré que l'agence n'assurera pas — jour férié, basse saison — passe par le mécanisme d'annulation de [B5](#b5--annulation-et-remboursement).
+
+**Ces annulations n'entrent pas dans le taux d'annulation de l'agence.** Seules comptent les annulations de départs **portant des réservations confirmées** ; pénaliser une agence pour une gestion de planning normale rendrait la statistique inexploitable.
+
+### Changement de véhicule sur un départ réservé
+
+- vers un véhicule de capacité **supérieure ou égale** : libre ;
+- vers un véhicule de capacité **inférieure** : bloqué tant que les réservations excédentaires n'ont pas été traitées.
+
+Un changement de plan de sièges constitue une « modification importante » au sens de [B5](#b5--annulation-et-remboursement) et ouvre donc un droit d'annulation gratuite.
 
 ## I2 — Vente au guichet
 
-[§22](#22-interface-agence) traite le sujet en une ligne, alors qu'il porte toute l'intégrité des données de disponibilité : si une agence vend vingt places au comptoir sans les saisir, MOTOBOY affiche des places qui n'existent pas, et le passager se déplace pour rien.
+**Décision arrêtée — 13 août 2026.**
 
-À clarifier : le mode de paiement « espèces » dans le modèle Payment, l'application ou non de la commission sur ces ventes, et — surtout — quel intérêt concret l'agence a à saisir ses ventes guichet. Si le back-office est plus lent que le cahier, il ne sera pas utilisé.
+Ce point porte toute l'intégrité des données de disponibilité : si une agence vend vingt places au comptoir sans les saisir, MOTOBOY affiche des places qui n'existent pas, et le passager se déplace pour rien.
+
+### Le critère est la vitesse
+
+Si saisir une vente au comptoir prend plus de temps que d'écrire une ligne dans le cahier, l'agence ne le fera pas. Le parcours doit tenir en **moins de 30 secondes** : choisir le départ, choisir la place, saisir nom et téléphone, terminer.
+
+Trois conséquences directes :
+
+- **Le passager n'a pas de compte.** Nom et numéro de téléphone suffisent — aucune inscription, aucun OTP. C'est une vente au comptoir, pas un tunnel de conversion.
+- **La réservation est créée directement en `CONFIRMED`**, sans hold ni tunnel de paiement ([B2](#b2--réservation-temporaire-des-places-pendant-le-paiement)) : l'argent est déjà encaissé.
+- **Un paiement de méthode `CASH` est enregistré** pour que statistiques et compte courant restent cohérents. Il ne transite jamais par l'agrégateur.
+
+### Remise du billet
+
+Le billet est **imprimé au comptoir et envoyé par SMS**.
+
+L'envoi SMS est toutefois **désactivable par agence**. C'est le seul cas où la plateforme paie un SMS sur une vente ne portant aucune commission ([B4](#b4--flux-financier-et-reversement-aux-agences)) : à volume élevé, la fuite devient nette, et le levier doit exister avant d'en avoir besoin.
+
+### Rappels des décisions liées
+
+- Aucune commission sur la vente guichet par défaut, activable par agence ([B4](#b4--flux-financier-et-reversement-aux-agences)).
+- Les places tenues par un paiement en ligne sont indisponibles au guichet, avec leur échéance affichée ([B2](#b2--réservation-temporaire-des-places-pendant-le-paiement)).
+- La vente au guichet reste ouverte jusqu'au départ, alors que la vente en ligne ferme 30 minutes avant.
 
 ## I3 — Rôle Propriétaire
 
-Contradiction dans le document : [§4](#4-applications) lui attribue un espace React, mais [§32](#32-mvp-final) et [§33](#33-architecture-mvp-finale) ne le mentionnent plus. Aucune section ne décrit ce qu'il fait concrètement, ni ses permissions.
+**Décision arrêtée — 13 août 2026 : le propriétaire dispose d'un espace de consultation, sans aucune relation financière portée par la plateforme.**
 
-Recommandation : le **sortir du MVP** et le conserver comme simple champ sur le véhicule ([§13](#13-gestion-des-véhicules)) plus une entrée d'administration ([§23](#23-interface-administration)). Un espace dédié pourra être ajouté quand son besoin réel sera formulé.
+Le document se contredisait : [§4](#4-applications) lui attribuait un espace React, mais [§32](#32-mvp-final) et [§33](#33-architecture-mvp-finale) ne le mentionnaient plus. La contradiction est levée en faveur du maintien — l'espace est confirmé et rattaché aux deux sections qui l'omettaient.
+
+### Ce que l'espace contient
+
+Consultation seule, aucune action :
+
+- ses véhicules, leur état et leur affectation ;
+- les départs assurés par ces véhicules ;
+- le taux de remplissage.
+
+### Ce que l'espace ne contient pas
+
+**Aucun circuit financier.** Le propriétaire ne dispose ni de compte courant, ni de calcul de part, ni de reversement. Si une rémunération le lie à l'agence, elle se règle entre eux, hors plateforme.
+
+C'est la frontière qui préserve le périmètre du MVP : ouvrir un reversement propriétaire reviendrait à reconstruire intégralement [B4](#b4--flux-financier-et-reversement-aux-agences) une seconde fois.
+
+### Visibilité du chiffre d'affaires
+
+Le revenu généré par un véhicule est une donnée commerciale de l'agence. Il est donc **masqué par défaut**, et son affichage est activable par l'agence, véhicule par propriétaire.
+
+Ce point relève du jugement plutôt que d'une contrainte technique : à ajuster si le rapport de force avec les propriétaires de véhicules l'impose sur le terrain.
+
+### Comptes et rattachement
+
+Le rôle `OWNER` existe déjà dans le RBAC ([§9](#9-système-de-rôles-et-permissions)), avec des permissions strictement en lecture.
+
+L'agence rattache un véhicule à un propriétaire par son numéro de téléphone, depuis [§22](#22-interface-agence) ; le compte est créé s'il n'existe pas. Un propriétaire dont les véhicules sont confiés à plusieurs agences les retrouve tous dans le même espace.
 
 ## I4 — Administrateur vs Super administrateur
 
-[§3](#3-utilisateurs) et [§9](#9-système-de-rôles-et-permissions) distinguent les deux rôles sans jamais définir ce qui les sépare. Il faut soit écrire la matrice de permissions, soit les fusionner pour le MVP. Le RBAC prévu en [§9](#9-système-de-rôles-et-permissions) permet de les séparer plus tard sans refonte.
+**Décision arrêtée — 13 août 2026.** Le partage se fait entre exploitation quotidienne et configuration de la plateforme.
+
+| Rôle | Périmètre |
+|---|---|
+| `ADMIN` | Exploitation quotidienne : validation des agences, modération des gares, traitement des remboursements et des reversements, support. |
+| `SUPER_ADMIN` | Tout ce qui précède, plus la gestion des comptes administrateurs, la configuration de la plateforme (bornes des paramètres commerciaux, pays, référentiel géographique) et l'accès à l'AuditLog. |
+
+Le RBAC de [§9](#9-système-de-rôles-et-permissions) permet de déplacer une permission d'un rôle à l'autre sans refonte, si le partage s'avère mal calibré à l'usage.
 
 ## I5 — Réseau faible et mode hors ligne
 
-Le brief n'aborde pas la connectivité, alors que le produit s'utilise en gare routière. Deux exigences minimales : le billet doit rester consultable **sans data** une fois chargé, et la validation à l'embarquement ([B3](#b3--validation-du-billet-à-lembarquement)) doit tolérer une coupure — a minima via la liste d'embarquement téléchargée à l'avance.
+**Décision arrêtée — 13 août 2026.**
+
+Le produit s'utilise en gare routière, où la couverture n'est pas garantie. Deux exigences, dont une déjà satisfaite.
+
+**Côté agent** — réglé par [B3](#b3--validation-du-billet-à-lembarquement) : PWA, liste d'embarquement pré-téléchargée, validations mises en file et synchronisées au retour du réseau.
+
+**Côté passager** — le billet doit rester consultable **sans réseau** dans l'application Flutter. Cela suppose de le mettre en cache localement et de **regénérer le QR Code à partir des données stockées**, plutôt que de le télécharger comme une image : un billet dont le QR ne s'affiche pas en gare ne vaut rien.
 
 ## I6 — Un seul design system
 
-[§7](#7-stack-technique) et [§34](#34-stack-finale) laissent le choix entre « Tailwind / shadcn ou Ant Design selon les interfaces ». Dans une application React unique ([§4](#4-applications)), embarquer deux design systems double le bundle, produit une expérience incohérente entre les espaces et double la maintenance.
+**Décision arrêtée — 13 août 2026 : Tailwind / shadcn pour l'ensemble de l'application web.**
 
-Il faut en choisir un pour l'ensemble. Le poids du back-office (tableaux, formulaires, filtres, sélecteurs de dates) est un critère plus déterminant que l'apparence des pages publiques.
+[§7](#7-stack-technique) et [§34](#34-stack-finale) laissaient le choix entre « Tailwind / shadcn ou Ant Design selon les interfaces ». Dans une application React unique ([§4](#4-applications)), embarquer deux design systems doublerait le bundle, produirait une expérience incohérente entre les espaces et doublerait la maintenance.
+
+### Conséquence à assumer
+
+Ant Design aurait fourni tableaux, formulaires et sélecteurs de dates prêts à l'emploi — ce qui pèse lourd sur un back-office aussi dense que celui-ci. En partant sur shadcn, cette machinerie est à construire, et les briques correspondantes doivent figurer dans la stack dès le départ :
+
+| Besoin | Brique |
+|---|---|
+| Tableaux — tri, filtres, pagination | TanStack Table |
+| Formulaires | react-hook-form, validé par Zod (déjà présent) |
+| Sélecteurs de dates | react-day-picker (socle du composant shadcn) |
+
+Sans ces ajouts explicites, la difficulté se découvre en pleine construction du back-office.
+
+En contrepartie, les pages publiques et l'espace passager conservent une identité propre plutôt qu'une apparence d'outil d'administration.
 
 ## I7 — Observabilité
 
-Aucune mention de supervision, alors que la plateforme encaisse de l'argent et dépend de webhooks tiers. Le minimum : suivi des erreurs, supervision des queues Laravel, et journalisation traçable des webhooks de paiement (reçus, rejoués, échoués). Sans cela, un paiement perdu est indébogable.
+**Décision arrêtée — 13 août 2026.** Trois briques, non négociables sur un produit qui encaisse de l'argent et dépend de webhooks tiers.
+
+| Brique | Ce qu'elle évite |
+|---|---|
+| Suivi des erreurs, backend et frontend | Des échecs silencieux découverts par les réclamations |
+| Supervision des files Laravel | Un job de libération de places bloqué gèle l'inventaire sans alerte |
+| Journal traçable des webhooks de paiement — reçus, rejoués, échoués | Un paiement perdu devient indébogable |
+
+Le journal des webhooks complète la réconciliation quotidienne définie en [B4](#b4--flux-financier-et-reversement-aux-agences) : la réconciliation détecte l'écart, le journal explique pourquoi il s'est produit.
 
 ## I8 — Coût des SMS
 
-OTP à l'inscription ([§8](#8-authentification)), confirmation de réservation et rappel de départ ([§24](#24-notifications)) représentent au moins trois SMS par réservation. À rapporter à la commission unitaire ([§26](#26-commission)) avant de figer la politique de notification — sinon la marge part en SMS. Le push est gratuit : privilégier le SMS pour ce qui est réellement critique.
+**Décision arrêtée — 13 août 2026.** Trois SMS par réservation ruineraient la marge face à la commission unitaire ([§26](#26-commission)). Le push étant gratuit, le SMS est réservé à ce qui est réellement critique ou sans alternative.
+
+| Événement | Canal |
+|---|---|
+| OTP d'inscription ([§8](#8-authentification)) | SMS — aucune alternative |
+| Annulation par l'agence ([B5](#b5--annulation-et-remboursement)) | SMS — systématique |
+| Confirmation de réservation | Push si disponible, SMS en repli |
+| Rappel de départ | Push uniquement |
+| Billet de vente au guichet ([I2](#i2--vente-au-guichet)) | SMS, désactivable par agence |
+
+Le repli SMS sur la confirmation est indispensable : un passager réservant depuis le web n'a pas l'application, donc pas de push.
 
 ## I9 — Cas « aucun résultat »
 
-Un comparateur dont la couverture est faible au lancement affichera souvent une recherche vide — et un passager déçu deux fois ne revient pas. Prévoir un repli utile : dates proches disponibles, autres axes desservis, ou alerte lorsqu'une offre apparaît sur le trajet recherché.
+**Décision arrêtée — 13 août 2026.**
+
+Au lancement, avec une couverture encore faible, la recherche vide sera fréquente — et un passager déçu deux fois ne revient pas.
+
+**Repli retenu pour le MVP** : afficher les **dates proches disponibles** sur le même axe, et les **axes desservis** au départ de la même ville.
+
+**L'alerte de disponibilité** — prévenir le passager lorsqu'une offre apparaît sur le trajet recherché — est plus utile encore, mais suppose une recherche sauvegardée et un job de correspondance. Elle est reportée juste après le MVP ([§31](#31-fonctionnalités-hors-mvp)).
 
 ---
 ---
@@ -2006,8 +2237,8 @@ Convention retenue : **un `Trip` est toujours daté, une `Route` ne l'est jamais
 
 # Annexe B — Incohérences internes relevées
 
-À corriger lors de la prochaine mise à jour du brief :
+Les trois incohérences identifiées lors de la consolidation sont désormais résolues :
 
-1. **Espace Propriétaire** — présent dans l'arborescence React de [§4](#4-applications), absent de [§32](#32-mvp-final) et [§33](#33-architecture-mvp-finale). Voir [I3](#i3--rôle-propriétaire).
+1. ~~**Espace Propriétaire** — présent dans l'arborescence React de [§4](#4-applications), absent de [§32](#32-mvp-final) et [§33](#33-architecture-mvp-finale).~~ **Résolu** : l'espace est maintenu en consultation seule suite à [I3](#i3--rôle-propriétaire), et ajouté aux deux sections qui l'omettaient.
 2. ~~**Validation des billets** — [§20](#20-qr-code) et [§23](#23-interface-administration) supposent une validation opérationnelle, mais aucune interface ne l'implémente dans [§22](#22-interface-agence).~~ **Résolu** : écran d'embarquement et rôle `AGENT` ajoutés suite à [B3](#b3--validation-du-billet-à-lembarquement).
 3. ~~**Modules manquants** — `Places` et `Payouts` absents de [§6](#6-architecture-générale).~~ **Résolu** : `Places` ajouté suite à [B1](#b1--référentiel-géographique), `Payouts` suite à [B4](#b4--flux-financier-et-reversement-aux-agences).
