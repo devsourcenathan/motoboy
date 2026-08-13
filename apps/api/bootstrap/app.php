@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Http\RendersApiErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,5 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+        );
+
+        // Toute erreur de l'API porte un code typé du contrat : les clients
+        // branchent dessus et composent eux-mêmes le texte affiché, dans la
+        // langue de l'utilisateur.
+        $exceptions->render(
+            fn (Throwable $e, Request $request) => RendersApiErrors::render($e, $request),
         );
     })->create();

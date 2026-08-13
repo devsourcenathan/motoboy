@@ -8,12 +8,14 @@ use App\Modules\Bookings\Enums\BookingStatus;
 use App\Modules\Fleet\Enums\SeatingMode;
 use App\Modules\Fleet\Enums\VehicleType;
 use App\Modules\Identity\Enums\Locale;
+use App\Modules\Identity\Enums\OtpPurpose;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Enums\RefundReason;
 use App\Modules\Payments\Enums\RefundStatus;
 use App\Modules\Tickets\Enums\TicketStatus;
 use App\Modules\Tickets\Enums\ValidationMethod;
+use App\Support\Http\ErrorCode;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Yaml\Yaml;
 use Tests\TestCase;
@@ -45,6 +47,8 @@ final class EnumParityTest extends TestCase
             'SeatingMode' => ['SeatingMode', SeatingMode::class],
             'VehicleType' => ['VehicleType', VehicleType::class],
             'Locale' => ['Locale', Locale::class],
+            'OtpPurpose' => ['OtpPurpose', OtpPurpose::class],
+            'ErrorCode' => ['ErrorCode', ErrorCode::class],
         ];
     }
 

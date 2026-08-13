@@ -26,10 +26,11 @@ dans `apps/api`.
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
 | Modèles Eloquent | 35 modèles, exercés contre le vrai schéma | `composer check` |
-| **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 30 tests, 78 assertions |
+| **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 48 tests, 144 assertions |
+| **Authentification** | inscription, OTP, session Sanctum, port SMS | idem |
 
-**Ce qui n'existe pas encore** : authentification, réservation, paiement,
-billet, embarquement — et tout le back-office agence.
+**Ce qui n'existe pas encore** : réservation, paiement, billet, embarquement —
+et tout le back-office agence.
 
 ---
 
@@ -85,13 +86,26 @@ pas » mais « elle existe, mais pas à la date choisie » — et une recherche 
 date lointaine ne remonte alors aucune date proche. Sans cette inclusion, le
 passager repart les mains vides sur un axe desservi tous les jours.
 
-### 3.2 Authentification
+### 3.2 Authentification — ✅ fait
 
-*Dépend de* : le fournisseur SMS, ou un pilote factice en attendant.
+Inscription, OTP, session Sanctum, et le port `SmsSender` avec son pilote de
+journalisation — ce qui a permis de tout construire sans attendre la
+documentation de TechSoft.
 
-- Inscription, OTP, session Sanctum
-- 10 minutes de validité, 4 tentatives ([§8](BRIEF.md))
-- La langue est transmise dès l'inscription : elle détermine celle de l'OTP ([I10](BRIEF.md))
+Deux enseignements à garder :
+
+**Une exception levée depuis une transaction annule ce qu'elle voulait
+enregistrer.** L'incrément du compteur de tentatives partait avec le
+`rollback` : la limite de quatre tentatives de [§8](BRIEF.md) ne limitait rien,
+et un attaquant disposait d'essais illimités sur un code à six chiffres. Toute
+Action qui compte un échec doit lever **hors** de sa transaction.
+
+**La limitation de débit protège le budget autant que le compte.** Chaque
+demande de code envoie un SMS payant, et l'OTP est le seul canal sans
+alternative ([I8](BRIEF.md)).
+
+Reste à écrire : l'adaptateur TechSoft, dès que sa documentation est
+accessible.
 
 ### 3.3 Réservation et tenue des places
 

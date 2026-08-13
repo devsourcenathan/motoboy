@@ -13,6 +13,7 @@
     "ordered_class_elements": {
       "order": [
         "use_trait",
+        "case",
         "constant",
         "property",
         "construct",

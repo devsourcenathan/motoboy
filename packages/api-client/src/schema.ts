@@ -152,8 +152,7 @@ export interface paths {
                     "application/json": {
                         phone: string;
                         code: string;
-                        /** @enum {string} */
-                        purpose: "REGISTRATION" | "LOGIN" | "PHONE_CHANGE";
+                        purpose: components["schemas"]["OtpPurpose"];
                     };
                 };
             };
@@ -212,8 +211,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         phone: string;
-                        /** @enum {string} */
-                        purpose: "REGISTRATION" | "LOGIN" | "PHONE_CHANGE";
+                        purpose: components["schemas"]["OtpPurpose"];
                     };
                 };
             };
@@ -1352,6 +1350,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description Un OTP est lié à son intention : un code demandé pour se connecter ne
+         *     doit pas pouvoir valider une inscription.
+         * @enum {string}
+         */
+        OtpPurpose: "REGISTRATION" | "LOGIN" | "PHONE_CHANGE";
         /**
          * @description Le Cameroun a deux langues officielles, et les régions du Nord-Ouest
          *     et du Sud-Ouest sont anglophones — Bamenda, Buea, Limbe sont des

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Trips\Http\Controllers\SearchController;
 use App\Modules\Trips\Http\Controllers\TripController;
@@ -26,5 +27,25 @@ Route::prefix('v1')->group(function (): void {
     Route::get('search', SearchController::class);
     Route::get('trips/{reference}', [TripController::class, 'show']);
     Route::get('trips/{reference}/seats', [TripController::class, 'seats']);
+
+    /*
+     * Authentification.
+     *
+     * La limitation de débit protège autant le budget que le compte : chaque
+     * demande de code envoie un SMS payant, et l'OTP est le seul canal sans
+     * alternative (I8). Une borne par adresse complète celle par numéro, portée
+     * par l'Action — sans quoi un attaquant balaierait les numéros un par un.
+     */
+    Route::middleware('throttle:10,1')->group(function (): void {
+        Route::post('auth/register', [AuthController::class, 'register']);
+        Route::post('auth/login', [AuthController::class, 'login']);
+        Route::post('auth/otp/resend', [AuthController::class, 'resend']);
+        Route::post('auth/otp/verify', [AuthController::class, 'verify']);
+    });
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('auth/logout', [AuthController::class, 'logout']);
+    });
 
 });

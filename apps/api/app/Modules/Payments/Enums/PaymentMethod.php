@@ -6,10 +6,6 @@ namespace App\Modules\Payments\Enums;
 
 enum PaymentMethod: string
 {
-    public function usesAggregator(): bool
-    {
-        return $this !== self::Cash;
-    }
     case MobileMoney = 'MOBILE_MONEY';
     case Card = 'CARD';
 
@@ -19,4 +15,9 @@ enum PaymentMethod: string
      * compte courant.
      */
     case Cash = 'CASH';
+
+    public function usesAggregator(): bool
+    {
+        return $this !== self::Cash;
+    }
 }
