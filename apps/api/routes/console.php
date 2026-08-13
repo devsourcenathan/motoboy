@@ -2,9 +2,23 @@
 
 declare(strict_types=1);
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Modules\Bookings\Actions\ReleaseExpiredHolds;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+/*
+ * Libération des tenues expirées.
+ *
+ * **À la minute, et sans chevauchement.** PostgreSQL n'acceptant pas `now()`
+ * dans le prédicat d'un index partiel, une tenue arrivée à terme reste
+ * bloquante jusqu'au passage de ce job : sa fréquence *est* la durée maximale
+ * d'indisponibilité fantôme acceptée en B2.
+ *
+ * `withoutOverlapping` évite que deux exécutions traitent la même réservation :
+ * en mode capacité, le compteur reculerait deux fois et le départ afficherait
+ * plus de places qu'il n'en a.
+ */
+Schedule::call(fn (ReleaseExpiredHolds $action) => $action->handle())
+    // `name` doit précéder `withoutOverlapping` : le verrou est posé sous ce nom.
+    ->name('bookings:release-expired-holds')
+    ->everyMinute()
+    ->withoutOverlapping();

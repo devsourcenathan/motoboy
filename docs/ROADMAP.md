@@ -26,11 +26,12 @@ dans `apps/api`.
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
 | Modèles Eloquent | 35 modèles, exercés contre le vrai schéma | `composer check` |
-| **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 48 tests, 144 assertions |
+| **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 51 tests, 156 assertions |
 | **Authentification** | inscription, OTP, session Sanctum, port SMS | idem |
+| **Réservation** | prise de places atomique, tenue, libération planifiée | idem |
 
-**Ce qui n'existe pas encore** : réservation, paiement, billet, embarquement —
-et tout le back-office agence.
+**Ce qui n'existe pas encore** : paiement, billet, embarquement — et tout le
+back-office agence.
 
 ---
 
@@ -125,7 +126,7 @@ renvoie soit une expiration d'attente, soit une violation d'unicité. Les deux
 prouvent la même chose — un siège ne peut pas être pris deux fois — et c'est
 cela que le test doit affirmer.
 
-Reste à câbler : le job de libération dans le planificateur.
+Le job de libération tourne à la minute, sans chevauchement — sa fréquence *est* la durée maximale d'indisponibilité fantôme acceptée en [B2](BRIEF.md).
 
 ### 3.4 Paiement
 
