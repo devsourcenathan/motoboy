@@ -25,9 +25,8 @@ dans `apps/api`.
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
-| Modèles Eloquent | 35 modèles, exercés contre le vrai schéma | 19 tests, 51 assertions |
-
-| Recherche | ✅ 4 endpoints publics, éprouvés de bout en bout | 11 tests dédiés |
+| Modèles Eloquent | 35 modèles, exercés contre le vrai schéma | `composer check` |
+| **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 30 tests, 78 assertions |
 
 **Ce qui n'existe pas encore** : authentification, réservation, paiement,
 billet, embarquement — et tout le back-office agence.
@@ -36,8 +35,9 @@ billet, embarquement — et tout le back-office agence.
 
 ## 2. Décisions qui ne dépendent pas du code
 
-Ces points ne se règlent pas en écrivant du logiciel. Quatre d'entre eux
-**n'ont jamais été discutés** et méritent d'être ouverts tôt.
+Ces points ne se règlent pas en écrivant du logiciel. Un seul reste entièrement
+ouvert — l'hébergement — et il devra l'être avant la première mise en
+production.
 
 | Sujet | État | Ce qu'il bloque |
 |---|---|---|
