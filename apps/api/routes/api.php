@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Modules\Agencies\Http\Controllers\FleetController;
+use App\Modules\Agencies\Http\Controllers\RoutingController;
+use App\Modules\Agencies\Http\Controllers\StationController;
 use App\Modules\Bookings\Http\Controllers\BookingController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
@@ -76,6 +79,30 @@ Route::prefix('v1')->group(function (): void {
             Route::get('trips/{reference}/boarding-list', [BoardingController::class, 'list']);
             Route::post('trips/{reference}/validations', [BoardingController::class, 'sync']);
             Route::post('tickets/lookup', [BoardingController::class, 'lookup']);
+
+            /*
+             * Alimentation de l'inventaire.
+             *
+             * Sans ces écrans, la recherche ne renvoie rien et le produit
+             * n'existe pas : c'est le chantier qui devait avancer en parallèle
+             * du parcours passager, pas après.
+             */
+            Route::get('stations', [StationController::class, 'index']);
+            Route::post('stations', [StationController::class, 'store']);
+            Route::patch('stations/{id}', [StationController::class, 'update']);
+            Route::post('city-requests', [StationController::class, 'requestCity']);
+
+            Route::get('vehicles', [FleetController::class, 'vehicles']);
+            Route::post('vehicles', [FleetController::class, 'storeVehicle']);
+            Route::get('vehicles/{id}/seats', [FleetController::class, 'seats']);
+
+            Route::get('drivers', [FleetController::class, 'drivers']);
+            Route::post('drivers', [FleetController::class, 'storeDriver']);
+
+            Route::get('routes', [RoutingController::class, 'routes']);
+            Route::post('routes', [RoutingController::class, 'storeRoute']);
+            Route::post('routes/{routeId}/schedules', [RoutingController::class, 'storeSchedule']);
+            Route::post('trips/generate', [RoutingController::class, 'generate']);
         });
     });
 

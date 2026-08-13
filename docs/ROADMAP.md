@@ -31,10 +31,12 @@ dans `apps/api`.
 | **Réservation** | prise de places atomique, tenue, libération planifiée | idem |
 | **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | idem |
 | **Billet et QR** | émission par passager, charge signée, consultation | idem |
-| **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | 76 tests, 234 assertions |
+| **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | idem |
+| **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | 82 tests, 262 assertions |
 
-**Ce qui n'existe pas encore** : la PWA elle-même, et tout le back-office
-agence. Le parcours passager de [§35](BRIEF.md) est complet côté API.
+**Ce qui n'existe pas encore** : la vente au guichet, les écrans de suivi de
+l'agence, la PWA, et l'administration. Le parcours passager de
+[§35](BRIEF.md) est complet côté API, et une agence peut désormais l'alimenter.
 
 ---
 
@@ -222,13 +224,21 @@ Le chemin critique ci-dessus est celui du passager. Mais **une agence doit
 pouvoir alimenter l'inventaire**, sinon la recherche ne renvoie rien et le
 produit n'existe pas.
 
-À mener en parallèle du 3.1, pas après :
+### Chaîne d'inventaire — ✅ fait
 
-- Lot 2 du contrat d'API — back-office agence
-- Gares, véhicules et plan de sièges, chauffeurs
-- Itinéraires et **horaires récurrents** ([I1](BRIEF.md)) — sans génération automatique, l'agence ressaisit ses départs chaque matin et abandonne en une semaine
-- `GenerateTrips` — job quotidien, horizon glissant de 30 jours
+Gares, véhicules avec plan de sièges généré, chauffeurs, itinéraires, horaires
+récurrents et `GenerateTrips`, planifié quotidiennement. Un test suit la chaîne
+entière : d'une agence sans rien jusqu'à un départ que la recherche renvoie.
+
+L'**autorisation par agence** est portée par `AgencyContext`, et une ressource
+d'une autre agence répond `NOT_FOUND` et non `FORBIDDEN` : dire « interdit »
+confirmerait son existence et permettrait d'énumérer le parc d'un concurrent.
+
+### Reste à faire
+
 - **Vente au guichet** — moins de 30 secondes, sinon plus lente que le cahier et non utilisée ([I2](BRIEF.md))
+- Écrans de suivi : tableau de bord, réservations, reversements, personnel
+- Lot 2 du contrat d'API, pour que ces endpoints y figurent
 
 ---
 

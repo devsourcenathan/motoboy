@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Bookings\Actions\ReleaseExpiredHolds;
+use App\Modules\Trips\Actions\GenerateTrips;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -21,4 +22,16 @@ Schedule::call(fn (ReleaseExpiredHolds $action) => $action->handle())
     // `name` doit précéder `withoutOverlapping` : le verrou est posé sous ce nom.
     ->name('bookings:release-expired-holds')
     ->everyMinute()
+    ->withoutOverlapping();
+
+/*
+ * Génération des départs sur l'horizon glissant (I1).
+ *
+ * Quotidienne : c'est elle qui fait avancer la fenêtre de trente jours, et sans
+ * elle l'offre se tarirait jour après jour sans que personne le remarque avant
+ * que la recherche ne renvoie plus rien.
+ */
+Schedule::call(fn (GenerateTrips $action) => $action->handle())
+    ->name('trips:generate')
+    ->dailyAt('03:00')
     ->withoutOverlapping();
