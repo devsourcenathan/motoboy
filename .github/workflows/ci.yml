@@ -42,12 +42,33 @@ jobs:
     defaults:
       run:
         working-directory: apps/api
+
+    # Les tests tournent sur PostgreSQL, pas sur SQLite. Le schéma s'appuie sur
+    # des index uniques partiels et des contraintes de vérification, et surtout
+    # le modèle de verrouillage de SQLite diffère fondamentalement : un test de
+    # double-vente qui y passerait ne prouverait rien sur la production.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: motoboy_test
+          POSTGRES_USER: motoboy
+          POSTGRES_PASSWORD: motoboy
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U motoboy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          extensions: pdo_pgsql
           coverage: none
 
       - name: Cache Composer
@@ -65,6 +86,9 @@ jobs:
 
       - name: Analyse statique — niveau 8
         run: composer analyse
+
+      - name: Migrations
+        run: php artisan migrate --force
 
       - name: Tests
         run: php artisan test

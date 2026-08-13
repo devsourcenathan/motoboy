@@ -38,9 +38,17 @@ Node ≥ 20 · pnpm 10 · PHP ≥ 8.2 · Composer 2
 ## Démarrer
 
 ```bash
+docker compose up -d
+```
+
+```bash
 pnpm install
 pnpm api:types
 ```
+
+Postgres écoute sur **5433** et Redis sur **6380** — les ports par défaut sont
+souvent déjà pris par une instance locale, et le conflit se manifeste par des
+erreurs d'authentification déroutantes plutôt que par un refus franc.
 
 | Commande | Effet |
 |---|---|
@@ -53,8 +61,13 @@ pnpm api:types
 L'API se lance à part, depuis `apps/api` :
 
 ```bash
-php artisan serve
+php artisan migrate && php artisan serve
 ```
+
+**Les tests backend tournent sur PostgreSQL, pas sur SQLite.** Le schéma
+s'appuie sur des index uniques partiels et des contraintes de vérification, et
+surtout le modèle de verrouillage de SQLite diffère fondamentalement : un test
+de double-vente qui y passerait ne prouverait rien sur la production.
 
 ## Trois règles à tenir
 

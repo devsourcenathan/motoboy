@@ -1,0 +1,45 @@
+# Services de développement.
+#
+# Postgres écoute sur **5433** et non 5432 : le port par défaut est souvent déjà
+# pris par une instance locale, et un conflit se manifeste par des erreurs
+# d'authentification déroutantes plutôt que par un refus franc.
+#
+# Le schéma s'appuie sur des mécanismes propres à PostgreSQL — index unique
+# partiel, contraintes de vérification, jsonb. Les tests tournent donc sur
+# Postgres, pas sur SQLite : le modèle de verrouillage de SQLite diffère
+# fondamentalement, et un test de double-vente qui y passerait ne prouverait
+# rien sur la production.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: motoboy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: motoboy
+      POSTGRES_USER: motoboy
+      POSTGRES_PASSWORD: motoboy
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U motoboy -d motoboy']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: motoboy-redis
+    restart: unless-stopped
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
