@@ -67,7 +67,8 @@ export default function App() {
           <li key={trip.reference}>
             {formatTime(trip.departure_at)} — {trip.agency.name} —{' '}
             {formatMoney(trip.price)}
-            {trip.duration_minutes != null && ` — ${formatDuration(trip.duration_minutes)}`}
+            {trip.duration_minutes != null &&
+              ` — ${formatDuration(trip.duration_minutes)}`}
           </li>
         ))}
       </ul>

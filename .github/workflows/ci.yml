@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  javascript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Le contrat OpenAPI est normatif : si les types générés diffèrent de
+      # ceux commités, quelqu'un a édité le package à la main ou oublié de
+      # regénérer après avoir modifié la spécification.
+      - name: Les types générés sont à jour
+        run: |
+          pnpm api:types
+          git diff --exit-code packages/api-client/src/schema.ts
+
+      # Formatage, pureté de @motoboy/shared, lint, typecheck.
+      - run: pnpm verify
+
+  php:
+    name: Laravel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+
+      - run: composer install --prefer-dist --no-progress --no-interaction
+
+      - run: cp .env.example .env && php artisan key:generate
+
+      - name: Formatage
+        run: composer format:check
+
+      - name: Analyse statique — niveau 8
+        run: composer analyse
+
+      - name: Tests
+        run: php artisan test

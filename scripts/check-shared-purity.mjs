@@ -36,7 +36,12 @@ const FORBIDDEN_DEPS = [
 
 const FORBIDDEN_IMPORTS = [/from\s+['"]react/, /from\s+['"]expo/, /require\(['"]react/]
 
-const FORBIDDEN_GLOBALS = [/\bwindow\./, /\bdocument\./, /\bnavigator\./, /\blocalStorage\b/]
+const FORBIDDEN_GLOBALS = [
+  /\bwindow\./,
+  /\bdocument\./,
+  /\bnavigator\./,
+  /\blocalStorage\b/,
+]
 
 const problems = []
 
@@ -67,7 +72,8 @@ function walk(dir) {
       if (pattern.test(source)) problems.push(`${where} : import interdit (${pattern})`)
     }
     for (const pattern of FORBIDDEN_GLOBALS) {
-      if (pattern.test(source)) problems.push(`${where} : globale d'environnement (${pattern})`)
+      if (pattern.test(source))
+        problems.push(`${where} : globale d'environnement (${pattern})`)
     }
   }
 }

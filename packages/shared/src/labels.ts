@@ -82,13 +82,13 @@ export const errorCodeLabels: Record<ErrorCode, string> = {
   ONLINE_SALES_CLOSED: 'Les réservations en ligne sont closes pour ce départ.',
   TRIP_CANCELLED: 'Ce départ a été annulé.',
   BOOKING_EXPIRED: 'Le délai de paiement est dépassé, les places ont été libérées.',
-  BOOKING_NOT_CANCELLABLE: "Cette réservation ne peut plus être annulée.",
+  BOOKING_NOT_CANCELLABLE: 'Cette réservation ne peut plus être annulée.',
   CANCELLATION_DEADLINE_PASSED: "Le délai d'annulation est dépassé.",
   PAYMENT_ALREADY_SUCCEEDED: 'Cette réservation est déjà payée.',
   PAYMENT_FAILED: 'Le paiement a échoué. Vous pouvez réessayer.',
   TICKET_NOT_FOUND: 'Billet introuvable.',
   TICKET_ALREADY_VALIDATED: 'Billet déjà validé.',
-  TICKET_WRONG_TRIP: "Ce billet concerne un autre départ.",
+  TICKET_WRONG_TRIP: 'Ce billet concerne un autre départ.',
   TICKET_CANCELLED: 'Ce billet a été annulé.',
 }
 

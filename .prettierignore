@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+pnpm-lock.yaml
+apps/api
+apps/mobile/assets
+
+# Généré depuis docs/openapi.yaml — jamais édité à la main, donc jamais formaté.
+packages/api-client/src/schema.ts
+
+# Prose, pas du code. Prettier réaligne les tableaux à chaque édition de
+# contenu : changer une cellule réécrit tout le tableau, et les diffs de
+# décisions deviennent illisibles. Ce sont précisément les fichiers qu'on
+# modifie le plus.
+*.md

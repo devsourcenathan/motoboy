@@ -930,7 +930,6 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
 
 components:
-
   securitySchemes:
     bearerAuth:
       type: http
@@ -1002,7 +1001,6 @@ components:
           schema: { $ref: '#/components/schemas/ValidationErrorBody' }
 
   schemas:
-
     # ── Erreurs ──
 
     ErrorCode:
@@ -1207,8 +1205,17 @@ components:
     TripSummary:
       type: object
       required:
-        [reference, agency, departure_at, origin_station, destination_station,
-         price, seats_available, seating_mode, vehicle_type]
+        [
+          reference,
+          agency,
+          departure_at,
+          origin_station,
+          destination_station,
+          price,
+          seats_available,
+          seating_mode,
+          vehicle_type,
+        ]
       properties:
         reference: { type: string }
         agency: { $ref: '#/components/schemas/AgencySummary' }
@@ -1321,8 +1328,7 @@ components:
 
     Booking:
       type: object
-      required:
-        [reference, status, trip, passengers, seats_count, total, created_at]
+      required: [reference, status, trip, passengers, seats_count, total, created_at]
       properties:
         reference: { type: string }
         status: { $ref: '#/components/schemas/BookingStatus' }

@@ -11,8 +11,13 @@
     "check:shared": "node scripts/check-shared-purity.mjs",
     "typecheck": "pnpm -r --parallel typecheck",
     "lint": "pnpm -r --parallel lint",
-    "verify": "pnpm check:shared && pnpm typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "pnpm format:check && pnpm check:shared && pnpm lint && pnpm typecheck",
     "web": "pnpm --filter @motoboy/web dev",
     "mobile": "pnpm --filter @motoboy/mobile start"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }
