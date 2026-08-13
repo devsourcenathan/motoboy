@@ -1346,10 +1346,690 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/stations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gares de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyStation"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Créer une gare
+         * @description La gare **appartient à l'agence** et est publiée immédiatement : la
+         *     modération est a posteriori, car bloquer une agence motivée pendant
+         *     plusieurs jours la ferait renoncer.
+         *
+         *     La ville, elle, vient du **référentiel fermé** curé par MOTOBOY : si
+         *     chaque agence pouvait créer la sienne, « Douala », « douala » et « Dla »
+         *     coexisteraient et la recherche cesserait de regrouper les offres.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgencyStationInput"];
+                };
+            };
+            responses: {
+                /** @description Gare créée */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyStation"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/stations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Modifier une gare */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        address?: string | null;
+                        latitude?: number | null;
+                        longitude?: number | null;
+                        is_active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyStation"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/agency/city-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Demander l'ajout d'une ville
+         * @description Sans ce circuit, une agence desservant une ville absente du référentiel
+         *     est bloquée sans recours et abandonne.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: int64 */
+                        country_id: number;
+                        requested_name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Demande enregistrée */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: int64 */
+                            id: number;
+                            requested_name: string;
+                            /** @enum {string} */
+                            status: "PENDING" | "APPROVED" | "REJECTED";
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/vehicles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Véhicules de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyVehicle"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Enregistrer un véhicule
+         * @description En mode `SEATED`, le **plan de sièges est généré** à partir de la
+         *     capacité : demander à une agence de créer trente sièges un par un
+         *     garantirait qu'elle ne le fasse pas, et sans plan le passager ne peut
+         *     pas choisir sa place.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgencyVehicleInput"];
+                };
+            };
+            responses: {
+                /** @description Véhicule enregistré */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyVehicle"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/vehicles/{id}/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plan de sièges d'un véhicule */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Vide en mode CAPACITY */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencySeat"][];
+                        };
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/drivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chauffeurs de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyDriver"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Enregistrer un chauffeur
+         * @description Le chauffeur reste un acteur métier **sans application dédiée**. Il peut
+         *     en revanche porter le rôle `AGENT` pour l'embarquement : le rôle est
+         *     fonctionnel, pas lié à un métier.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgencyDriverInput"];
+                };
+            };
+            responses: {
+                /** @description Chauffeur enregistré */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyDriver"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Itinéraires de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyRoute"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Créer un itinéraire
+         * @description Un itinéraire n'est **jamais daté** — un départ l'est toujours. Les
+         *     gares de départ et d'arrivée doivent appartenir à l'agence.
+         *
+         *     Les escales sont **purement informatives** : la réservation est
+         *     point-à-point, et une ville d'escale ne rend pas un départ éligible à
+         *     une recherche qui la viserait.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgencyRouteInput"];
+                };
+            };
+            responses: {
+                /** @description Itinéraire créé */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyRoute"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/routes/{routeId}/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Créer un horaire récurrent
+         * @description Sans horaires récurrents, une agence ressaisit ses départs chaque matin
+         *     et abandonne au bout d'une semaine — l'application afficherait alors des
+         *     données mortes, ce qui tue un comparateur plus sûrement qu'une absence
+         *     d'offre.
+         *
+         *     Modifier un horaire **n'affecte pas les départs déjà générés** : le
+         *     changement s'applique aux départs créés ensuite.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    routeId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgencyScheduleInput"];
+                };
+            };
+            responses: {
+                /** @description Horaire créé */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencySchedule"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/trips/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Générer les départs manquants
+         * @description Génère sur l'horizon glissant, **sans jamais modifier un départ
+         *     existant** : une régénération qui les écraserait réécrirait des départs
+         *     portant déjà des réservations.
+         *
+         *     Exposé pour que l'agence voie immédiatement l'effet d'un horaire qu'elle
+         *     vient de créer ; un job quotidien fait avancer la fenêtre.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            created: number;
+                            horizon_days: number;
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AgencyStation: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            city?: string | null;
+            /** Format: int64 */
+            city_id: number;
+            address?: string | null;
+            latitude?: number | null;
+            longitude?: number | null;
+            is_active: boolean;
+            /**
+             * Format: date-time
+             * @description Modération a posteriori — la gare est publiée sans l'attendre.
+             */
+            moderated_at?: string | null;
+        };
+        AgencyStationInput: {
+            /**
+             * Format: int64
+             * @description Issue du référentiel fermé curé par MOTOBOY.
+             */
+            city_id: number;
+            name: string;
+            address?: string | null;
+            latitude?: number | null;
+            longitude?: number | null;
+        };
+        AgencyVehicle: {
+            /** Format: int64 */
+            id: number;
+            registration: string;
+            brand?: string | null;
+            model?: string | null;
+            type: components["schemas"]["VehicleType"];
+            seating_mode: components["schemas"]["SeatingMode"];
+            capacity: number;
+            seats_count?: number | null;
+            condition?: string;
+        };
+        AgencyVehicleInput: {
+            registration: string;
+            brand?: string | null;
+            model?: string | null;
+            type: components["schemas"]["VehicleType"];
+            seating_mode: components["schemas"]["SeatingMode"];
+            capacity: number;
+            /**
+             * @description Rattache le véhicule à un propriétaire. Son accès reste en
+             *     consultation seule, sans aucun circuit financier porté par la
+             *     plateforme.
+             */
+            owner_phone?: string | null;
+        };
+        AgencySeat: {
+            /** Format: int64 */
+            id: number;
+            label: string;
+            row_index?: number;
+            column_index?: number;
+            is_bookable: boolean;
+        };
+        AgencyDriver: {
+            /** Format: int64 */
+            id: number;
+            first_name: string;
+            last_name: string;
+            phone: string;
+            license_number: string;
+            /** Format: date */
+            license_expires_at?: string | null;
+            /** Format: int64 */
+            assigned_vehicle_id?: number | null;
+            status: string;
+        };
+        AgencyDriverInput: {
+            first_name: string;
+            last_name: string;
+            phone: string;
+            license_number: string;
+            /** Format: date */
+            license_expires_at?: string | null;
+            /** Format: int64 */
+            assigned_vehicle_id?: number | null;
+        };
+        AgencyRoute: {
+            /** Format: int64 */
+            id: number;
+            origin: components["schemas"]["AgencyRouteEnd"];
+            destination: components["schemas"]["AgencyRouteEnd"];
+            reference_duration_minutes?: number | null;
+            /** @description Informatives — jamais réservables. */
+            stops: {
+                city?: string | null;
+                position: number;
+            }[];
+            schedules: components["schemas"]["AgencySchedule"][];
+            is_active: boolean;
+        };
+        AgencyRouteEnd: {
+            city?: string | null;
+            station?: string | null;
+        };
+        AgencyRouteInput: {
+            /** Format: int64 */
+            origin_station_id: number;
+            /** Format: int64 */
+            destination_station_id: number;
+            reference_duration_minutes?: number | null;
+            stops?: number[];
+        };
+        AgencySchedule: {
+            /** Format: int64 */
+            id: number;
+            /** @description Heure locale de pendule, pas un instant. */
+            departure_time: string;
+            days_of_week: number[];
+            /** Format: int64 */
+            default_vehicle_id?: number | null;
+            /** Format: int64 */
+            default_driver_id?: number | null;
+            price: components["schemas"]["Money"];
+            /** Format: date */
+            valid_from: string;
+            /** Format: date */
+            valid_until?: string | null;
+            is_active: boolean;
+        };
+        AgencyScheduleInput: {
+            /** @example 08:00 */
+            departure_time: string;
+            days_of_week: number[];
+            /** Format: int64 */
+            default_vehicle_id: number;
+            /** Format: int64 */
+            default_driver_id?: number | null;
+            price: number;
+            /** Format: date */
+            valid_from: string;
+            /** Format: date */
+            valid_until?: string | null;
+        };
         /**
          * @description Un OTP est lié à son intention : un code demandé pour se connecter ne
          *     doit pas pouvoir valider une inscription.
@@ -1751,6 +2431,7 @@ export interface components {
     parameters: {
         /** @description Référence publique, lisible et non devinable */
         Reference: string;
+        ResourceId: number;
         /**
          * @description Rejouer la même clé renvoie le résultat initial sans créer de
          *     doublon. Un UUID généré par le client convient.

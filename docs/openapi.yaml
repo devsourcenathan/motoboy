@@ -6,15 +6,20 @@ info:
   description: |
     Contrat de l'API MOTOBOY.
 
-    **Premier lot** — conventions, parcours passager critique, embarquement.
-    Le back-office agence, l'administration et l'espace propriétaire suivront
-    dans un second lot, une fois le motif CRUD posé.
+    Parcours passager, embarquement, et back-office agence. L'administration et
+    l'espace propriétaire restent à spécifier.
 
     ## Statut du document
 
     Cette spécification est **normative** : elle est la source de vérité du
-    contrat, et l'implémentation Laravel est vérifiée contre elle par un test
-    de conformité. Elle n'est pas générée depuis le code.
+    contrat, et l'implémentation Laravel est vérifiée contre elle. Elle n'est
+    pas générée depuis le code.
+
+    Un test de couverture compare les routes enregistrées aux chemins déclarés
+    ici, dans les deux sens. **Aucun endpoint ne peut être servi sans être
+    spécifié** — c'est ce qui rend le mot « normative » vrai plutôt
+    qu'aspirationnel. Les chemins spécifiés mais pas encore implémentés sont
+    déclarés explicitement dans ce test, jamais tolérés en silence.
 
     Les types TypeScript du package `api-client` en sont générés et ne sont
     jamais édités à la main.
@@ -86,6 +91,10 @@ tags:
     description: Billets électroniques
   - name: Boarding
     description: Embarquement — rôle AGENT, fonctionne hors ligne
+  - name: Agency
+    description: |
+      Back-office agence. Sans ces endpoints, la recherche ne renvoie rien et le
+      produit n'existe pas.
   - name: Webhooks
     description: Entrées appelées par les prestataires. Exclues de la génération du client.
 
@@ -941,6 +950,319 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  # ──────────────────── Back-office agence — inventaire ────────────────────
+  #
+  # Sans ces endpoints, la recherche ne renvoie rien et le produit n'existe
+  # pas : c'est le chantier qui devait avancer en parallèle du parcours
+  # passager, pas après.
+  #
+  # Toute écriture est portée par l'agence de l'utilisateur. Une ressource
+  # appartenant à une autre agence répond `404` et non `403` : dire « interdit »
+  # confirmerait son existence et permettrait d'énumérer le parc d'un
+  # concurrent.
+
+  /v1/agency/stations:
+    get:
+      tags: [Agency]
+      summary: Gares de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyStation' }
+
+    post:
+      tags: [Agency]
+      summary: Créer une gare
+      description: |
+        La gare **appartient à l'agence** et est publiée immédiatement : la
+        modération est a posteriori, car bloquer une agence motivée pendant
+        plusieurs jours la ferait renoncer.
+
+        La ville, elle, vient du **référentiel fermé** curé par MOTOBOY : si
+        chaque agence pouvait créer la sienne, « Douala », « douala » et « Dla »
+        coexisteraient et la recherche cesserait de regrouper les offres.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyStationInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Gare créée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/stations/{id}:
+    patch:
+      tags: [Agency]
+      summary: Modifier une gare
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 150 }
+                address: { type: [string, 'null'] }
+                latitude: { type: [number, 'null'] }
+                longitude: { type: [number, 'null'] }
+                is_active: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/city-requests:
+    post:
+      tags: [Agency]
+      summary: Demander l'ajout d'une ville
+      description: |
+        Sans ce circuit, une agence desservant une ville absente du référentiel
+        est bloquée sans recours et abandonne.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [country_id, requested_name]
+              properties:
+                country_id: { type: integer, format: int64 }
+                requested_name: { type: string, maxLength: 120 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Demande enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, requested_name, status]
+                properties:
+                  id: { type: integer, format: int64 }
+                  requested_name: { type: string }
+                  status:
+                    type: string
+                    enum: [PENDING, APPROVED, REJECTED]
+
+  /v1/agency/vehicles:
+    get:
+      tags: [Agency]
+      summary: Véhicules de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyVehicle' }
+
+    post:
+      tags: [Agency]
+      summary: Enregistrer un véhicule
+      description: |
+        En mode `SEATED`, le **plan de sièges est généré** à partir de la
+        capacité : demander à une agence de créer trente sièges un par un
+        garantirait qu'elle ne le fasse pas, et sans plan le passager ne peut
+        pas choisir sa place.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyVehicleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Véhicule enregistré
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyVehicle' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/vehicles/{id}/seats:
+    get:
+      tags: [Agency]
+      summary: Plan de sièges d'un véhicule
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Vide en mode CAPACITY
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencySeat' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/drivers:
+    get:
+      tags: [Agency]
+      summary: Chauffeurs de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyDriver' }
+
+    post:
+      tags: [Agency]
+      summary: Enregistrer un chauffeur
+      description: |
+        Le chauffeur reste un acteur métier **sans application dédiée**. Il peut
+        en revanche porter le rôle `AGENT` pour l'embarquement : le rôle est
+        fonctionnel, pas lié à un métier.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyDriverInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Chauffeur enregistré
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyDriver' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/routes:
+    get:
+      tags: [Agency]
+      summary: Itinéraires de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyRoute' }
+
+    post:
+      tags: [Agency]
+      summary: Créer un itinéraire
+      description: |
+        Un itinéraire n'est **jamais daté** — un départ l'est toujours. Les
+        gares de départ et d'arrivée doivent appartenir à l'agence.
+
+        Les escales sont **purement informatives** : la réservation est
+        point-à-point, et une ville d'escale ne rend pas un départ éligible à
+        une recherche qui la viserait.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyRouteInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Itinéraire créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyRoute' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/routes/{routeId}/schedules:
+    post:
+      tags: [Agency]
+      summary: Créer un horaire récurrent
+      description: |
+        Sans horaires récurrents, une agence ressaisit ses départs chaque matin
+        et abandonne au bout d'une semaine — l'application afficherait alors des
+        données mortes, ce qui tue un comparateur plus sûrement qu'une absence
+        d'offre.
+
+        Modifier un horaire **n'affecte pas les départs déjà générés** : le
+        changement s'applique aux départs créés ensuite.
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyScheduleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Horaire créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencySchedule' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/trips/generate:
+    post:
+      tags: [Agency]
+      summary: Générer les départs manquants
+      description: |
+        Génère sur l'horizon glissant, **sans jamais modifier un départ
+        existant** : une régénération qui les écraserait réécrirait des départs
+        portant déjà des réservations.
+
+        Exposé pour que l'agence voie immédiatement l'effet d'un horaire qu'elle
+        vient de créer ; un job quotidien fait avancer la fenêtre.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, horizon_days]
+                properties:
+                  created: { type: integer }
+                  horizon_days: { type: integer }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -958,6 +1280,12 @@ components:
       examples:
         booking:
           value: MTB-7F3K2A
+
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
 
     IdempotencyKey:
       name: Idempotency-Key
@@ -1014,6 +1342,175 @@ components:
 
   schemas:
     # ── Erreurs ──
+
+    AgencyStation:
+      type: object
+      required: [id, name, city_id, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        city: { type: [string, 'null'] }
+        city_id: { type: integer, format: int64 }
+        address: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+        is_active: { type: boolean }
+        moderated_at:
+          type: [string, 'null']
+          format: date-time
+          description: Modération a posteriori — la gare est publiée sans l'attendre.
+
+    AgencyStationInput:
+      type: object
+      required: [city_id, name]
+      properties:
+        city_id:
+          type: integer
+          format: int64
+          description: Issue du référentiel fermé curé par MOTOBOY.
+        name: { type: string, maxLength: 150 }
+        address: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+
+    AgencyVehicle:
+      type: object
+      required: [id, registration, type, seating_mode, capacity]
+      properties:
+        id: { type: integer, format: int64 }
+        registration: { type: string }
+        brand: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        type: { $ref: '#/components/schemas/VehicleType' }
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer }
+        seats_count: { type: [integer, 'null'] }
+        condition: { type: string }
+
+    AgencyVehicleInput:
+      type: object
+      required: [registration, type, seating_mode, capacity]
+      properties:
+        registration: { type: string, maxLength: 20 }
+        brand: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        type: { $ref: '#/components/schemas/VehicleType' }
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer, minimum: 1, maximum: 90 }
+        owner_phone:
+          type: [string, 'null']
+          description: |
+            Rattache le véhicule à un propriétaire. Son accès reste en
+            consultation seule, sans aucun circuit financier porté par la
+            plateforme.
+
+    AgencySeat:
+      type: object
+      required: [id, label, is_bookable]
+      properties:
+        id: { type: integer, format: int64 }
+        label: { type: string }
+        row_index: { type: integer }
+        column_index: { type: integer }
+        is_bookable: { type: boolean }
+
+    AgencyDriver:
+      type: object
+      required: [id, first_name, last_name, phone, license_number, status]
+      properties:
+        id: { type: integer, format: int64 }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+        license_number: { type: string }
+        license_expires_at: { type: [string, 'null'], format: date }
+        assigned_vehicle_id: { type: [integer, 'null'], format: int64 }
+        status: { type: string }
+
+    AgencyDriverInput:
+      type: object
+      required: [first_name, last_name, phone, license_number]
+      properties:
+        first_name: { type: string, maxLength: 100 }
+        last_name: { type: string, maxLength: 100 }
+        phone: { type: string, maxLength: 20 }
+        license_number: { type: string, maxLength: 50 }
+        license_expires_at: { type: [string, 'null'], format: date }
+        assigned_vehicle_id: { type: [integer, 'null'], format: int64 }
+
+    AgencyRoute:
+      type: object
+      required: [id, origin, destination, stops, schedules, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        origin: { $ref: '#/components/schemas/AgencyRouteEnd' }
+        destination: { $ref: '#/components/schemas/AgencyRouteEnd' }
+        reference_duration_minutes: { type: [integer, 'null'] }
+        stops:
+          type: array
+          description: Informatives — jamais réservables.
+          items:
+            type: object
+            required: [position]
+            properties:
+              city: { type: [string, 'null'] }
+              position: { type: integer }
+        schedules:
+          type: array
+          items: { $ref: '#/components/schemas/AgencySchedule' }
+        is_active: { type: boolean }
+
+    AgencyRouteEnd:
+      type: object
+      properties:
+        city: { type: [string, 'null'] }
+        station: { type: [string, 'null'] }
+
+    AgencyRouteInput:
+      type: object
+      required: [origin_station_id, destination_station_id]
+      properties:
+        origin_station_id: { type: integer, format: int64 }
+        destination_station_id: { type: integer, format: int64 }
+        reference_duration_minutes: { type: [integer, 'null'] }
+        stops:
+          type: array
+          maxItems: 12
+          items: { type: integer, format: int64 }
+
+    AgencySchedule:
+      type: object
+      required: [id, departure_time, days_of_week, price, valid_from, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        departure_time:
+          type: string
+          description: Heure locale de pendule, pas un instant.
+        days_of_week:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 7 }
+        default_vehicle_id: { type: [integer, 'null'], format: int64 }
+        default_driver_id: { type: [integer, 'null'], format: int64 }
+        price: { $ref: '#/components/schemas/Money' }
+        valid_from: { type: string, format: date }
+        valid_until: { type: [string, 'null'], format: date }
+        is_active: { type: boolean }
+
+    AgencyScheduleInput:
+      type: object
+      required: [departure_time, days_of_week, default_vehicle_id, price, valid_from]
+      properties:
+        departure_time: { type: string, examples: ['08:00'] }
+        days_of_week:
+          type: array
+          minItems: 1
+          maxItems: 7
+          items: { type: integer, minimum: 1, maximum: 7 }
+        default_vehicle_id: { type: integer, format: int64 }
+        default_driver_id: { type: [integer, 'null'], format: int64 }
+        price: { type: integer, minimum: 0 }
+        valid_from: { type: string, format: date }
+        valid_until: { type: [string, 'null'], format: date }
 
     OtpPurpose:
       type: string

@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function (): void {
         // Réservation. La prise de places est l'opération atomique du produit :
         // elle tient les places avant même la saisie du paiement (B2).
         Route::post('bookings', [BookingController::class, 'store']);
+        Route::get('bookings', [BookingController::class, 'index']);
         Route::get('bookings/{reference}', [BookingController::class, 'show']);
 
         Route::post('bookings/{reference}/payments', [PaymentController::class, 'store']);
@@ -76,6 +77,7 @@ Route::prefix('v1')->group(function (): void {
          * départ est ce qui désigne laquelle (B3).
          */
         Route::prefix('agency')->group(function (): void {
+            Route::get('trips', [BoardingController::class, 'trips']);
             Route::get('trips/{reference}/boarding-list', [BoardingController::class, 'list']);
             Route::post('trips/{reference}/validations', [BoardingController::class, 'sync']);
             Route::post('tickets/lookup', [BoardingController::class, 'lookup']);

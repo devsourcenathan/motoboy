@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tickets\Http\Controllers;
 
+use App\Modules\Agencies\Support\AgencyContext;
 use App\Modules\Bookings\Models\BookingPassenger;
 use App\Modules\Identity\Models\User;
 use App\Modules\Tickets\Actions\BuildBoardingList;
@@ -21,6 +22,41 @@ use Illuminate\Support\Collection;
 
 final class BoardingController
 {
+    public function __construct(private readonly AgencyContext $context) {}
+
+    /**
+     * Départs de l'agence, pour que l'agent choisisse le sien.
+     *
+     * C'est le premier écran de la PWA d'embarquement : sans lui, l'agent
+     * devrait connaître par cœur la référence du départ qu'il contrôle.
+     */
+    public function trips(Request $request): JsonResponse
+    {
+        $agency = $this->context->require($request);
+
+        $perPage = min(max($request->integer('per_page', 20), 1), 100);
+
+        $trips = Trip::query()
+            ->where('agency_id', $agency->id)
+            ->when($request->filled('from'), fn ($q) => $q->where('departure_at', '>=', $request->date('from')))
+            ->when($request->filled('to'), fn ($q) => $q->where('departure_at', '<=', $request->date('to')))
+            ->withAvailability()
+            ->with('agency.commercialTerms', 'originStation.city', 'destinationStation.city',
+                'vehicle', 'route.stops.city')
+            ->orderBy('departure_at')
+            ->paginate($perPage);
+
+        return response()->json([
+            'data' => TripSummaryResource::collection($trips->items())->resolve(),
+            'meta' => [
+                'page' => $trips->currentPage(),
+                'per_page' => $trips->perPage(),
+                'total' => $trips->total(),
+                'last_page' => $trips->lastPage(),
+            ],
+        ]);
+    }
+
     public function list(Request $request, string $reference, BuildBoardingList $build): JsonResponse
     {
         $trip = $this->authorizedTrip($request, $reference);

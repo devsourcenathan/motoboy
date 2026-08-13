@@ -21,7 +21,7 @@ dans `apps/api`.
 |---|---|---|
 | Décisions produit | 6 points bloquants et 10 points importants tranchés | [BRIEF.md](BRIEF.md) |
 | Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 18 migrations |
-| Contrat d'API | **lot 1 seulement** — 24 opérations | [openapi.yaml](openapi.yaml) |
+| Contrat d'API | passager, embarquement, back-office agence — 45 opérations | couverture vérifiée par test |
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
@@ -32,7 +32,7 @@ dans `apps/api`.
 | **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | idem |
 | **Billet et QR** | émission par passager, charge signée, consultation | idem |
 | **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | idem |
-| **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | 82 tests, 262 assertions |
+| **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | 85 tests, 265 assertions |
 
 **Ce qui n'existe pas encore** : la vente au guichet, les écrans de suivi de
 l'agence, la PWA, et l'administration. Le parcours passager de
@@ -238,7 +238,12 @@ confirmerait son existence et permettrait d'énumérer le parc d'un concurrent.
 
 - **Vente au guichet** — moins de 30 secondes, sinon plus lente que le cahier et non utilisée ([I2](BRIEF.md))
 - Écrans de suivi : tableau de bord, réservations, reversements, personnel
-- Lot 2 du contrat d'API, pour que ces endpoints y figurent
+
+Le lot 2 du contrat est écrit, et un **test de couverture** compare désormais
+les routes enregistrées aux chemins spécifiés, dans les deux sens. Il a été
+introduit après avoir constaté la dérive : treize routes servies sans figurer au
+contrat, quatre chemins spécifiés sans exister. C'est ce qui rend le mot
+« normative » vrai plutôt qu'aspirationnel.
 
 ---
 
