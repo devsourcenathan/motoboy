@@ -29,9 +29,10 @@ dans `apps/api`.
 | **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 51 tests, 156 assertions |
 | **Authentification** | inscription, OTP, session Sanctum, port SMS | idem |
 | **Réservation** | prise de places atomique, tenue, libération planifiée | idem |
+| **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | 60 tests, 179 assertions |
 
-**Ce qui n'existe pas encore** : paiement, billet, embarquement — et tout le
-back-office agence.
+**Ce qui n'existe pas encore** : billet, embarquement — et tout le back-office
+agence.
 
 ---
 
@@ -128,14 +129,32 @@ cela que le test doit affirmer.
 
 Le job de libération tourne à la minute, sans chevauchement — sa fréquence *est* la durée maximale d'indisponibilité fantôme acceptée en [B2](BRIEF.md).
 
-### 3.4 Paiement
+### 3.4 Paiement — ✅ fait
 
-*Dépend de* : réservation. **Pas** du choix de l'agrégateur.
+`InitiatePayment`, `ConfirmPayment`, `RefundPayment` et
+`RecordBookingSettlement`, derrière le port `PaymentGateway`. Le prestataire
+n'est toujours pas choisi et **cela n'a bloqué à aucun moment** : le pilote
+factice reproduit le trait qui compte — rien n'est encaissé de façon synchrone.
 
-- Abstraction `PaymentGateway` + pilote factice pilotable en test
-- `InitiatePayment`, `ConfirmPayment`
-- Webhook idempotent, journal traçable ([I7](BRIEF.md))
-- Cas limite : succès arrivant après expiration, place revendue → remboursement `LATE_PAYMENT` ([B5](BRIEF.md))
+Trois points à garder :
+
+**Le pilote factice ne renvoie jamais de succès immédiat.** Un pilote complaisant
+laisserait écrire du code incapable de gérer le vrai Mobile Money, où le
+passager doit saisir son code pendant une à deux minutes.
+
+**Le webhook répond toujours 204, même en échec.** Les prestataires réémettent :
+un 500 sur une charge illisible déclencherait une tempête de rejeux sans jamais
+résoudre le problème. Ce qui n'a pas pu être traité reste dans le journal, avec
+son erreur.
+
+**Les pourcentages sont en points de base.** 800 vaut 8 % : un entier
+interdirait 8,5 %, un flottant ferait entrer de l'arrondi dans un calcul
+d'argent.
+
+Reste à écrire : l'exécution effective du remboursement auprès du prestataire,
+qui dépend de son API — critère éliminatoire de la grille de [B4](BRIEF.md). Les
+remboursements sont créés en `PENDING` et attendent, plutôt que d'afficher un
+succès simulé.
 
 ### 3.5 Billet et QR Code
 

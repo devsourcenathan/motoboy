@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Modules\Bookings\Http\Controllers\BookingController;
 use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Payments\Http\Controllers\PaymentController;
+use App\Modules\Payments\Http\Controllers\WebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Trips\Http\Controllers\SearchController;
 use App\Modules\Trips\Http\Controllers\TripController;
@@ -52,6 +54,18 @@ Route::prefix('v1')->group(function (): void {
         // elle tient les places avant même la saisie du paiement (B2).
         Route::post('bookings', [BookingController::class, 'store']);
         Route::get('bookings/{reference}', [BookingController::class, 'show']);
+
+        Route::post('bookings/{reference}/payments', [PaymentController::class, 'store']);
+        Route::get('payments/{reference}', [PaymentController::class, 'show']);
     });
+
+    /*
+     * Webhook de l'agrégateur.
+     *
+     * Hors `auth:sanctum` — l'appelant est un prestataire, pas un passager.
+     * L'authentification repose sur la signature de la charge utile, vérifiée
+     * par l'adaptateur, et chaque appel est journalisé avant tout traitement.
+     */
+    Route::post('webhooks/payments/{provider}', WebhookController::class);
 
 });

@@ -24,6 +24,7 @@ final class Booking extends Model
         'trip_id', 'agency_id', 'user_id', 'channel', 'created_by',
         'status', 'expires_at', 'seats_count', 'total_amount', 'currency',
         'contact_name', 'contact_phone',
+        'confirmed_at', 'cancelled_at', 'cancelled_by', 'cancellation_reason',
         // Conditions figées à la création — recopiées depuis les conditions
         // commerciales de l'agence, jamais issues d'une saisie utilisateur.
         'commission_type', 'commission_value', 'fee_bearer',

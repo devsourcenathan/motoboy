@@ -30,7 +30,7 @@ final class AgencyLedgerEntry extends Model
 
     protected $fillable = [
         'agency_id', 'type', 'amount', 'currency',
-        'reference_type', 'reference_id', 'description', 'created_by', 'occurred_at',
+        'reference_type', 'reference_id', 'description', 'created_by', 'occurred_at', 'created_at',
     ];
 
     /** @var array<string, string> */
