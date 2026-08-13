@@ -27,8 +27,10 @@ dans `apps/api`.
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
 | Modèles Eloquent | 35 modèles, exercés contre le vrai schéma | 19 tests, 51 assertions |
 
-**Ce qui n'existe pas encore** : aucune Action, aucun contrôleur, aucun endpoint
-métier. La seule route enregistrée est le `/user` par défaut de Laravel.
+| Recherche | ✅ 4 endpoints publics, éprouvés de bout en bout | 11 tests dédiés |
+
+**Ce qui n'existe pas encore** : authentification, réservation, paiement,
+billet, embarquement — et tout le back-office agence.
 
 ---
 
@@ -42,13 +44,21 @@ Ces points ne se règlent pas en écrivant du logiciel. Quatre d'entre eux
 | **Agrégateur de paiement** | grille de sélection prête en [B4](BRIEF.md) | L'intégration réelle du paiement. *Pas* le développement — voir l'abstraction ci-dessous |
 | **Cadre réglementaire CEMAC** | ouvert, à poser à un conseil local | Une réponse défavorable remettrait en cause l'encaissement centralisé, donc `agency_ledger_entries`, `payouts` et `payout_lines` |
 | **Liste des villes** | seedée, **non validée sur le terrain** | La pertinence de la recherche au lancement |
-| **Fournisseur SMS** | ⚠️ jamais discuté | OTP, confirmations, annulations — donc l'inscription elle-même |
+| **Fournisseur SMS** | ✅ **TechSoft SMS** — documentation derrière authentification, à récupérer | L'adaptateur concret, pas le port ni le reste du développement |
+| **Stockage objet** | ✅ **Cloudflare R2**, compatible S3 | Rien — l'API S3 est standard |
+| **Push mobile** | ✅ **Firebase Cloud Messaging** | Rien à court terme |
 | **Hébergement et déploiement** | ⚠️ jamais discuté | La mise en production, et le choix d'infrastructure qui en découle |
-| **Stockage S3-compatible** | ⚠️ jamais discuté | Documents des agences et des véhicules |
-| **Push mobile** | ⚠️ jamais discuté | Le canal gratuit sur lequel repose l'arbitrage de coût de [I8](BRIEF.md) |
 
-**Le fournisseur SMS est le plus pressant** : sans lui, l'inscription par OTP ne
-fonctionne pas, et elle est sur le chemin critique.
+**Point ouvert sur TechSoft** : `app.techsoft-sms.com/developers/docs` répond
+`401` sans session. Le schéma exact des requêtes — authentification, noms de
+paramètres, forme des réponses, existence d'un rappel de statut de livraison —
+reste à obtenir avant d'écrire l'adaptateur.
+
+**Cela ne bloque pas.** Le port `SmsSender` est défini indépendamment, et un
+pilote de journalisation permet de développer l'inscription par OTP sans
+prestataire. Changer de fournisseur ou en ajouter un revient alors à écrire une
+classe et à changer une ligne de configuration — c'est exactement ce
+qu'exigeait [§29](BRIEF.md).
 
 **L'abstraction déverrouille le reste.** [§29](BRIEF.md) exige que le code métier
 ne dépende d'aucun fournisseur précis pour le paiement, le SMS, l'email et le
@@ -64,17 +74,16 @@ L'ordre suit les dépendances réelles. [§35](BRIEF.md) dit que le MVP doit
 valider le parcours **recherche → comparaison → réservation → paiement → billet
 → voyage** : c'est ce parcours qu'on construit, dans cet ordre.
 
-### 3.1 Recherche
+### 3.1 Recherche — ✅ fait
 
-*Dépend de* : modèles et référentiel — disponibles.
+`SearchTrips`, `SuggestAlternatives`, `AutocompletePlaces`, plus les quatre
+endpoints publics du contrat.
 
-Premier chantier parce qu'il est **public**, donc sans authentification, et
-qu'il éprouve le référentiel de bout en bout : autocomplétion insensible aux
-accents, filtrage sur le couple de villes, repli quand il n'y a aucun résultat.
-
-- `SearchTrips` et `AutocompletePlaces`
-- `GET /v1/places/autocomplete`, `GET /v1/search`, `GET /v1/trips/{reference}`, `GET /v1/trips/{reference}/seats`
-- Le bloc `suggestions` doit être renseigné quand `data` est vide ([I9](BRIEF.md))
+Un enseignement à garder : `routes_served` **n'exclut pas** la destination
+demandée. Le cas qui fait le plus mal n'est pas « cette destination n'existe
+pas » mais « elle existe, mais pas à la date choisie » — et une recherche à
+date lointaine ne remonte alors aucune date proche. Sans cette inclusion, le
+passager repart les mains vides sur un axe desservi tous les jours.
 
 ### 3.2 Authentification
 

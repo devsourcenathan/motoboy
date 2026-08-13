@@ -136,4 +136,48 @@ final class Trip extends Model
         $query->where('status', 'SCHEDULED')
             ->where('online_sales_close_at', '>', now());
     }
+
+    /**
+     * Ajoute `held_seats_count` — les places réellement immobilisées.
+     *
+     * **Une seule source de vérité pour les deux modes d'inventaire.** En mode
+     * `CAPACITY`, `trips.seats_taken` existe uniquement comme garde-fou
+     * d'écriture, adossé à la contrainte `seats_taken <= capacity` : compter des
+     * lignes ne peut pas être contraint, d'où le compteur. Mais en **lecture**,
+     * les lignes de `booking_passengers` font foi dans les deux modes, ce qui
+     * évite deux chemins de calcul susceptibles de diverger.
+     *
+     * Une tenue expirée reste comptée tant que le job de libération n'est pas
+     * passé — jusqu'à une minute d'indisponibilité fantôme, explicitement
+     * acceptée en B2.
+     *
+     * @param Builder<$this> $query
+     */
+    public function scopeWithAvailability(Builder $query): void
+    {
+        $query->withCount([
+            'passengers as held_seats_count' => fn (Builder $q) => $q->where('holds_seat', true),
+        ]);
+    }
+
+    /**
+     * Ne garde que les départs offrant assez de places pour le groupe entier :
+     * une réservation de plusieurs places est prise en tout ou rien (B2).
+     *
+     * La sous-requête est répétée plutôt que reprise de `scopeWithAvailability`
+     * parce que PostgreSQL n'autorise pas à référencer un alias du `SELECT`
+     * dans un `WHERE` — ce n'est pas une duplication qu'on pourrait factoriser.
+     *
+     * @param Builder<$this> $query
+     */
+    public function scopeHavingSeatsFor(Builder $query, int $seats): void
+    {
+        $query->whereRaw(
+            'trips.capacity - (
+                select count(*) from booking_passengers bp
+                where bp.trip_id = trips.id and bp.holds_seat = true
+            ) >= ?',
+            [$seats],
+        );
+    }
 }

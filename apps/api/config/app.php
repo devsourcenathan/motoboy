@@ -68,6 +68,17 @@ return [
     */
 
     'timezone' => 'UTC',
+    /*
+     * Fuseau d'affichage et de saisie.
+     *
+     * Le stockage reste en UTC : ce réglage sert aux heures **locales** — heure
+     * de départ d'un horaire récurrent, filtre « à partir de 08:00 ». Ce sont
+     * des heures de pendule, pas des instants.
+     *
+     * À terme, la valeur vient de `countries.timezone` (B1) ; une constante
+     * suffit tant que le produit est mono-pays.
+     */
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Africa/Douala'),
 
     /*
     |--------------------------------------------------------------------------

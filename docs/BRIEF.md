@@ -347,12 +347,36 @@ Le prestataire exact sera choisi ultérieurement.
 
 ### Stockage
 
-Stockage objet compatible S3 pour :
+**Cloudflare R2**, compatible S3, pour :
 
 - documents des agences ;
 - documents des véhicules ;
 - photos ;
 - fichiers générés.
+
+### SMS
+
+**TechSoft SMS**, derrière le port `SmsSender`.
+
+### Push
+
+**Firebase Cloud Messaging**, derrière le port `PushSender`.
+
+### Fournisseurs — ce que l'abstraction signifie concrètement
+
+[§29](#29-principes-techniques) exige que le code métier ne dépende d'aucun
+fournisseur précis. En pratique, pour chacun des quatre — paiement, SMS, email,
+stockage :
+
+- une **interface** dans le module concerné, exprimée en vocabulaire métier et
+  non en vocabulaire du prestataire ;
+- une **implémentation par fournisseur**, plus un pilote de journalisation
+  utilisable en développement et en test ;
+- le choix se fait **en configuration**, jamais par un `if` dans le code métier.
+
+Ajouter ou changer de prestataire revient alors à écrire une classe et à changer
+une ligne. C'est aussi ce qui permet de développer l'inscription par OTP avant
+d'avoir la documentation d'accès de TechSoft.
 
 ---
 
