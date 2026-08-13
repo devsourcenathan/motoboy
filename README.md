@@ -3,9 +3,15 @@
 Plateforme de mobilité pour le marché camerounais : rechercher, comparer,
 réserver, payer, obtenir un billet électronique.
 
-La conception est documentée dans [`docs/`](docs/) — le [brief](docs/BRIEF.md)
-porte les décisions et leur raisonnement, le [schéma](docs/SCHEMA.md) le modèle
-de données, et [`openapi.yaml`](docs/openapi.yaml) le contrat d'API.
+La conception est documentée dans [`docs/`](docs/) :
+
+| Document | Ce qu'il porte |
+|---|---|
+| [BRIEF.md](docs/BRIEF.md) | Les décisions **et leur raisonnement** — à lire avant de contourner l'une d'elles |
+| [ROADMAP.md](docs/ROADMAP.md) | Ce qui est fait, ce qui reste, dans quel ordre et pourquoi |
+| [SCHEMA.md](docs/SCHEMA.md) | Le modèle de données et ses garde-fous |
+| [openapi.yaml](docs/openapi.yaml) | Le contrat d'API, **normatif** |
+| [CODING-STANDARD.md](docs/CODING-STANDARD.md) | Comment écrire le code, et où les principes ne s'appliquent pas ici |
 
 ---
 
