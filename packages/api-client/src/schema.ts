@@ -1884,10 +1884,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/counter-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vendre au guichet
+         * @description **Le critère est la vitesse.** Si saisir une vente au comptoir prend plus
+         *     de temps que d'écrire une ligne dans le cahier, l'agence ne le fera pas —
+         *     et toute la fiabilité de la disponibilité affichée s'effondre. D'où un
+         *     seul appel : départ, places, nom et téléphone.
+         *
+         *     Trois conséquences, toutes délibérées :
+         *
+         *     - **le passager n'a pas de compte** — ni inscription ni OTP ;
+         *     - la réservation est créée directement en `CONFIRMED`, **sans tenue ni
+         *       tunnel de paiement** : l'argent est déjà dans la caisse ;
+         *     - un paiement de méthode `CASH` est enregistré, **sans transiter par
+         *       l'agrégateur**, pour que statistiques et compte courant restent
+         *       cohérents.
+         *
+         *     La vente au guichet reste ouverte **jusqu'au départ**, alors que la vente
+         *     en ligne ferme trente minutes avant : l'agence voit le véhicule et
+         *     maîtrise sa situation.
+         *
+         *     Une place tenue par un paiement en ligne en cours reste indisponible ici,
+         *     au même titre qu'une place vendue.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /**
+                     * @description Rejouer la même clé renvoie le résultat initial sans créer de
+                     *     doublon. Un UUID généré par le client convient.
+                     */
+                    "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CounterSaleInput"];
+                };
+            };
+            responses: {
+                /** @description Vente enregistrée, billets émis */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CounterSale"];
+                    };
+                };
+                /** @description Codes possibles — `SEAT_ALREADY_HELD`, `TRIP_FULL`, `TRIP_CANCELLED`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/trips/{reference}/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Plan des places, vu du guichet
+         * @description Identique au plan public, à une différence près : les places **tenues**
+         *     portent leur échéance.
+         *
+         *     Le hold l'emporte sur le guichet — donner la priorité au comptoir
+         *     obligerait à rembourser un passager venant de payer avec succès. Mais
+         *     l'agent doit distinguer « vendue » de « tenue, se libère dans six
+         *     minutes » pour savoir s'il attend ou s'il oriente son client vers un
+         *     autre siège.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CounterSeatMap"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CounterSaleInput: {
+            trip_reference: string;
+            passengers: {
+                first_name: string;
+                last_name: string;
+                /**
+                 * Format: int64
+                 * @description Requis en mode SEATED, ignoré en mode CAPACITY.
+                 */
+                seat_id?: number | null;
+            }[];
+            /**
+             * @description Destinataire du billet par SMS. Aucun compte n'est créé : c'est une
+             *     vente au comptoir, pas un tunnel de conversion.
+             */
+            contact_phone: string;
+            contact_name?: string | null;
+        };
+        CounterSale: {
+            booking: components["schemas"]["Booking"];
+            amount_due: components["schemas"]["Money"];
+            ticket_references: string[];
+            /**
+             * @description Faux si l'agence a désactivé l'envoi. C'est le seul cas où la
+             *     plateforme paierait un SMS sur une vente ne portant aucune
+             *     commission, d'où le levier.
+             */
+            sms_sent: boolean;
+        };
+        CounterSeatMap: {
+            seating_mode: components["schemas"]["SeatingMode"];
+            capacity: number;
+            seats_available: number;
+            seats: components["schemas"]["CounterSeat"][];
+        };
+        CounterSeat: components["schemas"]["Seat"] & {
+            /**
+             * Format: date-time
+             * @description Renseigné pour une place au statut HELD.
+             */
+            held_until?: string | null;
+        };
         AgencyStation: {
             /** Format: int64 */
             id: number;

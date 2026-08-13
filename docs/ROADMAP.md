@@ -21,7 +21,7 @@ dans `apps/api`.
 |---|---|---|
 | Décisions produit | 6 points bloquants et 10 points importants tranchés | [BRIEF.md](BRIEF.md) |
 | Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 18 migrations |
-| Contrat d'API | passager, embarquement, back-office agence — 45 opérations | couverture vérifiée par test |
+| Contrat d'API | passager, embarquement, back-office, guichet — 34 chemins, 39 opérations | couverture vérifiée par test |
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
@@ -32,11 +32,13 @@ dans `apps/api`.
 | **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | idem |
 | **Billet et QR** | émission par passager, charge signée, consultation | idem |
 | **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | idem |
-| **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | 85 tests, 265 assertions |
+| **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | idem |
+| **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | 97 tests, 317 assertions |
 
-**Ce qui n'existe pas encore** : la vente au guichet, les écrans de suivi de
-l'agence, la PWA, et l'administration. Le parcours passager de
-[§35](BRIEF.md) est complet côté API, et une agence peut désormais l'alimenter.
+**Ce qui n'existe pas encore** : les écrans de suivi de l'agence, la PWA, et
+l'administration. Le parcours passager de [§35](BRIEF.md) est complet côté API,
+une agence peut l'alimenter, et elle peut vendre au comptoir sans que
+la disponibilité affichée cesse d'être vraie.
 
 ---
 
@@ -234,9 +236,37 @@ L'**autorisation par agence** est portée par `AgencyContext`, et une ressource
 d'une autre agence répond `NOT_FOUND` et non `FORBIDDEN` : dire « interdit »
 confirmerait son existence et permettrait d'énumérer le parc d'un concurrent.
 
+### Vente au guichet — ✅ côté API
+
+`CreateCounterSale` : un seul appel fait la prise de places, la réservation
+**directement confirmée**, le paiement `CASH`, les billets et le SMS. Le critère
+est la vitesse — une saisie plus lente que le cahier ne serait pas faite, et
+toute la fiabilité de la disponibilité affichée s'effondrerait avec elle
+([I2](BRIEF.md)).
+
+Le flux d'argent est **l'inverse** de celui d'une vente en ligne, et c'est le
+point le plus facile à se tromper : aucun crédit au compte courant, puisque
+l'agence a encaissé elle-même. Créditer puis reverser lui paierait une seconde
+fois ce qu'elle a déjà. Commission activée, c'est elle qui **doit** — d'où un
+`COUNTER_COMMISSION_DEBIT` seul, déduit du prochain reversement.
+
+Deux points que l'écriture a révélés :
+
+- **Le rejeu n'était pas géré côté guichet.** La clé d'idempotence remontait
+  jusqu'à l'index d'unicité et produisait une erreur serveur, laissant l'agent
+  incapable de dire si l'argent qu'il tient correspond à une vente enregistrée.
+  Le SMS n'est pas renvoyé sur un rejeu.
+- **`created_by` restait vide.** La colonne existait pour l'agent ; une vente en
+  espèces dont on ignore qui l'a encaissée ne se réconcilie pas avec la caisse.
+
+Le plan de sièges est désormais **une seule règle** partagée entre la vue
+publique et celle du guichet — le jour où change ce qui rend une place
+indisponible, les deux changent ensemble. Le guichet en voit une colonne de
+plus, l'échéance des places tenues : le hold l'emporte sur le comptoir, mais
+l'agent doit distinguer « vendue » de « tenue, se libère dans six minutes ».
+
 ### Reste à faire
 
-- **Vente au guichet** — moins de 30 secondes, sinon plus lente que le cahier et non utilisée ([I2](BRIEF.md))
 - Écrans de suivi : tableau de bord, réservations, reversements, personnel
 
 Le lot 2 du contrat est écrit, et un **test de couverture** compare désormais

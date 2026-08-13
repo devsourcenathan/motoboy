@@ -1263,6 +1263,77 @@ paths:
                   created: { type: integer }
                   horizon_days: { type: integer }
 
+  /v1/agency/counter-sales:
+    post:
+      tags: [Agency]
+      summary: Vendre au guichet
+      description: |
+        **Le critère est la vitesse.** Si saisir une vente au comptoir prend plus
+        de temps que d'écrire une ligne dans le cahier, l'agence ne le fera pas —
+        et toute la fiabilité de la disponibilité affichée s'effondre. D'où un
+        seul appel : départ, places, nom et téléphone.
+
+        Trois conséquences, toutes délibérées :
+
+        - **le passager n'a pas de compte** — ni inscription ni OTP ;
+        - la réservation est créée directement en `CONFIRMED`, **sans tenue ni
+          tunnel de paiement** : l'argent est déjà dans la caisse ;
+        - un paiement de méthode `CASH` est enregistré, **sans transiter par
+          l'agrégateur**, pour que statistiques et compte courant restent
+          cohérents.
+
+        La vente au guichet reste ouverte **jusqu'au départ**, alors que la vente
+        en ligne ferme trente minutes avant : l'agence voit le véhicule et
+        maîtrise sa situation.
+
+        Une place tenue par un paiement en ligne en cours reste indisponible ici,
+        au même titre qu'une place vendue.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CounterSaleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Vente enregistrée, billets émis
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CounterSale' }
+        '409':
+          description: |
+            Codes possibles — `SEAT_ALREADY_HELD`, `TRIP_FULL`, `TRIP_CANCELLED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/trips/{reference}/seats:
+    get:
+      tags: [Agency]
+      summary: Plan des places, vu du guichet
+      description: |
+        Identique au plan public, à une différence près : les places **tenues**
+        portent leur échéance.
+
+        Le hold l'emporte sur le guichet — donner la priorité au comptoir
+        obligerait à rembourser un passager venant de payer avec succès. Mais
+        l'agent doit distinguer « vendue » de « tenue, se libère dans six
+        minutes » pour savoir s'il attend ou s'il oriente son client vers un
+        autre siège.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CounterSeatMap' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1342,6 +1413,71 @@ components:
 
   schemas:
     # ── Erreurs ──
+
+    CounterSaleInput:
+      type: object
+      required: [trip_reference, passengers, contact_phone]
+      properties:
+        trip_reference: { type: string }
+        passengers:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: object
+            required: [first_name, last_name]
+            properties:
+              first_name: { type: string, maxLength: 100 }
+              last_name: { type: string, maxLength: 100 }
+              seat_id:
+                type: [integer, 'null']
+                format: int64
+                description: Requis en mode SEATED, ignoré en mode CAPACITY.
+        contact_phone:
+          type: string
+          maxLength: 20
+          description: |
+            Destinataire du billet par SMS. Aucun compte n'est créé : c'est une
+            vente au comptoir, pas un tunnel de conversion.
+        contact_name: { type: [string, 'null'], maxLength: 150 }
+
+    CounterSale:
+      type: object
+      required: [booking, amount_due, ticket_references, sms_sent]
+      properties:
+        booking: { $ref: '#/components/schemas/Booking' }
+        amount_due:
+          $ref: '#/components/schemas/Money'
+        ticket_references:
+          type: array
+          items: { type: string }
+        sms_sent:
+          type: boolean
+          description: |
+            Faux si l'agence a désactivé l'envoi. C'est le seul cas où la
+            plateforme paierait un SMS sur une vente ne portant aucune
+            commission, d'où le levier.
+
+    CounterSeatMap:
+      type: object
+      required: [seating_mode, capacity, seats_available, seats]
+      properties:
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer }
+        seats_available: { type: integer }
+        seats:
+          type: array
+          items: { $ref: '#/components/schemas/CounterSeat' }
+
+    CounterSeat:
+      allOf:
+        - $ref: '#/components/schemas/Seat'
+        - type: object
+          properties:
+            held_until:
+              type: [string, 'null']
+              format: date-time
+              description: Renseigné pour une place au statut HELD.
 
     AgencyStation:
       type: object

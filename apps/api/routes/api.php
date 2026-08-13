@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Agencies\Http\Controllers\CounterSaleController;
 use App\Modules\Agencies\Http\Controllers\FleetController;
 use App\Modules\Agencies\Http\Controllers\RoutingController;
 use App\Modules\Agencies\Http\Controllers\StationController;
@@ -105,6 +106,17 @@ Route::prefix('v1')->group(function (): void {
             Route::post('routes', [RoutingController::class, 'storeRoute']);
             Route::post('routes/{routeId}/schedules', [RoutingController::class, 'storeSchedule']);
             Route::post('trips/generate', [RoutingController::class, 'generate']);
+
+            /*
+             * Vente au comptoir (I2).
+             *
+             * C'est elle qui porte l'intégrité de toute la disponibilité
+             * affichée : une agence qui vend vingt places sans les saisir fait
+             * déplacer des passagers pour rien. Un seul appel, donc — la saisie
+             * doit être plus rapide que le cahier.
+             */
+            Route::post('counter-sales', [CounterSaleController::class, 'store']);
+            Route::get('trips/{reference}/seats', [CounterSaleController::class, 'seats']);
         });
     });
 

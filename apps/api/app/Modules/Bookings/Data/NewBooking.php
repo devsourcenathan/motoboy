@@ -12,7 +12,12 @@ namespace App\Modules\Bookings\Data;
  */
 final readonly class NewBooking
 {
-    /** @param list<NewPassenger> $passengers */
+    /**
+     * @param  list<NewPassenger>  $passengers
+     * @param  int|null  $createdBy  L'agent, en vente au guichet. Une vente en
+     *                               espèces dont on ignore qui l'a encaissée ne
+     *                               peut pas se réconcilier avec la caisse (I2).
+     */
     public function __construct(
         public string $tripReference,
         public array $passengers,
@@ -20,6 +25,7 @@ final readonly class NewBooking
         public ?int $userId = null,
         public ?string $contactName = null,
         public ?string $contactPhone = null,
+        public ?int $createdBy = null,
     ) {}
 
     public function seatCount(): int

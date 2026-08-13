@@ -6,6 +6,7 @@ namespace App\Modules\Bookings\Actions;
 
 use App\Modules\Agencies\Models\AgencyCommercialTerms;
 use App\Modules\Bookings\Data\NewBooking;
+use App\Modules\Bookings\Enums\BookingChannel;
 use App\Modules\Bookings\Enums\BookingStatus;
 use App\Modules\Bookings\Models\Booking;
 use App\Modules\Fleet\Enums\SeatingMode;
@@ -59,13 +60,41 @@ final class CreateBooking
     }
 
     /**
+     * Prise de places pour une vente au comptoir (I2).
+     *
+     * **Mêmes verrous, même index unique.** Vendre au guichet ne dispense
+     * d'aucun garde-fou — c'est même là que la double-vente coûterait le plus,
+     * le passager étant devant l'agent.
+     *
+     * Ce qui change : aucune tenue, aucun tunnel de paiement. La réservation
+     * naît `CONFIRMED` parce que l'argent est déjà dans la caisse.
+     */
+    public function takeSeatsForCounterSale(Trip $trip, NewBooking $request): Booking
+    {
+        $this->guardSeatSelection($trip, $request);
+
+        return $this->take(
+            $trip,
+            $this->termsOf($trip),
+            $request,
+            BookingChannel::Counter,
+            BookingStatus::Confirmed,
+        );
+    }
+
+    /**
      * Toute la prise de places, dans une seule transaction.
      *
      * L'Action détient la transaction — ni le contrôleur ni le modèle (§4 du
      * standard de code).
      */
-    private function take(Trip $trip, AgencyCommercialTerms $terms, NewBooking $request): Booking
-    {
+    private function take(
+        Trip $trip,
+        AgencyCommercialTerms $terms,
+        NewBooking $request,
+        BookingChannel $channel = BookingChannel::Online,
+        BookingStatus $status = BookingStatus::PendingPayment,
+    ): Booking {
         $seats = $request->seatCount();
 
         if ($trip->seating_mode === SeatingMode::Capacity) {
@@ -78,9 +107,15 @@ final class CreateBooking
             'trip_id' => $trip->id,
             'agency_id' => $trip->agency_id,
             'user_id' => $request->userId,
-            'channel' => 'ONLINE',
-            'status' => BookingStatus::PendingPayment,
-            'expires_at' => now()->addMinutes($terms->hold_duration_minutes),
+            'created_by' => $request->createdBy,
+            'channel' => $channel,
+            'status' => $status,
+            // Une vente au comptoir n'a rien à tenir : la place est vendue, pas
+            // réservée en attente d'un paiement.
+            'expires_at' => $status === BookingStatus::PendingPayment
+                ? now()->addMinutes($terms->hold_duration_minutes)
+                : null,
+            'confirmed_at' => $status === BookingStatus::Confirmed ? now() : null,
             'seats_count' => $seats,
             'total_amount' => $trip->price * $seats,
             'currency' => $trip->currency,

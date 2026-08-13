@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Bookings\Models;
 
 use App\Modules\Agencies\Models\Agency;
+use App\Modules\Bookings\Enums\BookingChannel;
 use App\Modules\Bookings\Enums\BookingStatus;
 use App\Modules\Identity\Models\User;
 use App\Modules\Payments\Enums\PaymentStatus;
@@ -33,6 +34,7 @@ final class Booking extends Model
 
     /** @var array<string, string> */
     protected $casts = [
+        'channel' => BookingChannel::class,
         'status' => BookingStatus::class,
         'expires_at' => 'immutable_datetime',
         'confirmed_at' => 'immutable_datetime',
