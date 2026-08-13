@@ -10,6 +10,7 @@ use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Enums\RefundReason;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payouts\Actions\RecordBookingSettlement;
+use App\Modules\Tickets\Actions\IssueTickets;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -24,6 +25,7 @@ final class ConfirmPayment
     public function __construct(
         private readonly RecordBookingSettlement $settlement,
         private readonly RefundPayment $refund,
+        private readonly IssueTickets $tickets,
     ) {}
 
     public function handle(WebhookEvent $event): ?Payment
@@ -124,6 +126,10 @@ final class ConfirmPayment
             ]);
 
             $this->settlement->handle($booking, $payment->refresh());
+
+            // Le billet naît de la confirmation, pas de la réservation : avant
+            // paiement il n'y a qu'une place tenue (§19).
+            $this->tickets->handle($booking->refresh());
         });
 
         return $payment->refresh();

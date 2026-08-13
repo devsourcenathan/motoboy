@@ -44,14 +44,19 @@ final class TripSummaryResource extends JsonResource
     }
 
     /**
-     * `held_seats_count` vient de `scopeWithAvailability`. Un départ chargé sans
-     * cette portée n'a pas de disponibilité calculable : on renvoie `null`
-     * plutôt qu'un chiffre faux — `Model::shouldBeStrict` fait d'ailleurs échouer
-     * l'accès en développement.
+     * `held_seats_count` vient de `scopeWithAvailability`, que tous les
+     * appelants n'utilisent pas : un billet embarque le départ sans avoir besoin
+     * de sa disponibilité.
+     *
+     * La lecture passe par le tableau brut des attributs, **pas** par
+     * `getAttribute` : `Model::shouldBeStrict` lève sur un attribut absent au
+     * lieu de renvoyer `null`, ce qui ferait échouer toute réponse portant un
+     * départ chargé sans cette portée. On renvoie `null` — une disponibilité
+     * inconnue, ce qui est vrai — plutôt qu'un chiffre inventé.
      */
     private static function seatsAvailable(Trip $trip): ?int
     {
-        $held = $trip->getAttribute('held_seats_count');
+        $held = $trip->getAttributes()['held_seats_count'] ?? null;
 
         return is_numeric($held) ? $trip->capacity - (int) $held : null;
     }

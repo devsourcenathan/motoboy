@@ -7,6 +7,7 @@ use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\WebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
+use App\Modules\Tickets\Http\Controllers\TicketController;
 use App\Modules\Trips\Http\Controllers\SearchController;
 use App\Modules\Trips\Http\Controllers\TripController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,11 @@ Route::prefix('v1')->group(function (): void {
 
         Route::post('bookings/{reference}/payments', [PaymentController::class, 'store']);
         Route::get('payments/{reference}', [PaymentController::class, 'show']);
+
+        // Billets. Le client les met en cache : ils doivent rester consultables
+        // sans réseau, en gare (I5).
+        Route::get('tickets', [TicketController::class, 'index']);
+        Route::get('tickets/{reference}', [TicketController::class, 'show']);
     });
 
     /*

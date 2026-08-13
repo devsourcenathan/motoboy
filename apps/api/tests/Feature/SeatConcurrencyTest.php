@@ -50,15 +50,34 @@ final class SeatConcurrencyTest extends TestCase
     {
         parent::setUp();
 
+        $this->wipe();
+        $this->seed(CountrySeeder::class);
+        $this->buildNetwork();
+    }
+
+    /**
+     * Renoncer aux transactions oblige à ranger **aussi** derrière soi.
+     *
+     * Nettoyer seulement en amont suffit tant qu'on regarde cette classe seule,
+     * mais les données survivantes atteignent la classe de test suivante, dont
+     * les fixtures échouent alors sur une référence de départ déjà prise. Un
+     * échec qui ne désigne pas sa cause.
+     */
+    protected function tearDown(): void
+    {
+        $this->wipe();
+
+        parent::tearDown();
+    }
+
+    private function wipe(): void
+    {
         // Ordre imposé par les clés étrangères.
         foreach (['booking_passengers', 'bookings', 'trips', 'route_stops', 'routes',
             'vehicle_seats', 'vehicles', 'stations', 'agency_commercial_terms',
             'agencies', 'city_aliases', 'cities', 'countries', 'users'] as $table) {
             DB::table($table)->delete();
         }
-
-        $this->seed(CountrySeeder::class);
-        $this->buildNetwork();
     }
 
     public function test_a_committed_hold_makes_the_seat_unbookable(): void

@@ -39,7 +39,7 @@ final class TripController
     {
         $trip = $this->find($reference);
 
-        $held = $trip->getAttribute('held_seats_count');
+        $held = $trip->getAttributes()['held_seats_count'] ?? null;
         $available = is_numeric($held) ? $trip->capacity - (int) $held : $trip->capacity;
 
         return response()->json([

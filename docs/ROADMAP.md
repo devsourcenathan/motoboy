@@ -29,10 +29,10 @@ dans `apps/api`.
 | **Recherche** | 4 endpoints publics, éprouvés de bout en bout | 51 tests, 156 assertions |
 | **Authentification** | inscription, OTP, session Sanctum, port SMS | idem |
 | **Réservation** | prise de places atomique, tenue, libération planifiée | idem |
-| **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | 60 tests, 179 assertions |
+| **Paiement** | port agrégateur, initiation, webhook, commission et compte courant | idem |
+| **Billet et QR** | émission par passager, charge signée, consultation | 67 tests, 202 assertions |
 
-**Ce qui n'existe pas encore** : billet, embarquement — et tout le back-office
-agence.
+**Ce qui n'existe pas encore** : embarquement — et tout le back-office agence.
 
 ---
 
@@ -156,13 +156,26 @@ qui dépend de son API — critère éliminatoire de la grille de [B4](BRIEF.md)
 remboursements sont créés en `PENDING` et attendent, plutôt que d'afficher un
 succès simulé.
 
-### 3.5 Billet et QR Code
+### 3.5 Billet et QR Code — ✅ fait
 
-*Dépend de* : paiement confirmé.
+`IssueTickets`, appelée depuis la confirmation de paiement, et `QrPayload` pour
+la charge encodée. Format `MTB1:<référence>:<signature>`.
 
-- Émission d'un billet **par passager**
-- Signature du QR, vérifiable hors ligne contre la liste d'embarquement
-- Consultable sans réseau côté client ([I5](BRIEF.md))
+Deux points à garder :
+
+**L'appareil de l'agent ne vérifie pas la signature.** Ce serait tentant, mais
+il faudrait distribuer la clé sur chaque téléphone : un appareil volé
+permettrait alors de forger des billets pour **toutes** les agences. Hors ligne,
+l'autorité reste la liste d'embarquement pré-téléchargée — appartenir à la liste
+est ce qui fait foi ([B3](BRIEF.md)). La signature sert côté serveur.
+
+**Le préfixe de version n'est pas décoratif.** Un passager peut avoir capturé
+son billet une semaine avant son voyage : le jour où le format changera, il
+faudra distinguer un ancien billet d'une charge corrompue.
+
+L'API renvoie le **contenu à encoder**, jamais une image : le client regénère le
+QR localement, sans quoi le billet dépendrait du réseau au moment précis où il
+n'y en a pas ([I5](BRIEF.md)).
 
 ### 3.6 Embarquement
 
