@@ -7,6 +7,14 @@ namespace App\Modules\Identity\Enums;
 /** Rôles amorcés du RBAC (§9 du brief). */
 enum Role: string
 {
+    /** Rôles dont l'attribution est portée par une agence donnée. */
+    public function isAgencyScoped(): bool
+    {
+        return match ($this) {
+            self::Agency, self::Agent => true,
+            default => false,
+        };
+    }
     case Passenger = 'PASSENGER';
     case Agency = 'AGENCY';
 
@@ -16,13 +24,4 @@ enum Role: string
     case Owner = 'OWNER';
     case Admin = 'ADMIN';
     case SuperAdmin = 'SUPER_ADMIN';
-
-    /** Rôles dont l'attribution est portée par une agence donnée. */
-    public function isAgencyScoped(): bool
-    {
-        return match ($this) {
-            self::Agency, self::Agent => true,
-            default => false,
-        };
-    }
 }

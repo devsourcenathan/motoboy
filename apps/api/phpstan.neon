@@ -1,6 +1,12 @@
 includes:
     - vendor/larastan/larastan/extension.neon
 
+    # Sans cette extension, PHPStan ignore que `assertNotNull()` et consorts
+    # affinent un type : les tests se retrouvent truffés de `?->` défensifs qui
+    # masquent les vraies nullités.
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
 parameters:
     paths:
         - app

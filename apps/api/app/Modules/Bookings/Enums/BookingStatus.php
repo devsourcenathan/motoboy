@@ -14,14 +14,6 @@ namespace App\Modules\Bookings\Enums;
  */
 enum BookingStatus: string
 {
-    case PendingPayment = 'PENDING_PAYMENT';
-    case Confirmed = 'CONFIRMED';
-    case Expired = 'EXPIRED';
-    case CancelledByPassenger = 'CANCELLED_BY_PASSENGER';
-    case CancelledByAgency = 'CANCELLED_BY_AGENCY';
-    case Used = 'USED';
-    case NoShow = 'NO_SHOW';
-
     /** Les statuts qui immobilisent une place dans l'inventaire. */
     public function holdsSeat(): bool
     {
@@ -38,4 +30,11 @@ enum BookingStatus: string
             default => false,
         };
     }
+    case PendingPayment = 'PENDING_PAYMENT';
+    case Confirmed = 'CONFIRMED';
+    case Expired = 'EXPIRED';
+    case CancelledByPassenger = 'CANCELLED_BY_PASSENGER';
+    case CancelledByAgency = 'CANCELLED_BY_AGENCY';
+    case Used = 'USED';
+    case NoShow = 'NO_SHOW';
 }
