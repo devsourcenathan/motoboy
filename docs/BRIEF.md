@@ -224,7 +224,9 @@ motoboy/
 
 **Laravel est dans le dépôt mais hors du workspace JS.** Composer le gère, pnpm l'ignore. Une seule PR peut ainsi modifier un endpoint, le type généré et les deux clients.
 
-**Deux packages, séparés par la frontière du généré.** `api-client` est régénéré intégralement depuis la spécification OpenAPI produite par l'API et n'est jamais édité à la main ; `shared` est écrit à la main. Les mélanger rendrait toute régénération risquée.
+**Deux packages, séparés par la frontière du généré.** `api-client` est régénéré intégralement depuis la spécification OpenAPI et n'est jamais édité à la main ; `shared` est écrit à la main. Les mélanger rendrait toute régénération risquée.
+
+**La spécification OpenAPI est normative, pas générée depuis le code.** Elle est la source de vérité du contrat entre les trois applications, et l'implémentation Laravel est vérifiée contre elle par un test de conformité — requêtes et réponses validées contre le schéma. L'approche inverse, générer la spec depuis des annotations, la rendrait descriptive : elle suivrait le code au lieu de le contraindre, et ne permettrait plus de concevoir en avance. Contrat détaillé dans [`openapi.yaml`](openapi.yaml).
 
 **Trois règles à tenir dès le départ :**
 
@@ -313,7 +315,7 @@ La séparation des domaines permettra d'extraire certains services plus tard si 
 ### Monorepo
 
 - pnpm workspaces
-- spécification OpenAPI produite par l'API, types TypeScript générés
+- spécification OpenAPI normative, types TypeScript générés, conformité de l'API vérifiée par test
 
 Voir [§6](#6-architecture-générale).
 
