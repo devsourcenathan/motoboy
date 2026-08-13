@@ -110,6 +110,7 @@ paths:
                 first_name: { type: string, maxLength: 100 }
                 last_name: { type: string, maxLength: 100 }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '202':
           description: OTP envoyé
           content:
@@ -137,6 +138,7 @@ paths:
               properties:
                 phone: { type: string }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '202':
           description: OTP envoyé
           content:
@@ -170,6 +172,7 @@ paths:
                   type: string
                   enum: [REGISTRATION, LOGIN, PHONE_CHANGE]
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: Session ouverte
           content:
@@ -206,6 +209,7 @@ paths:
                   type: string
                   enum: [REGISTRATION, LOGIN, PHONE_CHANGE]
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '202':
           description: OTP renvoyé
           content:
@@ -222,6 +226,7 @@ paths:
       tags: [Auth]
       summary: Profil de l'utilisateur courant
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -234,6 +239,7 @@ paths:
       tags: [Auth]
       summary: Révoquer le jeton courant
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '204': { description: Session close }
 
   # ────────────────────────────── Places ──────────────────────────────
@@ -260,6 +266,7 @@ paths:
           in: query
           schema: { type: integer, default: 10, maximum: 25 }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -340,6 +347,7 @@ paths:
             enum: [best, price_asc, departure_asc, duration_asc]
             default: best
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -364,6 +372,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -386,6 +395,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -444,6 +454,7 @@ paths:
                   description: Requis si la réservation est faite pour un tiers
                 contact_phone: { type: string }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '201':
           description: Réservation créée, places tenues
           content:
@@ -485,6 +496,7 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -505,6 +517,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -539,6 +552,7 @@ paths:
                   type: array
                   items: { type: integer, format: int64 }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: Annulation enregistrée
           content:
@@ -576,6 +590,7 @@ paths:
             type: array
             items: { type: integer, format: int64 }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -621,6 +636,7 @@ paths:
                     toujours vers ce compte, jamais vers un numéro déclaré
                     après coup.
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '202':
           description: Paiement initié
           content:
@@ -647,6 +663,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -683,6 +700,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '204': { description: Reçu }
         '401': { description: Signature invalide }
 
@@ -696,6 +714,7 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -723,6 +742,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -747,6 +767,7 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PerPage'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -777,6 +798,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Reference'
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
           content:
@@ -835,6 +857,7 @@ paths:
                         description: Horodatage de l'appareil, l'agent pouvant être hors ligne
                       method: { $ref: '#/components/schemas/ValidationMethod' }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: Synchronisation traitée, résultat par élément
           content:
@@ -887,6 +910,7 @@ paths:
                   description: Référence du billet ou de la réservation
                 trip_reference: { type: string }
       responses:
+        default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: Billet valide
           content:
@@ -944,6 +968,18 @@ components:
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
 
   responses:
+    DefaultError:
+      description: |
+        Réponse d'erreur par défaut, déclarée sur **toutes** les opérations.
+
+        Sans elle, une opération n'ayant que des réponses `2xx` produit un
+        type d'erreur `never` dans le client généré : le consommateur ne peut
+        alors pas traiter l'échec de façon typée, alors qu'un `401`, un `429`
+        ou un `500` restent toujours possibles.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
     Unauthorized:
       description: Jeton absent ou invalide
       content:

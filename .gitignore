@@ -1,0 +1,43 @@
+# Dépendances
+node_modules/
+apps/api/vendor/
+
+# Builds
+dist/
+build/
+apps/web/dist/
+apps/api/public/build/
+apps/api/public/hot
+
+# Expo
+.expo/
+apps/mobile/.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Environnement — jamais commité
+.env
+.env.*
+!.env.example
+
+# Laravel
+apps/api/storage/*.key
+apps/api/storage/framework/cache/*
+apps/api/storage/framework/sessions/*
+apps/api/storage/framework/views/*
+apps/api/storage/logs/*
+apps/api/bootstrap/cache/*
+
+# Outils
+.turbo/
+*.tsbuildinfo
+coverage/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

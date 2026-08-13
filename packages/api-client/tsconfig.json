@@ -1,0 +1,16 @@
+{
+  "extends": "@motoboy/tsconfig/base.json",
+  "compilerOptions": {
+    // `fetch`, `Request`, `Headers` et `crypto.randomUUID` sont des globales
+    // standard disponibles dans les trois environnements — navigateur, Node 20+
+    // et React Native. TypeScript ne propose pas de `lib` couvrant ces globales
+    // sans embarquer tout le DOM, d'où ce choix.
+    //
+    // La règle « pas de dépendance DOM » vise `@motoboy/shared`, qui ne fait
+    // aucune I/O. Ici elle est tenue par le lint (`no-restricted-globals` sur
+    // `window` et `document`), pas par le résolveur de types : `document`
+    // typerait sans erreur mais casserait à l'exécution côté mobile.
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src"]
+}

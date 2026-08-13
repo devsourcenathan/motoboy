@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+/*
+ * Jetons de design partagés avec le mobile.
+ *
+ * Seuls les **jetons** voyagent entre les deux clients, jamais les composants :
+ * shadcn repose sur Radix et le DOM (§6 du brief). Les valeurs ci-dessous
+ * reflètent `@motoboy/shared/tokens`, qui reste la référence.
+ */
+@theme {
+  --color-brand-50: #eef7ff;
+  --color-brand-100: #d9ecff;
+  --color-brand-500: #1f7ae0;
+  --color-brand-600: #1662bb;
+  --color-brand-700: #124e96;
+
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f7f8fa;
+  --color-neutral-100: #eceef2;
+  --color-neutral-300: #c6cbd4;
+  --color-neutral-500: #7b8494;
+  --color-neutral-700: #414956;
+  --color-neutral-900: #181c23;
+
+  /* États métier — mêmes valeurs que côté mobile. */
+  --color-seat-available: #1a9e5c;
+  --color-seat-held: #e0a02a;
+  --color-seat-taken: #b4b9c2;
+  --color-danger: #d1453b;
+}
