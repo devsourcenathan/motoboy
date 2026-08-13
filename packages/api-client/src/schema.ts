@@ -37,6 +37,11 @@ export interface paths {
                         email?: string;
                         first_name: string;
                         last_name: string;
+                        /**
+                         * @description Défaut `fr`. Détermine la langue de l'OTP, donc du tout
+                         *     premier message reçu — avant même que le compte existe.
+                         */
+                        locale?: components["schemas"]["Locale"];
                     };
                 };
             };
@@ -1348,6 +1353,17 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * @description Le Cameroun a deux langues officielles, et les régions du Nord-Ouest
+         *     et du Sud-Ouest sont anglophones — Bamenda, Buea, Limbe sont des
+         *     destinations interurbaines réelles. Les deux langues sont donc
+         *     servies dès le lancement, pas à l'expansion.
+         *
+         *     Résolution : `users.locale` pour un compte, langue par défaut de
+         *     l'agence pour un passager de vente au guichet, qui n'a pas de compte.
+         * @enum {string}
+         */
+        Locale: "fr" | "en";
+        /**
          * @description Code typé, sur lequel les clients branchent. `message` est destiné à
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
@@ -1355,13 +1371,29 @@ export interface components {
         ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED";
         Error: {
             code: components["schemas"]["ErrorCode"];
+            /**
+             * @description **Diagnostic — ne jamais afficher à l'utilisateur.**
+             *
+             *     Destiné aux journaux, à l'exploitation et au débogage. Sa langue
+             *     n'est pas garantie et son libellé peut changer sans préavis.
+             *
+             *     Le client rend le message affiché à partir de `code` et de
+             *     `details`, dans la langue de l'utilisateur. C'est ce qui permet à
+             *     la localisation des erreurs de rester entièrement côté client,
+             *     sans négociation `Accept-Language`.
+             */
             message: string;
+            /**
+             * @description Valeurs d'interpolation du message affiché — échéance dépassée,
+             *     sièges en conflit, etc.
+             */
             details?: {
                 [key: string]: unknown;
             };
         };
         ValidationErrorBody: {
             code: components["schemas"]["ErrorCode"];
+            /** @description Diagnostic — ne jamais afficher. Voir `Error.message`. */
             message: string;
             errors: {
                 [key: string]: string[];
@@ -1404,7 +1436,7 @@ export interface components {
             first_name: string;
             last_name: string;
             phone_verified?: boolean;
-            locale?: string;
+            locale?: components["schemas"]["Locale"];
         };
         OtpChallenge: {
             /**

@@ -1,11 +1,12 @@
-import type { Money } from '@motoboy/api-client/types'
+import type { Locale, Money } from '@motoboy/api-client/types'
+import { DEFAULT_LOCALE, INTL_LOCALES } from './locale.js'
 
 /**
  * Les montants circulent en **unités entières de devise**. Le XAF n'ayant pas
  * de subdivision en circulation, il n'y a ni décimale ni arrondi à gérer.
  */
-export function formatMoney(money: Money, locale = 'fr-FR'): string {
-  const formatted = new Intl.NumberFormat(locale, {
+export function formatMoney(money: Money, locale: Locale = DEFAULT_LOCALE): string {
+  const formatted = new Intl.NumberFormat(INTL_LOCALES[locale], {
     style: 'decimal',
     maximumFractionDigits: 0,
   }).format(money.amount)

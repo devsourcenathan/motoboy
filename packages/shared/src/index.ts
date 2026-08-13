@@ -12,6 +12,7 @@
  * fait plus respecter cette règle : elle est vérifiée en CI.
  */
 
+export * from './locale.js'
 export * from './money.js'
 export * from './datetime.js'
 export * from './labels.js'

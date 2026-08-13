@@ -67,7 +67,7 @@ Le passager s'inscrit par téléphone et email, le téléphone étant vérifié 
 | `last_name` | varchar(100) | |
 | `phone_verified_at` | timestamptz | nullable |
 | `email_verified_at` | timestamptz | nullable |
-| `locale` | varchar(5) | défaut `fr` |
+| `locale` | varchar(2) | `fr` ou `en`, défaut `fr` — détermine la langue des SMS et notifications ([I10](BRIEF.md)) |
 | `is_active` | boolean | défaut `true` |
 | `last_login_at` | timestamptz | nullable |
 | `created_at` / `updated_at` | timestamptz | |
@@ -204,6 +204,7 @@ Une agence desservant une ville absente doit pouvoir en demander l'ajout, sinon 
 | `phone` | varchar(20) | |
 | `email` | varchar(255) | nullable |
 | `logo_path` | varchar(255) | nullable — stockage S3 |
+| `default_locale` | varchar(2) | `fr` ou `en`, défaut `fr` — langue des messages envoyés à un passager **sans compte**, en vente au guichet ([I10](BRIEF.md)) |
 | `status` | varchar(20) | `PENDING`, `APPROVED`, `SUSPENDED`, `REJECTED` |
 | `approved_by` | bigint | FK `users`, nullable |
 | `approved_at` | timestamptz | nullable |
@@ -753,6 +754,7 @@ Répartition des canaux arbitrée par le coût du SMS ([I8](BRIEF.md)).
 | `user_id` | bigint | FK nullable — `null` pour un passager de vente guichet |
 | `phone` | varchar(20) | nullable — destinataire sans compte |
 | `channel` | varchar(10) | `PUSH`, `SMS`, `EMAIL` |
+| `locale` | varchar(2) | langue effectivement utilisée — tracée, car la résolution dépend du destinataire ([I10](BRIEF.md)) |
 | `type` | varchar(50) | `BOOKING_CONFIRMED`, `PAYMENT_CONFIRMED`, `DEPARTURE_REMINDER`, `TRIP_CANCELLED`, `TRIP_MODIFIED`, `COUNTER_TICKET` |
 | `payload` | jsonb | |
 | `status` | varchar(20) | `QUEUED`, `SENT`, `FAILED` |

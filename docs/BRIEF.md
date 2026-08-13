@@ -1,6 +1,6 @@
 # MOTOBOY — Brief Projet MVP
 
-> **Statut du document** — Partie I consolidée et validée. **Parties II et III closes : les 6 points bloquants et les 9 points importants sont tranchés.** Ne restent ouverts que deux sujets externes signalés en [B4](#b4--flux-financier-et-reversement-aux-agences) : le cadre réglementaire de la détention de fonds de tiers, et le choix de l'agrégateur de paiement.
+> **Statut du document** — Partie I consolidée et validée. **Parties II et III closes : les 6 points bloquants et les 10 points importants sont tranchés.** Ne restent ouverts que deux sujets externes signalés en [B4](#b4--flux-financier-et-reversement-aux-agences) : le cadre réglementaire de la détention de fonds de tiers, et le choix de l'agrégateur de paiement.
 > **Dernière mise à jour** — 13 août 2026
 
 ---
@@ -77,6 +77,8 @@ Le système distingue plusieurs catégories d'utilisateurs.
 Utilisateur principal de la plateforme.
 
 Il recherche et réserve des trajets.
+
+Il choisit sa langue — **français ou anglais** ([I10](#i10--internationalisation)) — dès l'inscription, puisqu'elle détermine celle de l'OTP.
 
 ### Agence
 
@@ -1062,7 +1064,9 @@ Canaux, arbitrés selon le coût du SMS ([I8](#i8--coût-des-sms)) :
 | Rappel de départ | Push uniquement |
 | Billet de vente au guichet | SMS, désactivable par agence |
 
-Le repli SMS sur la confirmation est indispensable : un passager réservant depuis le web n'a pas l'application, donc pas de push. L'email est utilisé selon les cas, en complément.
+Le repli SMS sur la confirmation est indispensable : un passager réservant depuis le web n'a pas l'application, donc pas de push.
+
+Toutes ces notifications sont **localisées côté serveur** — `users.locale` pour un compte, langue par défaut de l'agence pour un passager de vente au guichet ([I10](#i10--internationalisation)). L'email est utilisé selon les cas, en complément.
 
 Les notifications non critiques seront traitées de manière asynchrone.
 
@@ -2092,6 +2096,7 @@ Conséquences retenues pour la conception :
 | I7 | Observabilité | ✅ **tranché** — erreurs, files, journal des webhooks |
 | I8 | Coût des SMS | ✅ **tranché** — SMS réservé au critique et au sans-alternative |
 | I9 | Cas « aucun résultat » | ✅ **tranché** — dates proches et axes desservis |
+| I10 | Internationalisation | ✅ **tranché** — français et anglais dès le lancement |
 
 ## I1 — Trajets récurrents
 
@@ -2258,6 +2263,8 @@ Le journal des webhooks complète la réconciliation quotidienne définie en [B4
 
 Le repli SMS sur la confirmation est indispensable : un passager réservant depuis le web n'a pas l'application, donc pas de push.
 
+Toutes ces notifications sont **localisées côté serveur** — `users.locale` pour un compte, langue par défaut de l'agence pour un passager de vente au guichet ([I10](#i10--internationalisation)).
+
 ## I9 — Cas « aucun résultat »
 
 **Décision arrêtée — 13 août 2026.**
@@ -2294,3 +2301,71 @@ Les trois incohérences identifiées lors de la consolidation sont désormais r�
 1. ~~**Espace Propriétaire** — présent dans l'arborescence React de [§4](#4-applications), absent de [§32](#32-mvp-final) et [§33](#33-architecture-mvp-finale).~~ **Résolu** : l'espace est maintenu en consultation seule suite à [I3](#i3--rôle-propriétaire), et ajouté aux deux sections qui l'omettaient.
 2. ~~**Validation des billets** — [§20](#20-qr-code) et [§23](#23-interface-administration) supposent une validation opérationnelle, mais aucune interface ne l'implémente dans [§22](#22-interface-agence).~~ **Résolu** : écran d'embarquement et rôle `AGENT` ajoutés suite à [B3](#b3--validation-du-billet-à-lembarquement).
 3. ~~**Modules manquants** — `Places` et `Payouts` absents de [§6](#6-architecture-générale).~~ **Résolu** : `Places` ajouté suite à [B1](#b1--référentiel-géographique), `Payouts` suite à [B4](#b4--flux-financier-et-reversement-aux-agences).
+
+---
+
+## I10 — Internationalisation
+
+**Décision arrêtée — 13 août 2026 : français et anglais dès le lancement.**
+
+Ce point avait été manqué. Le brief ne mentionnait la langue nulle part, et la
+stack s'orientait vers un produit francophone par défaut — sans que personne
+l'ait décidé.
+
+### Pourquoi ce n'est pas un sujet d'expansion
+
+L'i18n paraissait relever de l'extension à d'autres pays annoncée en
+[§2](#2-marché-cible). C'est une erreur de raisonnement.
+
+**Le Cameroun a deux langues officielles.** Les régions du Nord-Ouest et du
+Sud-Ouest sont anglophones — Bamenda, Buea et Limbe sont des destinations
+interurbaines réelles, et Douala–Bamenda un axe fréquenté.
+
+Un comparateur uniquement francophone n'exclut donc pas « les autres pays plus
+tard » : il ampute une partie du marché de lancement, et l'ampute **par
+défaut**.
+
+### Surfaces servies
+
+| Surface | Langues |
+|---|---|
+| Application mobile passager | français, anglais |
+| Web public et espace passager | français, anglais |
+| Espace agence et PWA d'embarquement | français, anglais — le personnel d'agence des régions anglophones l'est aussi |
+| Administration | français seul — usage interne |
+
+### Résolution de la langue
+
+- **Passager avec un compte** : `users.locale`.
+- **Passager de vente au guichet**, qui n'a pas de compte ([I2](#i2--vente-au-guichet)) : langue par défaut de l'agence.
+- **Première inscription** : la langue est transmise à `POST /v1/auth/register`, car elle détermine celle de l'OTP — le tout premier message reçu, avant même que le compte existe.
+
+### Erreurs — localisées côté client
+
+Le champ `message` des réponses d'erreur devient un **diagnostic** : journaux,
+exploitation, débogage. Il n'est jamais affiché et sa langue n'est pas garantie.
+
+Les clients composent le texte visible à partir du `code` typé et de `details`.
+La localisation des erreurs reste ainsi entièrement côté client, sans
+négociation `Accept-Language` sur chaque endpoint.
+
+Cette décision corrige aussi une contradiction : la spécification annonçait
+`message` comme destiné à l'affichage, alors que le code client rendait déjà
+depuis le `code`.
+
+### Contenu généré par le serveur
+
+Il n'y a pas d'échappatoire : SMS d'OTP, confirmations, annulation de départ,
+billet de vente au guichet, notifications push et relevés téléchargeables des
+agences sont localisés **côté serveur**, à partir de la langue résolue
+ci-dessus.
+
+Aucun de ces textes n'existe encore. Les écrire en français en dur serait se
+garantir une extraction pénible plus tard.
+
+### Ce qui n'a pas à être traduit
+
+Les noms de villes, de gares et d'agences sont des noms propres — Douala reste
+Douala. Les alias de villes ([B1](#b1--référentiel-géographique)) couvrent déjà
+les variantes de saisie. La surface à traduire se limite aux textes
+d'interface, aux libellés d'énumération et aux gabarits de notification.

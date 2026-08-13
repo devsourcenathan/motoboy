@@ -17,6 +17,8 @@ export type { components, paths }
 
 type S = components['schemas']
 
+export type Locale = S['Locale']
+
 export type ErrorCode = S['ErrorCode']
 export type ApiError = S['Error']
 export type ValidationErrorBody = S['ValidationErrorBody']

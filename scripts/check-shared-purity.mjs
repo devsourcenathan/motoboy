@@ -55,6 +55,29 @@ for (const dep of declared) {
   }
 }
 
+/*
+ * Retire les commentaires avant d'analyser.
+ *
+ * Sans cela, une docstring qui *mentionne* `navigator.language` pour expliquer
+ * ce que l'appelant doit passer est signalée comme une violation — alors que la
+ * fonction reçoit une chaîne en paramètre et ne touche à aucune globale.
+ *
+ * On ne retire que les blocs `/* *\/` et les lignes dont la forme épurée
+ * commence par `//` ou `*`. Les commentaires en fin de ligne de code sont
+ * conservés : les supprimer naïvement tronquerait une URL dans une chaîne, et
+ * masquerait une vraie violation placée sur la même ligne.
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trimStart()
+      return !trimmed.startsWith('//') && !trimmed.startsWith('*')
+    })
+    .join('\n')
+}
+
 // 2. Imports et globales dans le source
 function walk(dir) {
   for (const entry of readdirSync(dir)) {
@@ -65,7 +88,7 @@ function walk(dir) {
     }
     if (!/\.(ts|tsx|js|mjs)$/.test(entry)) continue
 
-    const source = readFileSync(full, 'utf8')
+    const source = stripComments(readFileSync(full, 'utf8'))
     const where = relative(root, full).replaceAll('\\', '/')
 
     for (const pattern of FORBIDDEN_IMPORTS) {

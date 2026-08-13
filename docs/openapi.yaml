@@ -23,9 +23,20 @@ info:
 
     ### Erreurs
 
-    Toute erreur porte un **code typé**, jamais seulement un message. Les
-    clients branchent sur `code` ; `message` est destiné à l'affichage et
-    peut changer sans préavis.
+    Toute erreur porte un **code typé**. Les clients branchent sur `code` et
+    composent le texte affiché eux-mêmes, dans la langue de l'utilisateur.
+
+    `message` est un **diagnostic** : journaux, exploitation, débogage. Il
+    n'est jamais affiché, sa langue n'est pas garantie, et son libellé peut
+    changer sans préavis. C'est ce qui permet de localiser les erreurs
+    entièrement côté client, sans négociation `Accept-Language`.
+
+    ### Langues
+
+    Français et anglais dès le lancement. Le contenu généré par le serveur —
+    SMS, notifications, billet guichet — est localisé côté serveur à partir de
+    `users.locale`, ou de la langue par défaut de l'agence pour un passager
+    sans compte.
 
     ### Idempotence
 
@@ -109,6 +120,11 @@ paths:
                   format: email
                 first_name: { type: string, maxLength: 100 }
                 last_name: { type: string, maxLength: 100 }
+                locale:
+                  $ref: '#/components/schemas/Locale'
+                  description: |
+                    Défaut `fr`. Détermine la langue de l'OTP, donc du tout
+                    premier message reçu — avant même que le compte existe.
       responses:
         default: { $ref: '#/components/responses/DefaultError' }
         '202':
@@ -1003,6 +1019,18 @@ components:
   schemas:
     # ── Erreurs ──
 
+    Locale:
+      type: string
+      enum: [fr, en]
+      description: |
+        Le Cameroun a deux langues officielles, et les régions du Nord-Ouest
+        et du Sud-Ouest sont anglophones — Bamenda, Buea, Limbe sont des
+        destinations interurbaines réelles. Les deux langues sont donc
+        servies dès le lancement, pas à l'expansion.
+
+        Résolution : `users.locale` pour un compte, langue par défaut de
+        l'agence pour un passager de vente au guichet, qui n'a pas de compte.
+
     ErrorCode:
       type: string
       description: |
@@ -1036,17 +1064,33 @@ components:
       required: [code, message]
       properties:
         code: { $ref: '#/components/schemas/ErrorCode' }
-        message: { type: string }
+        message:
+          type: string
+          description: |
+            **Diagnostic — ne jamais afficher à l'utilisateur.**
+
+            Destiné aux journaux, à l'exploitation et au débogage. Sa langue
+            n'est pas garantie et son libellé peut changer sans préavis.
+
+            Le client rend le message affiché à partir de `code` et de
+            `details`, dans la langue de l'utilisateur. C'est ce qui permet à
+            la localisation des erreurs de rester entièrement côté client,
+            sans négociation `Accept-Language`.
         details:
           type: object
           additionalProperties: true
+          description: |
+            Valeurs d'interpolation du message affiché — échéance dépassée,
+            sièges en conflit, etc.
 
     ValidationErrorBody:
       type: object
       required: [code, message, errors]
       properties:
         code: { $ref: '#/components/schemas/ErrorCode' }
-        message: { type: string }
+        message:
+          type: string
+          description: Diagnostic — ne jamais afficher. Voir `Error.message`.
         errors:
           type: object
           additionalProperties:
@@ -1128,7 +1172,7 @@ components:
         first_name: { type: string }
         last_name: { type: string }
         phone_verified: { type: boolean }
-        locale: { type: string }
+        locale: { $ref: '#/components/schemas/Locale' }
 
     OtpChallenge:
       type: object

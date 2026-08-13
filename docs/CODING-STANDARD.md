@@ -81,7 +81,7 @@ quand c'est tentant.
 | --------------------------------------------------------------------------- | ------------ |
 | Identifiants — classes, méthodes, variables, tables, colonnes, champs d'API | **Anglais**  |
 | Commentaires et docblocks                                                   | **Français** |
-| Messages destinés à l'utilisateur                                           | **Français** |
+| Messages destinés à l'utilisateur                                           | **Français et anglais** |
 | Messages de commit                                                          | **Anglais**  |
 | Documentation dans `docs/`                                                  | **Français** |
 
@@ -93,6 +93,29 @@ français — les traduire perdrait en précision.
 **Un commentaire dit _pourquoi_, jamais _quoi_.** Le code dit déjà ce qu'il
 fait. Un commentaire qui paraphrase la ligne suivante est du bruit qui se
 périme.
+
+### Textes destinés à l'utilisateur
+
+Le produit sert **français et anglais dès le lancement** : le Cameroun a deux
+langues officielles, et les régions du Nord-Ouest et du Sud-Ouest sont des
+destinations interurbaines réelles ([I10](BRIEF.md)).
+
+- **Aucune chaîne visible en dur.** Ni dans un composant, ni dans une Action,
+  ni dans un gabarit de notification.
+- Les libellés du **vocabulaire métier** — statuts, motifs, codes d'erreur —
+  vivent dans `@motoboy/shared`, typés `Record<Locale, Record<Union, string>>`.
+  Ajouter une valeur à une énumération casse alors la compilation **dans chaque
+  langue** tant que le libellé manque.
+- Les **textes d'interface** propres à une application vivent dans son propre
+  catalogue, pas dans `shared`.
+- Le **contenu généré par le serveur** — SMS, notifications, billet guichet,
+  relevés — est localisé côté serveur, à partir de `users.locale` ou de la
+  langue par défaut de l'agence pour un passager sans compte.
+- Le champ `message` d'une réponse d'erreur est un **diagnostic** : jamais
+  affiché, langue non garantie. Le texte visible se compose à partir du `code`.
+- **Jamais de `dayjs.locale()` global.** Le web sert deux langues
+  simultanément, et le contenu serveur dépend du destinataire, pas du processus.
+  La langue se passe par appel.
 
 ---
 
