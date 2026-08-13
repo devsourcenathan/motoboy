@@ -90,5 +90,10 @@ jobs:
       - name: Migrations
         run: php artisan migrate --force
 
+      # Les seeders de référence tournent en production : s'ils cassent, on le
+      # découvre ici et pas au déploiement.
+      - name: Seeders de référence
+        run: php artisan db:seed --force
+
       - name: Tests
         run: php artisan test
