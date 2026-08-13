@@ -20,7 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 final class Booking extends Model
 {
     protected $fillable = [
-        'reference', 'trip_id', 'agency_id', 'user_id', 'channel', 'created_by',
+        'reference', 'idempotency_key',
+        'trip_id', 'agency_id', 'user_id', 'channel', 'created_by',
         'status', 'expires_at', 'seats_count', 'total_amount', 'currency',
         'contact_name', 'contact_phone',
         // Conditions figées à la création — recopiées depuis les conditions

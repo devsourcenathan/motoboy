@@ -107,20 +107,25 @@ alternative ([I8](BRIEF.md)).
 Reste à écrire : l'adaptateur TechSoft, dès que sa documentation est
 accessible.
 
-### 3.3 Réservation et tenue des places
+### 3.3 Réservation et tenue des places — ✅ fait
 
-*Dépend de* : recherche et authentification.
+`CreateBooking` et `ReleaseExpiredHolds`, plus les deux endpoints du contrat.
 
-**Le chantier le plus délicat du projet.** Toute la mécanique de [B2](BRIEF.md)
-s'y joue.
+Deux enseignements à garder :
 
-- `CreateBooking` — opération atomique de prise de places, la transaction est détenue par l'Action
-- Conditions commerciales **figées** sur la réservation ([B4](BRIEF.md))
-- `ReleaseExpiredHolds` — job à la minute, sans quoi l'inventaire se gèle
-- La violation de contrainte unique est un **cas nominal**, pas une panne
+**Un test de concurrence peut mentir.** La première version ouvrait une
+transaction, tentait la prise concurrente, puis validait — un interblocage :
+la seconde connexion attendait la fin de la première, qui attendait son
+retour. Il a fallu un `lock_timeout` pour rendre le blocage observable au lieu
+de l'attendre.
 
-Tests obligatoires : deux réservations concurrentes du même siège, dépassement
-de capacité, expiration qui libère, échec de paiement qui **ne** libère pas.
+**Et il peut être intermittent si l'on sur-spécifie.** Exiger l'erreur `55P03`
+rendait le test aléatoire : selon l'instant exact de l'insertion, PostgreSQL
+renvoie soit une expiration d'attente, soit une violation d'unicité. Les deux
+prouvent la même chose — un siège ne peut pas être pris deux fois — et c'est
+cela que le test doit affirmer.
+
+Reste à câbler : le job de libération dans le planificateur.
 
 ### 3.4 Paiement
 

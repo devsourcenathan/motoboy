@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Bookings\Http\Controllers\BookingController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Trips\Http\Controllers\SearchController;
@@ -46,6 +47,11 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+
+        // Réservation. La prise de places est l'opération atomique du produit :
+        // elle tient les places avant même la saisie du paiement (B2).
+        Route::post('bookings', [BookingController::class, 'store']);
+        Route::get('bookings/{reference}', [BookingController::class, 'show']);
     });
 
 });
