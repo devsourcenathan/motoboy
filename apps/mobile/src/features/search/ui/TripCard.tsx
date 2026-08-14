@@ -3,10 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { formatDuration, formatMoney, formatTime, type Locale } from '@motoboy/shared'
 import type { TripSummary } from '@motoboy/api-client/types'
 import { fontSize, radius, spacing, theme } from '../../../shared/ui'
+import { useLocale } from '../../../shared/i18n/useLocale'
 
 export interface TripCardProps {
   trip: TripSummary
-  locale: Locale
   onPress: () => void
 }
 
@@ -18,8 +18,9 @@ export interface TripCardProps {
  * l'autre, et c'est précisément ce qui en fait un critère de comparaison plutôt
  * qu'une ligne de conditions générales que personne ne lit (B5).
  */
-export function TripCard({ trip, locale, onPress }: TripCardProps) {
+export function TripCard({ trip, onPress }: TripCardProps) {
   const { t } = useTranslation()
+  const locale = useLocale()
   const soldOut = trip.seats_available <= 0
 
   return (

@@ -4,7 +4,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-nativ
 import { ApiError, NetworkError } from '@motoboy/api-client'
 import { errorLabel } from '@motoboy/shared'
 import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
-import { deviceLocale } from '../../../shared/i18n'
+import { useLocale } from '../../../shared/i18n/useLocale'
 import { useTripSearch } from '../api/useTripSearch'
 import { EmptyResults } from './EmptyResults'
 import { TripCard } from './TripCard'
@@ -19,7 +19,7 @@ import { TripCard } from './TripCard'
 export function ResultsScreen() {
   const { t } = useTranslation()
   const router = useRouter()
-  const locale = deviceLocale()
+  const locale = useLocale()
   const params = useLocalSearchParams<{
     from: string
     to: string
@@ -49,7 +49,6 @@ export function ResultsScreen() {
         <EmptyResults
           suggestions={suggestions}
           originLabel={params.fromLabel ?? ''}
-          locale={locale}
           onPickDate={(date) => router.setParams({ date })}
           onPickDestination={(cityId, label) =>
             router.setParams({ to: String(cityId), toLabel: label })
@@ -63,7 +62,6 @@ export function ResultsScreen() {
           renderItem={({ item }) => (
             <TripCard
               trip={item}
-              locale={locale}
               onPress={() => router.push(`/trip/${item.reference}`)}
             />
           )}
@@ -88,7 +86,7 @@ function SearchError({
 }: {
   error: unknown
   onRetry: () => void
-  locale: ReturnType<typeof deviceLocale>
+  locale: ReturnType<typeof useLocale>
 }) {
   const { t } = useTranslation()
 

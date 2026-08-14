@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { formatDate, formatMoney, type Locale } from '@motoboy/shared'
+import { formatDate, formatMoney } from '@motoboy/shared'
 import type { SearchSuggestions } from '@motoboy/api-client/types'
 import { fontSize, radius, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
+import { useLocale } from '../../../shared/i18n/useLocale'
 
 export interface EmptyResultsProps {
   suggestions: SearchSuggestions | undefined
   originLabel: string
-  locale: Locale
   onPickDate: (date: string) => void
   onPickDestination: (cityId: number, label: string) => void
 }
@@ -24,11 +24,11 @@ export interface EmptyResultsProps {
 export function EmptyResults({
   suggestions,
   originLabel,
-  locale,
   onPickDate,
   onPickDestination,
 }: EmptyResultsProps) {
   const { t } = useTranslation()
+  const locale = useLocale()
 
   const dates = suggestions?.nearby_dates ?? []
   const routes = suggestions?.routes_served ?? []

@@ -13,7 +13,7 @@ import {
   spacing,
   theme,
 } from '../../../shared/ui'
-import { deviceLocale } from '../../../shared/i18n'
+import { useLocale } from '../../../shared/i18n/useLocale'
 import {
   addDays,
   swap,
@@ -39,7 +39,7 @@ type Picking = 'from' | 'to' | null
 export function SearchScreen() {
   const { t } = useTranslation()
   const router = useRouter()
-  const locale = deviceLocale()
+  const locale = useLocale()
 
   const [form, setForm] = useState<SearchForm>(() => ({
     from: null,
