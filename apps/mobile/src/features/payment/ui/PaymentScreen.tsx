@@ -98,7 +98,10 @@ export function PaymentScreen() {
           <Text style={styles.body}>{t('payment.succeeded.body')}</Text>
           <Button
             label={t('payment.succeeded.seeTicket')}
-            onPress={() => router.replace(`/tickets/${bookingReference}`)}
+            // Vers la **liste** : une réservation de trois places produit
+            // trois billets, un par passager, et la référence de réservation
+            // n'en désigne aucun.
+            onPress={() => router.replace('/tickets')}
           />
         </View>
       </Screen>

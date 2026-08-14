@@ -17,10 +17,10 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | parcours jusqu'au paiement · 55 tests |
+| `apps/mobile` | parcours complet jusqu'au billet · 58 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : le billet, le compte, l'annulation — et tout le web.
+**Ce qui n'existe pas** : le compte et l'annulation côté mobile, et tout le web.
 
 **Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
 langue épinglés, branché dans `pnpm verify`. 38 tests.
@@ -250,11 +250,26 @@ L'échec est banal et réessayer est le cas nominal : l'écran le dit, et rappel
 que **les places restent tenues**. La tenue expirée, en revanche, coupe court —
 proposer de payer promettrait un siège qui n'existe plus.
 
-### 4.7 Billet et QR Code
+### 4.7 Billet et QR Code — ✅ fait
 
-**Consultable sans réseau.** Le billet se met en cache localement et le QR se
-**regénère à partir des données stockées**, jamais téléchargé comme image : un
-billet dont le QR ne s'affiche pas en gare ne vaut rien ([I5](BRIEF.md)).
+**Consultable sans réseau.** Le billet est en cache sur le disque, et le QR se
+**dessine sur l'appareil** à partir de `qr_payload` — jamais téléchargé comme
+image. Un billet dont le code dépend du réseau ne s'affiche pas au moment précis
+où il n'y en a pas : en gare, devant l'agent ([I5](BRIEF.md)).
+
+Le détail est en `offlineFirst` : le billet en cache s'affiche immédiatement,
+sans attendre une réponse qui ne viendra peut-être pas. Un billet ne changeant
+qu'à l'annulation ou à l'embarquement, sa fraîcheur est bornée à une heure —
+le rafraîchir sans cesse coûterait du réseau là où il y en a le moins.
+
+**Un test protège la contrainte hors ligne** : il vérifie qu'aucune source
+distante n'entre dans l'arbre rendu. Le jour où quelqu'un remplacerait le rendu
+local par une image téléchargée, le billet cesserait de s'afficher en gare — et
+rien d'autre ne le signalerait.
+
+Après paiement, on arrive sur la **liste** et non sur un billet : une
+réservation de trois places produit trois billets, un par passager, et la
+référence de réservation n'en désigne aucun.
 
 ### 4.8 Compte et historique
 

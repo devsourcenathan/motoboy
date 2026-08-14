@@ -128,6 +128,20 @@ export interface PassengerMessages {
       readonly restart: string
     }
   }
+  readonly ticket: {
+    readonly title: string
+    readonly listTitle: string
+    readonly empty: string
+    readonly passenger: string
+    readonly seat: string
+    readonly noSeat: string
+    readonly reference: string
+    readonly showAtBoarding: string
+    readonly offline: string
+    readonly cancelled: string
+    readonly used: string
+    readonly departure: string
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -274,6 +288,22 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         restart: 'Nouvelle recherche',
       },
     },
+    ticket: {
+      title: 'Billet',
+      listTitle: 'Mes billets',
+      empty: 'Aucun billet pour le moment.',
+      passenger: 'Passager',
+      seat: 'Place',
+      noSeat: 'Non numérotée',
+      reference: 'Référence',
+      showAtBoarding: 'Présentez ce code à l’embarquement.',
+      // Le billet est en cache : il s'affiche sans réseau, et le QR est
+      // regénéré depuis les données stockées (I5).
+      offline: 'Ce billet s’affiche sans connexion.',
+      cancelled: 'Billet annulé',
+      used: 'Billet déjà utilisé',
+      departure: 'Départ',
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -399,6 +429,20 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         body: 'The seats have been released. You will need to book again.',
         restart: 'New search',
       },
+    },
+    ticket: {
+      title: 'Ticket',
+      listTitle: 'My tickets',
+      empty: 'No tickets yet.',
+      passenger: 'Passenger',
+      seat: 'Seat',
+      noSeat: 'Unnumbered',
+      reference: 'Reference',
+      showAtBoarding: 'Show this code at boarding.',
+      offline: 'This ticket works without a connection.',
+      cancelled: 'Ticket cancelled',
+      used: 'Ticket already used',
+      departure: 'Departure',
     },
     tabs: {
       search: 'Search',
