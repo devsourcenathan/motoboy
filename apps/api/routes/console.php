@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Bookings\Actions\ReleaseExpiredHolds;
+use App\Modules\Payments\Actions\RetryFailedRefunds;
 use App\Modules\Trips\Actions\GenerateTrips;
 use Illuminate\Support\Facades\Schedule;
 
@@ -34,4 +35,19 @@ Schedule::call(fn (ReleaseExpiredHolds $action) => $action->handle())
 Schedule::call(fn (GenerateTrips $action) => $action->handle())
     ->name('trips:generate')
     ->dailyAt('03:00')
+    ->withoutOverlapping();
+
+/*
+ * Rejeu des remboursements en échec (B5).
+ *
+ * Un remboursement en échec place le passager dans le pire état possible — sans
+ * argent et sans billet. Il ne doit jamais rester silencieux : trois tentatives,
+ * puis un état durable et une alerte journalisée.
+ *
+ * Toutes les dix minutes, pas à la minute : l'échec vient en général du compte
+ * source, et réessayer plus vite ne le rendrait pas joignable.
+ */
+Schedule::call(fn (RetryFailedRefunds $action) => $action->handle())
+    ->name('payments:retry-failed-refunds')
+    ->everyTenMinutes()
     ->withoutOverlapping();

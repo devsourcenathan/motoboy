@@ -578,15 +578,7 @@ paths:
           description: Annulation enregistrée
           content:
             application/json:
-              schema:
-                type: object
-                required: [booking, refund]
-                properties:
-                  booking: { $ref: '#/components/schemas/Booking' }
-                  refund:
-                    oneOf:
-                      - $ref: '#/components/schemas/Refund'
-                      - type: 'null'
+              schema: { $ref: '#/components/schemas/BookingCancellation' }
         '409':
           description: |
             Codes possibles — `CANCELLATION_DEADLINE_PASSED`,
@@ -1262,6 +1254,100 @@ paths:
                 properties:
                   created: { type: integer }
                   horizon_days: { type: integer }
+
+  /v1/agency/trips/{reference}/cancel:
+    post:
+      tags: [Agency]
+      summary: Annuler un départ
+      description: |
+        Le cas le plus fréquent sur le terrain — panne, effectif insuffisant,
+        route coupée — et le plus lourd : plusieurs dizaines de passagers déjà
+        payés.
+
+        **Remboursement intégral automatique, sans frais, sans validation
+        manuelle.** L'agence a décidé d'annuler ; faire attendre une approbation
+        laisserait des passagers payer pour un car qui ne partira pas.
+
+        Le motif est obligatoire. Le taux d'annulation est suivi en
+        administration, et seuls les départs **portant des réservations
+        confirmées** y entrent : supprimer un départ généré non assuré relève de
+        la gestion de planning, pas de l'incident.
+
+        **Rembourser d'abord, proposer ensuite.** Le transfert vers un autre
+        départ n'est pas au MVP : le passager est remboursé et reçoit des
+        alternatives dans sa notification. Les notifications partent en file —
+        notifier trente passagers en synchrone ferait expirer la requête au pire
+        moment.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { $ref: '#/components/schemas/TripCancellationReason' }
+                note: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Départ annulé, remboursements enregistrés
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TripCancellation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `TRIP_CANCELLED` (déjà annulé).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/agency/bookings/{reference}/cancel:
+    post:
+      tags: [Agency]
+      summary: Annuler tout ou partie d'une réservation, au guichet
+      description: |
+        Même mécanique que l'annulation passager, avec deux différences.
+
+        **L'agence peut annuler une réservation qu'elle a vendue au comptoir.**
+        Ce n'est pas du confort : ce passager n'a pas de compte et ne peut rien
+        annuler lui-même — sans cette route, son siège resterait bloqué jusqu'au
+        départ.
+
+        **Une vente au comptoir ne produit aucun remboursement par la
+        plateforme** : l'argent n'y est jamais passé, l'agence rend les espèces.
+        La réponse porte alors `refund: null`, et la commission guichet
+        éventuellement débitée est contre-passée.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passenger_ids:
+                  type: array
+                  items: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Annulation enregistrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingCancellation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `CANCELLATION_DEADLINE_PASSED`,
+            `BOOKING_NOT_CANCELLABLE`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /v1/agency/counter-sales:
     post:
@@ -2054,6 +2140,51 @@ components:
         reason: { $ref: '#/components/schemas/RefundReason' }
         amount: { $ref: '#/components/schemas/Money' }
         completed_at: { type: [string, 'null'], format: date-time }
+
+    BookingCancellation:
+      type: object
+      required: [booking, refund, fee, refunded]
+      properties:
+        booking: { $ref: '#/components/schemas/Booking' }
+        refund:
+          oneOf:
+            - $ref: '#/components/schemas/Refund'
+            - type: 'null'
+          description: |
+            Nul quand il n'y a rien à rembourser par la plateforme : vente au
+            comptoir encaissée en espèces par l'agence, ou frais d'annulation
+            égaux au montant payé.
+        refunded: { $ref: '#/components/schemas/Money' }
+        fee:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: |
+            Frais d'annulation retenus. MOTOBOY y récupère d'abord ses frais
+            réels d'agrégateur, le solde revient à l'agence qui subit la perte
+            du siège. La commission, elle, est abandonnée : elle rémunère un
+            transport qui n'a pas eu lieu.
+        cancelled_passenger_ids:
+          type: array
+          items: { type: integer, format: int64 }
+
+    TripCancellation:
+      type: object
+      required: [trip, bookings_cancelled, passengers_cancelled, refunded]
+      properties:
+        trip: { $ref: '#/components/schemas/TripSummary' }
+        bookings_cancelled: { type: integer }
+        passengers_cancelled: { type: integer }
+        refunded:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Total remboursé, intégral et sans frais.
+
+    TripCancellationReason:
+      type: string
+      enum: [BREAKDOWN, INSUFFICIENT_PASSENGERS, ROAD_CLOSED, OTHER]
+      description: |
+        Obligatoire à la saisie. Sans motif, le suivi du taux d'annulation ne
+        distingue pas une panne isolée d'une agence qui surréserve.
 
     CancellationQuote:
       type: object

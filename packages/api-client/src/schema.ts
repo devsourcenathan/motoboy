@@ -738,10 +738,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            booking: components["schemas"]["Booking"];
-                            refund: components["schemas"]["Refund"] | null;
-                        };
+                        "application/json": components["schemas"]["BookingCancellation"];
                     };
                 };
                 /**
@@ -1884,6 +1881,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/trips/{reference}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annuler un départ
+         * @description Le cas le plus fréquent sur le terrain — panne, effectif insuffisant,
+         *     route coupée — et le plus lourd : plusieurs dizaines de passagers déjà
+         *     payés.
+         *
+         *     **Remboursement intégral automatique, sans frais, sans validation
+         *     manuelle.** L'agence a décidé d'annuler ; faire attendre une approbation
+         *     laisserait des passagers payer pour un car qui ne partira pas.
+         *
+         *     Le motif est obligatoire. Le taux d'annulation est suivi en
+         *     administration, et seuls les départs **portant des réservations
+         *     confirmées** y entrent : supprimer un départ généré non assuré relève de
+         *     la gestion de planning, pas de l'incident.
+         *
+         *     **Rembourser d'abord, proposer ensuite.** Le transfert vers un autre
+         *     départ n'est pas au MVP : le passager est remboursé et reçoit des
+         *     alternatives dans sa notification. Les notifications partent en file —
+         *     notifier trente passagers en synchrone ferait expirer la requête au pire
+         *     moment.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: components["schemas"]["TripCancellationReason"];
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Départ annulé, remboursements enregistrés */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TripCancellation"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                /** @description Codes possibles — `TRIP_CANCELLED` (déjà annulé). */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/bookings/{reference}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annuler tout ou partie d'une réservation, au guichet
+         * @description Même mécanique que l'annulation passager, avec deux différences.
+         *
+         *     **L'agence peut annuler une réservation qu'elle a vendue au comptoir.**
+         *     Ce n'est pas du confort : ce passager n'a pas de compte et ne peut rien
+         *     annuler lui-même — sans cette route, son siège resterait bloqué jusqu'au
+         *     départ.
+         *
+         *     **Une vente au comptoir ne produit aucun remboursement par la
+         *     plateforme** : l'argent n'y est jamais passé, l'agence rend les espèces.
+         *     La réponse porte alors `refund: null`, et la commission guichet
+         *     éventuellement débitée est contre-passée.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /**
+                     * @description Rejouer la même clé renvoie le résultat initial sans créer de
+                     *     doublon. Un UUID généré par le client convient.
+                     */
+                    "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                };
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        passenger_ids?: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Annulation enregistrée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingCancellation"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                /**
+                 * @description Codes possibles — `CANCELLATION_DEADLINE_PASSED`,
+                 *     `BOOKING_NOT_CANCELLABLE`.
+                 */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/counter-sales": {
         parameters: {
             query?: never;
@@ -2482,6 +2634,37 @@ export interface components {
             /** Format: date-time */
             completed_at?: string | null;
         };
+        BookingCancellation: {
+            booking: components["schemas"]["Booking"];
+            /**
+             * @description Nul quand il n'y a rien à rembourser par la plateforme : vente au
+             *     comptoir encaissée en espèces par l'agence, ou frais d'annulation
+             *     égaux au montant payé.
+             */
+            refund: components["schemas"]["Refund"] | null;
+            refunded: components["schemas"]["Money"];
+            /**
+             * @description Frais d'annulation retenus. MOTOBOY y récupère d'abord ses frais
+             *     réels d'agrégateur, le solde revient à l'agence qui subit la perte
+             *     du siège. La commission, elle, est abandonnée : elle rémunère un
+             *     transport qui n'a pas eu lieu.
+             */
+            fee: components["schemas"]["Money"];
+            cancelled_passenger_ids?: number[];
+        };
+        TripCancellation: {
+            trip: components["schemas"]["TripSummary"];
+            bookings_cancelled: number;
+            passengers_cancelled: number;
+            /** @description Total remboursé, intégral et sans frais. */
+            refunded: components["schemas"]["Money"];
+        };
+        /**
+         * @description Obligatoire à la saisie. Sans motif, le suivi du taux d'annulation ne
+         *     distingue pas une panne isolée d'une agence qui surréserve.
+         * @enum {string}
+         */
+        TripCancellationReason: "BREAKDOWN" | "INSUFFICIENT_PASSENGERS" | "ROAD_CLOSED" | "OTHER";
         CancellationQuote: {
             cancellable: boolean;
             /** @description Code d'erreur qui serait renvoyé, si `cancellable` est faux */

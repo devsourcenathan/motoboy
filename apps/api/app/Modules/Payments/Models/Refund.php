@@ -23,7 +23,7 @@ final class Refund extends Model
 {
     protected $fillable = [
         'reference', 'booking_id', 'payment_id', 'booking_passenger_id',
-        'amount', 'currency', 'reason', 'initiated_by',
+        'amount', 'fee_amount', 'seats_count', 'currency', 'reason', 'initiated_by',
         'provider_reference', 'idempotency_key', 'status', 'retry_count', 'completed_at',
     ];
 

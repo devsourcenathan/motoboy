@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Payments\Http\Controllers;
 
 use App\Modules\Payments\Actions\ConfirmPayment;
+use App\Modules\Payments\Actions\ConfirmRefund;
 use App\Modules\Payments\Contracts\PaymentGateway;
+use App\Modules\Payments\Data\RefundEvent;
 use App\Modules\Payments\Models\PaymentWebhook;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ final class WebhookController
         string $provider,
         PaymentGateway $gateway,
         ConfirmPayment $confirm,
+        ConfirmRefund $confirmRefund,
     ): JsonResponse {
         $payload = $request->getContent();
         $event = $gateway->parseWebhook($payload, $request->headers->all());
@@ -65,11 +68,15 @@ final class WebhookController
         ]);
 
         try {
-            $payment = $confirm->handle($event);
+            // Encaissement ou remboursement : le prestataire envoie les deux
+            // ici, et c'est l'adaptateur qui a déjà tranché.
+            $applied = $event instanceof RefundEvent
+                ? $confirmRefund->handle($event)
+                : $confirm->handle($event);
 
             $log->update([
-                'status' => $payment === null ? 'FAILED' : 'PROCESSED',
-                'error' => $payment === null ? 'Référence de paiement inconnue.' : null,
+                'status' => $applied === null ? 'FAILED' : 'PROCESSED',
+                'error' => $applied === null ? 'Référence inconnue.' : null,
                 'processed_at' => now(),
             ]);
         } catch (Throwable $e) {

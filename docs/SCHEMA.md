@@ -409,6 +409,7 @@ Le niveau qui porte les horaires ([I1](BRIEF.md)). Distinct de la route parce qu
 | `cancelled_by` | bigint | FK `users`, nullable |
 | `cancelled_at` | timestamptz | nullable |
 | `cancellation_reason` | varchar(30) | `BREAKDOWN`, `INSUFFICIENT_PASSENGERS`, `ROAD_CLOSED`, `OTHER` |
+| `cancellation_note` | varchar(500) | nullable — texte libre de l'agent, lu par le passager dans sa notification. Sans lui il reçoit « panne » et rappelle l'agence |
 | `had_confirmed_bookings_at_cancellation` | boolean | défaut `false` — voir plus bas |
 | `created_at` / `updated_at` | timestamptz | |
 
@@ -630,7 +631,9 @@ Journal traçable exigé par [I7](BRIEF.md). Sans lui, un paiement perdu est ind
 | `booking_id` | bigint | FK |
 | `payment_id` | bigint | FK — le paiement d'origine |
 | `booking_passenger_id` | bigint | FK nullable — renseigné si **remboursement partiel** |
-| `amount` | bigint | |
+| `amount` | bigint | ce qui est rendu au passager |
+| `fee_amount` | bigint | défaut 0 — frais d'annulation **retenus**. C'est contre eux qu'est plafonné le coût réel du remboursement, connu seulement quand le prestataire l'annonce ([B5](BRIEF.md)) |
+| `seats_count` | smallint | défaut 1 — places couvertes, pour le prorata des écritures au compte courant |
 | `currency` | char(3) | |
 | `reason` | varchar(30) | `PASSENGER_REQUEST`, `AGENCY_TRIP_CANCELLED`, `TRIP_MODIFIED`, `LATE_PAYMENT`, `DUPLICATE_PAYMENT`, `ADMIN_ADJUSTMENT` |
 | `initiated_by` | bigint | FK `users`, nullable — `null` si automatique |
@@ -680,7 +683,7 @@ Le suivi financier repose sur un **compte courant** plutôt que sur un calcul pa
 |---|---|---|
 | `id` | bigserial | PK |
 | `agency_id` | bigint | FK |
-| `type` | varchar(30) | `BOOKING_CREDIT`, `COMMISSION_DEBIT`, `REFUND_DEBIT`, `COUNTER_COMMISSION_DEBIT`, `ADJUSTMENT`, `PAYOUT_DEBIT` |
+| `type` | varchar(30) | `BOOKING_CREDIT`, `COMMISSION_DEBIT`, `REFUND_DEBIT`, `COMMISSION_REVERSAL_CREDIT`, `AGGREGATOR_FEE_DEBIT`, `COUNTER_COMMISSION_DEBIT`, `COUNTER_COMMISSION_REVERSAL`, `ADJUSTMENT`, `PAYOUT_DEBIT` |
 | `amount` | bigint | **signé** — positif au crédit, négatif au débit |
 | `currency` | char(3) | |
 | `reference_type` | varchar(50) | polymorphe — `booking`, `refund`, `payout`… |
@@ -689,6 +692,8 @@ Le suivi financier repose sur un **compte courant** plutôt que sur un calcul pa
 | `created_by` | bigint | FK `users`, nullable |
 | `occurred_at` | timestamptz | date d'effet, distincte de la date d'écriture |
 | `created_at` | timestamptz | |
+
+**Une annulation se corrige par contre-passation, jamais par réécriture.** Le `BOOKING_CREDIT` et le `COMMISSION_DEBIT` d'origine restent en place ; s'y ajoutent un `COMMISSION_REVERSAL_CREDIT` — la commission rémunère un transport qui n'a pas eu lieu — et un `AGGREGATOR_FEE_DEBIT` par lequel MOTOBOY récupère ses frais réels, plafonné aux frais d'annulation retenus. Réécrire les lignes d'origine ferait cesser un relevé déjà envoyé à l'agence de correspondre à son compte.
 
 **Aucun solde stocké.** Le solde se calcule par somme. Un solde dénormalisé finit toujours par diverger de ses écritures, et sur un compte qui détermine combien l'on verse à une agence, la divergence se découvre lors d'une réclamation.
 

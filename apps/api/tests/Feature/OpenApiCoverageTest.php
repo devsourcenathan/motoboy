@@ -34,9 +34,9 @@ final class OpenApiCoverageTest extends TestCase
      * @var list<string>
      */
     private const PENDING = [
-        // Annulation et remboursement — chantier 3.7 de la feuille de route.
-        'POST /v1/bookings/{reference}/cancel',
-        'GET /v1/bookings/{reference}/cancellation-quote',
+        // Vide : tout ce que le contrat décrit existe. C'est l'état normal, pas
+        // un état à préserver — la liste se remplira au prochain chantier
+        // spécifié avant d'être construit.
     ];
 
     public function test_no_endpoint_is_served_without_being_specified(): void

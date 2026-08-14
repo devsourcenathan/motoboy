@@ -11,6 +11,8 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payments\Models\Refund;
+use App\Modules\Payouts\Models\Commission;
+use App\Modules\Tickets\Models\Ticket;
 use App\Modules\Trips\Models\Trip;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +20,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * `user_id` est **réellement nullable** — une vente au comptoir n'a pas de
+ * compte derrière elle (I2). L'annotation le dit explicitement : sans elle,
+ * l'analyse statique déduit du type de la relation que `$booking->user` est
+ * toujours présent, et laisse passer un accès qui casse sur toute réservation
+ * vendue au guichet.
+ *
+ * @property-read User|null $user
+ */
 final class Booking extends Model
 {
     protected $fillable = [
@@ -91,6 +102,29 @@ final class Booking extends Model
     public function refunds(): HasMany
     {
         return $this->hasMany(Refund::class);
+    }
+
+    /**
+     * Une réservation porte au plus une commission — `commissions.booking_id`
+     * est unique.
+     *
+     * @return HasOne<Commission, $this>
+     */
+    public function commission(): HasOne
+    {
+        return $this->hasOne(Commission::class);
+    }
+
+    /** @return HasMany<BookingPassenger, $this> */
+    public function activePassengers(): HasMany
+    {
+        return $this->passengers()->where('status', 'ACTIVE');
+    }
+
+    /** @return HasMany<Ticket, $this> */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
     }
 
     /**

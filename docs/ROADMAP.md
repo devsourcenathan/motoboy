@@ -20,8 +20,8 @@ dans `apps/api`.
 | Chantier | État | Vérification |
 |---|---|---|
 | Décisions produit | 6 points bloquants et 10 points importants tranchés | [BRIEF.md](BRIEF.md) |
-| Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 18 migrations |
-| Contrat d'API | passager, embarquement, back-office, guichet — 34 chemins, 39 opérations | couverture vérifiée par test |
+| Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 21 migrations |
+| Contrat d'API | passager, embarquement, back-office, guichet, annulation — 36 chemins, 41 opérations | couverture vérifiée par test, liste d'attente vide |
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
@@ -33,12 +33,14 @@ dans `apps/api`.
 | **Billet et QR** | émission par passager, charge signée, consultation | idem |
 | **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | idem |
 | **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | idem |
-| **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | 97 tests, 317 assertions |
+| **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | idem |
+| **Annulation et remboursement** | partielle ou totale, départ annulé, répartition des frais, rejeu | 124 tests, 430 assertions |
 
-**Ce qui n'existe pas encore** : les écrans de suivi de l'agence, la PWA, et
-l'administration. Le parcours passager de [§35](BRIEF.md) est complet côté API,
-une agence peut l'alimenter, et elle peut vendre au comptoir sans que
-la disponibilité affichée cesse d'être vraie.
+**Ce qui n'existe pas encore** : les reversements, les écrans de suivi de
+l'agence, la PWA, et l'administration. Le parcours passager de
+[§35](BRIEF.md) est complet côté API — jusqu'à l'annulation et au remboursement —
+une agence peut l'alimenter, et elle peut vendre au comptoir sans que la
+disponibilité affichée cesse d'être vraie.
 
 ---
 
@@ -200,14 +202,57 @@ deviendrait du bruit. D'où la colonne `client_id`, absente du schéma initial.
 Reste à écrire : **la PWA** — service worker, cache de la liste, file locale des
 validations. L'API qu'elle consomme est en place.
 
-### 3.7 Annulation et remboursement
+### 3.7 Annulation et remboursement — ✅ côté API
 
-*Dépend de* : paiement.
+`CancellationTerms`, `CancelBooking`, `CancelTrip`, `ConfirmRefund`,
+`RetryFailedRefunds`, plus les quatre endpoints du contrat.
 
-- `CancelBooking`, `CancelTrip`, `RefundBooking`
-- Répartition des frais, y compris le cas où ils sont **inférieurs** aux frais d'agrégateur
-- Annulation agence → remboursement intégral automatique de tous les passagers
-- Rejeu automatique d'un remboursement en échec, puis alerte
+**La répartition de [B5](BRIEF.md) est le point délicat, et elle est vérifiée au
+franc près.** MOTOBOY renonce à sa commission — elle rémunère un transport qui
+n'a pas eu lieu — mais récupère ses frais réels d'agrégateur sur les frais
+d'annulation retenus ; le solde revient à l'agence, qui subit la perte du siège.
+Si les frais retenus sont inférieurs aux frais réels, MOTOBOY absorbe la
+différence.
+
+Le compte courant se corrige **par contre-passation, jamais par réécriture** :
+le crédit et le débit d'origine restent en place, sans quoi un relevé déjà envoyé
+à l'agence cesserait de correspondre à ses lignes.
+
+Quatre choses que l'écriture a révélées :
+
+- **Le coût réel du remboursement n'est pas connu à l'annulation.** Il n'arrive
+  qu'avec la confirmation du prestataire. Il vient donc en écriture séparée,
+  plafonnée par ce que les frais retenus n'ont pas déjà couvert — d'où la
+  colonne `refunds.fee_amount`, plutôt qu'une soustraction reconstituée après
+  coup qui cesserait d'être vraie au premier remboursement non lié à une
+  annulation.
+- **Le port de paiement n'avait pas de `refund()`.** Les remboursements
+  seraient restés `PENDING` à vie, et le « rejeu automatique puis alerte » de B5
+  n'aurait rien eu à appeler. Le port l'expose désormais, et le webhook
+  distingue les deux flux par le **type de retour** de `parseWebhook` — un champ
+  « type » à interpréter chez l'appelant n'aurait fait que déplacer le problème.
+- **Un remboursement partait deux fois.** `RefundPayment::handle()` enregistrait
+  *et* exécutait, et l'appelant réexécutait hors transaction : deux demandes au
+  prestataire pour un seul remboursement. `record()` et `execute()` sont
+  désormais séparés, et `handle()` ne sert qu'aux appelants sans transaction
+  ouverte.
+- **`bookings.user_id` est réellement nullable** — vente au comptoir. L'analyse
+  statique le déduisait présent depuis le type de la relation ; une annotation
+  le dit maintenant, et le SMS d'annulation ne casse plus sur un passager de
+  guichet.
+
+⚠️ **Un point où [B5](BRIEF.md) et le contrat divergent.** B5 écrit « au-delà du
+délai, non remboursable », ce qui parle d'argent et laisserait l'annulation
+possible à zéro franc — le siège repartirait à la vente. Le contrat, lui, liste
+`CANCELLATION_DEADLINE_PASSED` en 409. Le contrat étant normatif, c'est lui qui
+tranche : l'annulation tardive est refusée. Relâcher cette borne se décide dans
+la spécification.
+
+**Reporté** : la modification importante du voyage ([B5](BRIEF.md)-C — décalage
+de plus de 30 minutes, changement de date ou de gare, ouvrant droit à annulation
+gratuite). Elle suppose un endpoint de **modification** de départ, que le lot
+back-office n'a pas construit : il couvre la création et la génération, pas
+l'édition. À écrire en même temps que celle-ci, plutôt qu'à moitié maintenant.
 
 ### 3.8 Reversements
 

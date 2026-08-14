@@ -36,7 +36,9 @@ final class Trip extends Model
         'origin_station_id', 'destination_station_id',
         'departure_at', 'arrival_estimate_at', 'online_sales_close_at',
         'vehicle_id', 'driver_id', 'price', 'currency',
-        'seating_mode', 'capacity', 'status',
+        'seating_mode', 'capacity', 'status', 'seats_taken',
+        'cancelled_at', 'cancelled_by', 'cancellation_reason', 'cancellation_note',
+        'had_confirmed_bookings_at_cancellation',
     ];
 
     /** @var array<string, string> */

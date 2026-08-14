@@ -18,6 +18,7 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Models\Payment;
+use App\Modules\Payments\Models\Refund;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Commission;
 use App\Modules\Tickets\Models\Ticket;
@@ -257,6 +258,40 @@ final class CounterSaleTest extends TestCase
             ])
             ->assertStatus(404)
             ->assertJsonPath('code', 'NOT_FOUND');
+    }
+
+    /**
+     * L'agence annule ce qu'elle a vendu au comptoir : ce passager n'a pas de
+     * compte et ne peut rien annuler lui-même. Sans cette route, son siège
+     * resterait bloqué jusqu'au départ, indisponible pour tout le monde.
+     */
+    public function test_the_agency_cancels_a_counter_sale_and_hands_the_cash_back_itself(): void
+    {
+        $this->agency->commercialTerms()->update(['counter_sale_commission_enabled' => true]);
+
+        $seat = $this->seatIds(1)[0];
+        $reference = $this->sell([$seat])->assertCreated()->json('booking.reference');
+
+        $response = $this->actingAs($this->agent)
+            ->postJson("/api/v1/agency/bookings/{$reference}/cancel")
+            ->assertOk();
+
+        // Aucun remboursement par la plateforme : l'argent n'y est jamais passé,
+        // l'agence rend les espèces de la main à la main.
+        $this->assertNull($response->json('refund'));
+        $this->assertSame(0, $response->json('refunded.amount'));
+        $this->assertSame(0, Refund::query()->count());
+
+        $booking = Booking::query()->where('reference', $reference)->firstOrFail();
+        $this->assertSame(BookingStatus::CancelledByPassenger, $booking->status);
+
+        // La commission guichet portait sur un transport qui n'aura pas lieu.
+        $reversal = AgencyLedgerEntry::query()->where('type', 'COUNTER_COMMISSION_REVERSAL')->firstOrFail();
+        $this->assertSame(0, (int) AgencyLedgerEntry::query()->sum('amount'));
+        $this->assertGreaterThan(0, (int) $reversal->amount);
+
+        // Et le siège repart à la vente.
+        $this->sell([$seat])->assertCreated();
     }
 
     public function test_the_key_is_required(): void

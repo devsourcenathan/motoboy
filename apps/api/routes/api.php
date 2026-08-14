@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Agencies\Http\Controllers\CancellationController;
 use App\Modules\Agencies\Http\Controllers\CounterSaleController;
 use App\Modules\Agencies\Http\Controllers\FleetController;
 use App\Modules\Agencies\Http\Controllers\RoutingController;
@@ -62,6 +63,16 @@ Route::prefix('v1')->group(function (): void {
         Route::get('bookings', [BookingController::class, 'index']);
         Route::get('bookings/{reference}', [BookingController::class, 'show']);
 
+        /*
+         * Annulation et remboursement (B5).
+         *
+         * Le devis précède l'annulation : le passager doit voir ce qu'il
+         * récupérera avant de confirmer, sinon une règle acceptée devient un
+         * litige.
+         */
+        Route::get('bookings/{reference}/cancellation-quote', [BookingController::class, 'cancellationQuote']);
+        Route::post('bookings/{reference}/cancel', [BookingController::class, 'cancel']);
+
         Route::post('bookings/{reference}/payments', [PaymentController::class, 'store']);
         Route::get('payments/{reference}', [PaymentController::class, 'show']);
 
@@ -117,6 +128,16 @@ Route::prefix('v1')->group(function (): void {
              */
             Route::post('counter-sales', [CounterSaleController::class, 'store']);
             Route::get('trips/{reference}/seats', [CounterSaleController::class, 'seats']);
+
+            /*
+             * Annulations à l'initiative de l'agence (B5).
+             *
+             * L'annulation d'une réservation par l'agence n'est pas du confort :
+             * un passager de vente au comptoir n'a pas de compte et ne peut rien
+             * annuler lui-même.
+             */
+            Route::post('trips/{reference}/cancel', [CancellationController::class, 'trip']);
+            Route::post('bookings/{reference}/cancel', [CancellationController::class, 'booking']);
         });
     });
 
