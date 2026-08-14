@@ -456,7 +456,14 @@ dépend de webhooks tiers, ces briques sont dites non négociables.
 
 ---
 
-## 5. Chantiers parallèles
+## 5. Interfaces
+
+Tout ce qui consomme l'API — écrans web et mobile, PWA d'embarquement — est dans
+sa propre feuille de route : **[ROADMAP-FRONT.md](ROADMAP-FRONT.md)**.
+
+---
+
+## 6. Chantiers parallèles
 
 Rien de tout cela ne bloque le chemin critique.
 
