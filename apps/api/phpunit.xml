@@ -15,11 +15,22 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
+        <!-- ⚠️ **`force="true"` partout, sans exception.**
+
+             Sans lui, une entrée ne s'applique que si la variable n'est pas déjà
+             définie — et le `.env` du poste la définit presque toujours. La
+             suite tournait ainsi avec `QUEUE_CONNECTION=database` au lieu de
+             `sync` : tous les jobs `ShouldQueue` étaient mis en file et jamais
+             exécutés, donc jamais testés. Un test qui n'observe pas l'effet du
+             job passait quand même, en ne prouvant rien.
+
+             `tests/TestCase.php` contrôle en plus la base **effective**, car une
+             configuration en cache court-circuite tout ce bloc. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
         <!-- Les tests tournent sur PostgreSQL, pas sur SQLite : le schéma
              s'appuie sur des index uniques partiels et des contraintes de
              vérification, et surtout le modèle de verrouillage de SQLite diffère
@@ -42,11 +53,14 @@
         <env name="DB_USERNAME" value="motoboy" force="true"/>
         <env name="DB_PASSWORD" value="motoboy" force="true"/>
         <env name="DB_SSLMODE" value="prefer" force="true"/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <!-- `sync` : les jobs s'exécutent dans la foulée du dispatch. C'est la
+             seule façon d'observer leur effet — SMS d'annulation, émission des
+             billets — dans le test qui les déclenche. -->
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="NIGHTWATCH_ENABLED" value="false" force="true"/>
     </php>
 </phpunit>

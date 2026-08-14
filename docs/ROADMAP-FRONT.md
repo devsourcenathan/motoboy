@@ -323,6 +323,31 @@ même annulation, sans quoi la seconde porterait sur des passagers déjà annul�
 L'entrée est le billet : c'est là qu'un passager pense à annuler, et là qu'il a
 sous les yeux ce qu'il s'apprête à perdre.
 
+### 4.10 Essayer le parcours en local — ✅ vérifié de bout en bout
+
+**Expo Go doit correspondre au SDK.** Le projet est sur le SDK 57, qui réclame
+Expo Go **57.0.3 ou plus** ; en dessous, l'application refuse de charger avec
+« Project is incompatible with this version of Expo Go ». Le Play Store est
+souvent en retard : la version exacte se lit sur
+`https://api.expo.dev/v2/versions/latest`, et l'APK officiel correspondant est
+publié sur le dépôt `expo/expo-go-releases`.
+
+L'adresse de l'API n'a pas à être réglée : elle se déduit de l'hôte du serveur
+Metro, la seule que le téléphone sait déjà joindre puisqu'il vient d'y charger le
+paquet.
+
+Deux points bloquent un essai manuel, par construction et non par oubli :
+
+- **L'OTP n'est envoyé nulle part** tant qu'aucun fournisseur SMS n'est branché.
+  Le pilote de journalisation l'écrit dans `storage/logs/laravel.log`.
+- **Rien n'est encaissé de façon synchrone**, le vrai Mobile Money non plus. Le
+  parcours s'arrête sur l'écran d'attente jusqu'à l'arrivée d'un webhook qui,
+  sans agrégateur, n'arrive jamais. `php artisan motoboy:confirm-payment` le joue
+  — en passant par le **vrai contrôleur**, donc en exerçant le journal des
+  webhooks, l'idempotence et l'émission des billets. La commande refuse de
+  s'exécuter en production et hors pilote factice : marquer un paiement comme
+  encaissé est un distributeur de billets gratuits.
+
 ---
 
 ## 5. Web
