@@ -168,6 +168,29 @@ export interface PassengerMessages {
       readonly expired: string
     }
   }
+  readonly cancellation: {
+    readonly title: string
+    readonly whoLeaves: string
+    readonly all: string
+    readonly refundable: string
+    readonly fee: string
+    readonly free: string
+    readonly deadline: string
+    readonly toSource: string
+    readonly counterSale: string
+    readonly confirm: string
+    readonly refused: {
+      readonly deadlinePassed: string
+      readonly notCancellable: string
+    }
+    readonly done: {
+      readonly title: string
+      readonly refunded: string
+      readonly noRefund: string
+      readonly pending: string
+      readonly close: string
+    }
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -361,6 +384,34 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         expired: 'Ce code a expiré. Demandez-en un nouveau.',
       },
     },
+    cancellation: {
+      title: 'Annuler',
+      whoLeaves: 'Qui n’embarque pas ?',
+      // L'annulation partielle est supportée dès le MVP : trois places
+      // réservées, une annulée (B5).
+      all: 'Tout le monde',
+      refundable: 'Vous récupérez',
+      fee: 'Frais d’annulation',
+      free: 'Aucun frais',
+      deadline: 'Annulable jusqu’au {{date}}',
+      // Le remboursement part toujours vers le compte source du paiement,
+      // jamais vers un numéro déclaré après coup (B5).
+      toSource: 'Le remboursement retournera sur le compte qui a payé.',
+      counterSale:
+        'Cette réservation a été payée en espèces au guichet : le remboursement se fait sur place, auprès de l’agence.',
+      confirm: 'Confirmer l’annulation',
+      refused: {
+        deadlinePassed: 'Le délai d’annulation est dépassé pour ce départ.',
+        notCancellable: 'Cette réservation ne peut pas être annulée.',
+      },
+      done: {
+        title: 'Annulation enregistrée',
+        refunded: '{{amount}} vous seront remboursés.',
+        noRefund: 'Aucun remboursement par l’application.',
+        pending: 'Le remboursement est en cours auprès de votre opérateur.',
+        close: 'Terminer',
+      },
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -525,6 +576,30 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         resendIn: 'Resend in {{seconds}}s',
         attemptsLeft: '{{count}} attempt(s) left',
         expired: 'This code has expired. Ask for a new one.',
+      },
+    },
+    cancellation: {
+      title: 'Cancel',
+      whoLeaves: 'Who is not travelling?',
+      all: 'Everyone',
+      refundable: 'You get back',
+      fee: 'Cancellation fee',
+      free: 'No fee',
+      deadline: 'Cancellable until {{date}}',
+      toSource: 'The refund will go back to the account that paid.',
+      counterSale:
+        'This booking was paid in cash at the counter: the refund is handled there, by the agency.',
+      confirm: 'Confirm cancellation',
+      refused: {
+        deadlinePassed: 'The cancellation deadline has passed for this departure.',
+        notCancellable: 'This booking cannot be cancelled.',
+      },
+      done: {
+        title: 'Cancellation recorded',
+        refunded: '{{amount}} will be refunded to you.',
+        noRefund: 'No refund through the app.',
+        pending: 'The refund is being processed by your operator.',
+        close: 'Done',
       },
     },
     tabs: {

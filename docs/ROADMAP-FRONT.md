@@ -17,10 +17,14 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | parcours complet, compte compris · 65 tests |
+| `apps/mobile` | **parcours passager complet** · 72 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : l'annulation côté mobile, et tout le web.
+**Ce qui n'existe pas** : tout le web, et la PWA d'embarquement.
+
+Le parcours passager de [§35](BRIEF.md) est complet de bout en bout : chercher,
+comparer, choisir sa place, réserver, payer, embarquer avec son billet hors
+ligne, annuler.
 
 **Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
 langue épinglés, branché dans `pnpm verify`. 38 tests.
@@ -294,11 +298,30 @@ n'aide personne. La déconnexion **vide le cache** — y laisser les réservatio
 d'un compte les rendrait visibles au suivant, sur un téléphone qui change de
 mains — et se ferme localement même hors ligne.
 
-### 4.9 Annulation
+### 4.9 Annulation — ✅ fait
 
-Le **devis d'abord** : le passager doit voir ce qu'il récupérera avant de
-confirmer, sinon une règle acceptée devient un litige. Annulation partielle
-comprise — trois places réservées, une annulée.
+Le **devis d'abord**, et le bouton reste inactif tant qu'il n'a pas répondu :
+valider sur un montant inconnu est exactement ce que cet écran existe pour
+éviter. Sans lui, le passager découvre les frais retenus après coup, et une
+règle qu'il avait acceptée devient un litige ([B5](BRIEF.md)).
+
+**Annulation partielle comprise** — trois places réservées, une annulée. Le
+choix des passagers n'apparaît qu'au-delà d'un seul : le proposer sinon
+reviendrait à demander une décision qui n'existe pas. Le devis se recalcule à
+chaque changement, et la clé de cache porte la sélection — partager un cache
+entre « une place » et « tout le monde » annoncerait le mauvais montant.
+
+L'écran dit **où repart l'argent** : vers le compte qui a payé, jamais vers un
+numéro déclaré après coup. Et quand rien ne transite par la plateforme — vente
+au comptoir encaissée en espèces — il le dit aussi, plutôt que de laisser
+attendre un virement qui ne viendra pas.
+
+La clé d'idempotence est **conservée** entre les tentatives, comme à la
+réservation et contrairement au paiement : une annulation rejouée doit rendre la
+même annulation, sans quoi la seconde porterait sur des passagers déjà annulés.
+
+L'entrée est le billet : c'est là qu'un passager pense à annuler, et là qu'il a
+sous les yeux ce qu'il s'apprête à perdre.
 
 ---
 

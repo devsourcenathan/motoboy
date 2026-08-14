@@ -34,6 +34,19 @@ export const queryKeys = {
   bookings: () => [QUERY_ROOT.bookings] as const,
   booking: (reference: string) => [QUERY_ROOT.bookings, reference] as const,
 
+  /*
+   * Le devis dépend de la sélection **et** du temps restant. Les identifiants
+   * entrent donc dans la clé : partager un cache entre « une place » et « tout
+   * le monde » annoncerait le mauvais montant.
+   */
+  cancellationQuote: (reference: string, passengerIds: readonly number[]) =>
+    [
+      QUERY_ROOT.bookings,
+      reference,
+      'cancellation-quote',
+      [...passengerIds].sort(),
+    ] as const,
+
   payment: (reference: string) => [QUERY_ROOT.payments, reference] as const,
 
   tickets: () => [QUERY_ROOT.tickets] as const,

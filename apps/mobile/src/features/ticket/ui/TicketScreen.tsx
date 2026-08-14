@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { formatDateTime, ticketStatusLabels } from '@motoboy/shared'
@@ -19,6 +19,7 @@ import { TicketQr } from './TicketQr'
  */
 export function TicketScreen() {
   const { t } = useTranslation()
+  const router = useRouter()
   const locale = useLocale()
   const describe = useErrorMessage()
 
@@ -88,6 +89,19 @@ export function TicketScreen() {
         </View>
 
         <Text style={styles.offline}>{t('ticket.offline')}</Text>
+
+        {/*
+          L'annulation part du billet : c'est là qu'un passager y pense, et
+          c'est là qu'il a sous les yeux ce qu'il s'apprête à perdre. Un billet
+          déjà annulé ou utilisé n'a plus rien à annuler.
+        */}
+        {invalid ? null : (
+          <Button
+            label={t('cancellation.title')}
+            variant="ghost"
+            onPress={() => router.push(`/bookings/${data.booking_reference}/cancel`)}
+          />
+        )}
       </ScrollView>
     </Screen>
   )

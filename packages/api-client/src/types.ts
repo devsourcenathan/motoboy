@@ -53,6 +53,9 @@ export type SearchSuggestions = S['SearchSuggestions']
 export type Booking = S['Booking']
 export type BookingPassenger = S['BookingPassenger']
 export type CancellationPolicy = S['CancellationPolicy']
+
+/** Résultat d'une annulation. `refund` est nul quand rien ne transite par la plateforme. */
+export type BookingCancellation = S['BookingCancellation']
 export type CancellationQuote = S['CancellationQuote']
 export type Payment = S['Payment']
 export type Refund = S['Refund']
