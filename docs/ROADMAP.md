@@ -36,7 +36,8 @@ dans `apps/api`.
 | **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | idem |
 | **Annulation et remboursement** | partielle ou totale, départ annulé, répartition des frais, rejeu | idem |
 | **Reversements** | solde du compte courant, validation humaine, décaissement, réconciliation | idem |
-| **Administration** | inscription et validation d'agence, coordonnées vérifiées, audit, référentiel, tableau de bord | 165 tests, 591 assertions |
+| **Administration** | inscription et validation d'agence, coordonnées vérifiées, audit, référentiel, tableau de bord | idem |
+| **Déploiement** | image Docker, blueprint Render, base Neon, R2 pour les documents | 167 tests, 594 assertions · image construite et exercée |
 
 **Ce qui n'existe pas encore** : les interfaces. **Toute la chaîne est en place
 côté API** — une agence s'inscrit, est validée, alimente son inventaire, vend en
@@ -48,9 +49,9 @@ listes de consultation de l'administration.
 
 ## 2. Décisions qui ne dépendent pas du code
 
-Ces points ne se règlent pas en écrivant du logiciel. Un seul reste entièrement
-ouvert — l'hébergement — et il devra l'être avant la première mise en
-production.
+Ces points ne se règlent pas en écrivant du logiciel. Le dernier entièrement
+ouvert — l'hébergement — est tranché ; ceux qui restent portent sur des
+prestataires, pas sur le développement.
 
 | Sujet | État | Ce qu'il bloque |
 |---|---|---|
@@ -60,7 +61,7 @@ production.
 | **Fournisseur SMS** | ✅ **TechSoft SMS** — documentation derrière authentification, à récupérer | L'adaptateur concret, pas le port ni le reste du développement |
 | **Stockage objet** | ✅ **Cloudflare R2**, compatible S3 | Rien — l'API S3 est standard |
 | **Push mobile** | ✅ **Firebase Cloud Messaging** | Rien à court terme |
-| **Hébergement et déploiement** | ⚠️ jamais discuté | La mise en production, et le choix d'infrastructure qui en découle |
+| **Hébergement et déploiement** | ✅ **Render** (Docker) + **Neon** (PostgreSQL) | Rien — voir [DEPLOIEMENT.md](DEPLOIEMENT.md) |
 
 **Point ouvert sur TechSoft** : `app.techsoft-sms.com/developers/docs` répond
 `401` sans session. Le schéma exact des requêtes — authentification, noms de
@@ -419,6 +420,39 @@ véhicules, chauffeurs, propriétaires, trajets, réservations, billets,
 transactions, commissions. Ce sont des écrans sans décision, qui se construisent
 mieux une fois qu'on sait ce qu'on y cherche ; ils appartiennent au même chantier
 que les interfaces.
+
+---
+
+## 4 ter. Déploiement — ✅ fait
+
+**Render** pour l'API, en Docker, et **Neon** pour la base. Recette complète dans
+[DEPLOIEMENT.md](DEPLOIEMENT.md) ; l'image a été construite et exercée contre une
+base réelle, pas seulement écrite.
+
+**Un seul conteneur sert les trois rôles** — web, file d'attente, planificateur.
+Le travail de fond n'est pas accessoire : sans planificateur,
+`ReleaseExpiredHolds` ne tourne plus et l'inventaire se gèle, sans qu'aucune
+erreur ne le signale.
+
+Deux choses que la construction a révélées :
+
+- **Le manifeste de paquets de la machine de développement partait dans
+  l'image.** `bootstrap/cache/packages.php` y liste les paquets *de
+  développement* ; copié dans une image installée en `--no-dev`, il fait
+  référencer un fournisseur de services absent, et le conteneur meurt au
+  démarrage sur « Class not found » avant même d'avoir touché la base.
+- **Un appel non authentifié sans en-tête `Accept` renvoyait 500.** Le
+  middleware d'authentification redirige vers une route `login` qui n'existe pas
+  sur une API, et la `RouteNotFoundException` passe **avant** la couche de
+  traduction : le client recevait une erreur opaque là où le contrat promet un
+  401 typé. Aucun test ne l'attrapait — `getJson` pose l'en-tête, un vrai client
+  l'oublie une fois. Corrigé, et couvert.
+
+**Ce qui n'est pas fait, et qui compte :** aucun prestataire n'est branché — les
+pilotes factices restent actifs, donc **rien ne s'encaisse réellement** —, et
+[I7](BRIEF.md) reste entier : pas de suivi d'erreurs, pas de supervision des
+files, pas de sauvegarde vérifiée. Sur un produit qui encaisse de l'argent et
+dépend de webhooks tiers, ces briques sont dites non négociables.
 
 ---
 

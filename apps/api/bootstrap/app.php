@@ -16,7 +16,36 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        /*
+         * Derrière le proxy de l'hébergeur.
+         *
+         * Sans cela, deux choses cassent silencieusement : les URL générées
+         * repassent en `http` alors que le trafic est en HTTPS, et surtout
+         * **l'adresse enregistrée au journal d'audit devient celle du proxy**.
+         * §28 demande de savoir d'où une opération a été faite ; une colonne
+         * remplie de la même IP interne ne répond plus à la question.
+         *
+         * `'*'` est correct ici parce que l'application n'est joignable qu'à
+         * travers le proxy de l'hébergeur : rien n'atteint le conteneur
+         * directement.
+         */
+        $middleware->trustProxies(at: '*');
+
+        /*
+         * Aucune redirection vers un écran de connexion : il n'y en a pas.
+         *
+         * Par défaut, le middleware d'authentification redirige un visiteur non
+         * authentifié vers `route('login')` dès que la requête ne réclame pas
+         * explicitement du JSON. Sur une API sans route `login`, cela lève une
+         * `RouteNotFoundException` **avant** que la couche de traduction
+         * n'intervienne : le client reçoit un 500 opaque là où le contrat promet
+         * un 401 `UNAUTHENTICATED`.
+         *
+         * Le cas ne se voyait pas en test parce que les assistants `getJson` et
+         * `postJson` posent l'en-tête `Accept` ; un client qui l'oublie, lui, ne
+         * l'oublie qu'une fois.
+         */
+        $middleware->redirectGuestsTo(fn (): ?string => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -68,6 +68,27 @@ return [
             'throw' => false,
         ],
 
+        /*
+         * Cloudflare R2 — compatible S3, d'où le même pilote.
+         *
+         * **Le système de fichiers d'un conteneur est éphémère** : sur Render,
+         * un document déposé sur le disque local disparaît au redéploiement
+         * suivant. En production, `DOCUMENTS_DISK` doit donc valoir `r2`.
+         *
+         * `AWS_DEFAULT_REGION=auto` et l'endpoint de compte sont les deux
+         * réglages propres à R2 ; le reste est du S3 standard.
+         */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
