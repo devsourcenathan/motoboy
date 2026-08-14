@@ -90,8 +90,11 @@ RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cac
 ENV CONTAINER_ROLE=web \
     APP_ENV=production \
     APP_DEBUG=false \
-    LOG_CHANNEL=stderr
+    LOG_CHANNEL=stderr \
+    PORT=8080
 
+# Documentaire seulement : le port réellement écouté vient de `PORT`, que
+# l'hébergeur impose. nginx est reconfiguré au démarrage.
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
