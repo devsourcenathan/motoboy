@@ -31,4 +31,39 @@ config.resolver.nodeModulesPaths = [
 // Turborepo n'a pas été retenu au départ. Metro les transpile comme le reste.
 config.resolver.disableHierarchicalLookup = true
 
+/*
+ * Résolution des imports `.js` écrits dans du TypeScript.
+ *
+ * Les packages du workspace sont compilés en `moduleResolution: nodenext`, qui
+ * **impose** l'extension `.js` dans les imports relatifs — `./locale.js`
+ * désigne `locale.ts`. C'est la convention ESM de TypeScript, et le compilateur
+ * la fait respecter.
+ *
+ * Metro, lui, ne connaît pas cette correspondance : il cherche un vrai fichier
+ * `locale.js`, ne le trouve pas, et échoue sur `Unable to resolve module`. Sans
+ * cette passerelle, aucun package du workspace ne traverse le bundler — la
+ * compilation TypeScript passe, et c'est à l'exécution que tout tombe.
+ *
+ * La réécriture est **limitée aux imports relatifs**, pour ne pas toucher aux
+ * `.js` bien réels de `node_modules`, et retombe sur la résolution normale si
+ * aucun `.ts` ne correspond.
+ */
+const originalResolve = config.resolver.resolveRequest
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const resolve = originalResolve ?? context.resolveRequest
+
+  if (moduleName.startsWith('.') && moduleName.endsWith('.js')) {
+    for (const extension of ['.ts', '.tsx']) {
+      try {
+        return resolve(context, moduleName.replace(/\.js$/, extension), platform)
+      } catch {
+        // Extension suivante, puis la résolution d'origine.
+      }
+    }
+  }
+
+  return resolve(context, moduleName, platform)
+}
+
 module.exports = config

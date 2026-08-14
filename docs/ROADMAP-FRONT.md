@@ -17,11 +17,11 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | Expo nu — un écran de vérification |
+| `apps/mobile` | Expo Router, i18n, session, cache persisté, primitives, **onboarding** |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : navigation, session, catalogues de traduction,
-primitives d'interface, et tous les écrans.
+**Ce qui n'existe pas** : les écrans du parcours — recherche, résultats,
+réservation, paiement, billet — et tout le web.
 
 ---
 
@@ -48,26 +48,26 @@ réécrit pour en accueillir une seconde.
 
 *Rien ne peut être écrit avant.*
 
-### 3.1 Catalogues de traduction
+### 3.1 Catalogues de traduction — ✅ fait
 
 `fr` et `en`, dans `@motoboy/shared` : les chaînes sont les mêmes des deux côtés,
 et les dupliquer garantirait qu'une traduction manque quelque part. Chaque
 application les branche à son propre moteur.
 
-### 3.2 Session et jeton
+### 3.2 Session et jeton — ✅ fait
 
 Le jeton Sanctum se stocke différemment selon la plateforme — coffre du système
 sur mobile, mémoire plus stockage sur web. D'où un **port** dans `shared`, et une
 implémentation par application : le client d'API ne doit connaître ni l'un ni
 l'autre.
 
-### 3.3 Client d'API prêt à l'emploi
+### 3.3 Client d'API prêt à l'emploi — ✅ fait
 
 Le client généré ne sait rien de l'authentification ni des erreurs. Il lui
 manque : l'en-tête `Authorization`, la traduction d'une réponse d'erreur en
 objet typé, et la clé d'idempotence sur les opérations qui en exigent une.
 
-### 3.4 Primitives d'interface
+### 3.4 Primitives d'interface — ✅ amorcé
 
 **Les composants ne se partagent pas, seuls les jetons.** shadcn repose sur Radix
 et le DOM ; le mobile a ses propres primitives. C'est déjà écrit dans
@@ -80,10 +80,40 @@ servirait deux fois mal.
 
 *Dans l'ordre du voyage, parce que chaque écran se nourrit du précédent.*
 
-### 4.1 Navigation et coquille
+### 4.0 Onboarding — ✅ fait
 
-Onglets : rechercher, mes billets, compte. Les liens profonds comptent — un SMS
-de confirmation renvoie vers un billet.
+Trois écrans, pas davantage : ce qu'il y a à dire tient en trois phrases —
+comparer, réserver, embarquer. Un onboarding plus long se saute entièrement.
+
+**« Passer » est visible dès le premier écran.** Un passager qui veut son billet
+ne doit pas traverser une introduction, et cacher la sortie ne la fait pas lire,
+elle fait désinstaller.
+
+Le marqueur « déjà vu » vit dans le stockage de l'application, pas dans le
+compte : l'onboarding s'affiche **avant toute inscription** — c'est son objet.
+Le lier au compte le ferait réapparaître à chaque changement de téléphone.
+
+L'aiguillage d'entrée n'affiche **ni** l'onboarding **ni** la recherche tant
+qu'il ne sait pas : montrer l'un puis basculer sur l'autre produirait un
+clignotement à chaque démarrage.
+
+### 4.1 Navigation et coquille — ✅ fait
+
+Expo Router, avec le schéma `motoboy://` : les liens profonds comptent — un SMS
+de confirmation doit pouvoir ouvrir le billet. Les onglets — rechercher, mes
+billets, compte — arrivent avec les écrans qu'ils desservent.
+
+Le cache des requêtes est **persisté sur le disque**, et c'est ce qui rendra le
+billet consultable sans réseau. Seules les données sans caractère secret y
+entrent : le cache est écrit en clair, et y laisser le profil d'un compte
+déconnecté le rendrait lisible après coup.
+
+**Un accroc trouvé en construisant le bundle** : aucun package du workspace ne
+traversait Metro. Les imports relatifs y portent l'extension `.js` — la
+convention que `moduleResolution: nodenext` impose pour désigner un `.ts` — et
+Metro cherchait un vrai fichier `.js`. La compilation TypeScript passait ; le
+bundle, lui, échouait. L'écran dit « de vérification de la chaîne » ne vérifiait
+donc rien. Corrigé dans `metro.config.js`, et vérifié par un export réel.
 
 ### 4.2 Recherche
 
