@@ -8,8 +8,10 @@
 # **l'inventaire se gèle** — un paiement abandonné immobilise sa place
 # indéfiniment, et un car affiche complet sans avoir vendu un billet (B2).
 #
-# Le contexte de build est `apps/api` : l'API n'a besoin ni du monorepo JS ni de
-# la spécification, qui ne servent qu'aux tests et à la génération du client.
+# **Le contexte de build est la racine du dépôt**, pour une seule raison :
+# `docs/openapi.yaml` est normatif et l'API le sert. L'y recopier sous
+# `apps/api` créerait un second exemplaire qui divergerait au premier oubli.
+# Tout le reste du monorepo est exclu par le `.dockerignore` de la racine.
 
 # ─────────────────────────────── Dépendances ───────────────────────────────
 
@@ -19,7 +21,7 @@ WORKDIR /app
 
 # Les manifestes d'abord : tant qu'ils ne changent pas, cette couche est
 # réutilisée et l'installation n'est pas rejouée à chaque modification de code.
-COPY composer.json composer.lock ./
+COPY apps/api/composer.json apps/api/composer.lock ./
 
 RUN composer install \
       --no-dev \
@@ -29,7 +31,7 @@ RUN composer install \
       --no-interaction \
       --no-progress
 
-COPY . .
+COPY apps/api .
 
 # `--classmap-authoritative` : en production, aucune classe n'est cherchée sur le
 # disque hors de la carte. Ce qui n'y figure pas n'existe pas — et rien ne doit y
@@ -68,17 +70,26 @@ RUN apk add --no-cache \
   && apk del .build-deps \
   && rm -rf /tmp/pear
 
-COPY docker/php.ini /usr/local/etc/php/conf.d/99-motoboy.ini
-COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-motoboy.conf
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint
+COPY apps/api/docker/php.ini /usr/local/etc/php/conf.d/99-motoboy.ini
+COPY apps/api/docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-motoboy.conf
+COPY apps/api/docker/nginx.conf /etc/nginx/nginx.conf
+COPY apps/api/docker/supervisord.conf /etc/supervisor/supervisord.conf
+COPY apps/api/docker/entrypoint.sh /usr/local/bin/entrypoint
 
 RUN chmod +x /usr/local/bin/entrypoint
 
 WORKDIR /var/www/html
 
 COPY --from=vendor /app .
+
+# Le contrat, servi tel quel par `GET /openapi.yaml`. Une seule source, celle
+# que les tests vérifient et dont le client TypeScript est généré.
+#
+# **Hors de `public/`, délibérément.** nginx sert ce répertoire directement :
+# le fichier partirait avant d'atteindre Laravel, avec un type MIME générique et
+# surtout **sans passer par l'interrupteur** `API_DOCS_ENABLED`, qui cesserait
+# alors de fermer quoi que ce soit.
+COPY docs/openapi.yaml storage/app/openapi.yaml
 
 # `storage` et `bootstrap/cache` sont les deux seuls chemins que l'application
 # écrit. Le reste du code reste en lecture seule pour l'utilisateur qui sert les

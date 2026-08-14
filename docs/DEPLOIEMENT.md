@@ -181,6 +181,17 @@ php artisan motoboy:create-admin +237690000000 --super --first-name=Nathan --las
 
 ## 6 bis. Vérifier un déploiement
 
+### La documentation du contrat
+
+`https://<service>.onrender.com/docs` — l'interface Swagger, sur le contrat qui
+fait foi. Le fichier servi par `/openapi.yaml` est **le même** que celui dont le
+client TypeScript est généré et dont un test compare les chemins aux routes
+réellement servies : une documentation dérivée d'autre chose finirait par
+décrire un produit qui n'existe pas.
+
+Ouverte par défaut — le contrat n'est pas un secret, et le cacher n'empêche
+personne de découvrir les routes. `API_DOCS_ENABLED=false` la ferme.
+
 ### En une commande
 
 ```bash
