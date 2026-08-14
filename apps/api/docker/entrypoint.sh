@@ -12,6 +12,24 @@ php_artisan() {
     php /var/www/html/artisan "$@"
 }
 
+# Le port n'ouvre qu'après les migrations. Si celles-ci échouent, l'hébergeur ne
+# voit qu'une absence de port et le dit sans jamais nommer la cause : ce message
+# est là pour que la vraie raison figure dans le journal, juste au-dessus.
+on_failure() {
+    status=$?
+
+    if [ "${status}" -eq 0 ]; then
+        return 0
+    fi
+
+    echo "" >&2
+    echo "Démarrage interrompu avant l'ouverture du port." >&2
+    echo "L'hébergeur signalera « no open ports detected » : la cause réelle est" >&2
+    echo "l'erreur ci-dessus, pas le port." >&2
+}
+
+trap on_failure EXIT INT TERM
+
 # ────────────────────────────── Garde-fous ──────────────────────────────
 
 if [ -z "${APP_KEY}" ]; then
@@ -53,11 +71,27 @@ php_artisan config:cache
 php_artisan route:cache
 php_artisan event:cache
 
-# Les migrations tournent depuis n'importe quel rôle, mais `--isolated` prend un
-# verrou partagé : deux conteneurs qui démarrent en même temps — le cas normal
-# d'un redéploiement — n'en jouent qu'une seule série.
+# ─────────────────────────────── Migrations ───────────────────────────────
+#
+# `--isolated` prend un verrou partagé pour que deux conteneurs démarrant
+# ensemble — le cas normal d'un redéploiement — ne jouent qu'une seule série.
+#
+# ⚠️ Mais ce verrou vit dans `cache_locks`, une table que **ces migrations
+# créent**. Sur une base vierge, `--isolated` échoue donc avant d'avoir rien
+# migré, sur une erreur qui parle de cache là où le problème est ailleurs. La
+# toute première passe se fait sans verrou : il n'y a de toute façon rien à
+# protéger tant que la base est vide.
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
-    php_artisan migrate --force --isolated
+    echo "Connexion à la base et migrations…"
+
+    if php_artisan migrate:status >/dev/null 2>&1; then
+        php_artisan migrate --force --isolated
+    else
+        echo "Base vierge : première migration sans verrou d'isolation."
+        php_artisan migrate --force
+    fi
+
+    echo "Migrations à jour."
 fi
 
 # ──────────────────────────────── Démarrage ────────────────────────────────
