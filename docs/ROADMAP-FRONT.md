@@ -17,10 +17,10 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | socle, onboarding, recherche, résultats, plan de sièges, **réservation** · 48 tests |
+| `apps/mobile` | parcours jusqu'au paiement · 55 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : le paiement, le billet, le compte — et tout le web.
+**Ce qui n'existe pas** : le billet, le compte, l'annulation — et tout le web.
 
 **Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
 langue épinglés, branché dans `pnpm verify`. 38 tests.
@@ -227,12 +227,28 @@ Un message générique laisserait le passager réessayer indéfiniment le même
 siège. « Complet » et « ventes closes », eux, n'offrent pas ce geste — parce
 qu'il n'existe pas.
 
-### 4.6 Paiement
+### 4.6 Paiement — ✅ fait
 
 Mobile Money, **asynchrone par nature** : le passager reçoit une sollicitation
-sur son téléphone et saisit son code. L'écran attend un verdict qui vient par
-webhook — il ne doit ni promettre un succès, ni abandonner au premier délai.
-L'échec est banal et réessayer est le cas nominal.
+sur son téléphone et saisit son code. L'écran ne promet donc **aucun succès** et
+n'abandonne pas au premier délai — il attend, en le disant, et interroge le
+serveur toutes les deux secondes jusqu'au verdict. L'interrogation s'arrête
+d'elle-même une fois le sort connu : la poursuivre viderait la batterie pour
+redemander une réponse qui ne changera plus.
+
+**`PENDING` et `PROCESSING` se disent pareil** au passager : la différence est
+interne au prestataire et ne lui offre aucun geste différent.
+
+⚠️ **La clé d'idempotence se renouvelle ici, contrairement à la réservation.**
+Une réservation rejouée doit rendre la même réservation ; une tentative de
+paiement est *une autre tentative* — le contrat prévoit explicitement plusieurs
+paiements par réservation, dont un seul aboutit. Réutiliser la clé renverrait
+l'échec précédent, et le passager qui recompose correctement son code verrait le
+même refus.
+
+L'échec est banal et réessayer est le cas nominal : l'écran le dit, et rappelle
+que **les places restent tenues**. La tenue expirée, en revanche, coupe court —
+proposer de payer promettrait un siège qui n'existe plus.
 
 ### 4.7 Billet et QR Code
 

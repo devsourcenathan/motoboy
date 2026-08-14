@@ -1,10 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native'
-import { ApiError, NetworkError } from '@motoboy/api-client'
-import { errorLabel } from '@motoboy/shared'
 import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
+import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useTripSearch } from '../api/useTripSearch'
 import { EmptyResults } from './EmptyResults'
 import { TripCard } from './TripCard'
@@ -44,7 +43,7 @@ export function ResultsScreen() {
           <ActivityIndicator color={theme.text.brand} />
         </View>
       ) : error ? (
-        <SearchError error={error} onRetry={() => void refetch()} locale={locale} />
+        <SearchError error={error} onRetry={() => void refetch()} />
       ) : trips.length === 0 ? (
         <EmptyResults
           suggestions={suggestions}
@@ -79,27 +78,13 @@ export function ResultsScreen() {
  * **code** de l'erreur, jamais de son message — celui-ci est un diagnostic
  * destiné aux journaux (I10).
  */
-function SearchError({
-  error,
-  onRetry,
-  locale,
-}: {
-  error: unknown
-  onRetry: () => void
-  locale: ReturnType<typeof useLocale>
-}) {
+function SearchError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const { t } = useTranslation()
-
-  const message =
-    error instanceof ApiError
-      ? errorLabel(error.code, locale)
-      : error instanceof NetworkError
-        ? t('state.offline', { ns: 'common' })
-        : t('state.unexpected', { ns: 'common' })
+  const describe = useErrorMessage()
 
   return (
     <View style={styles.centered}>
-      <Text style={styles.error}>{message}</Text>
+      <Text style={styles.error}>{describe(error)}</Text>
       <Button
         label={t('action.retry', { ns: 'common' })}
         onPress={onRetry}

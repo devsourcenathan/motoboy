@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 import { formatCountdown, type Countdown } from '@motoboy/shared'
-import { fontSize, radius, spacing, theme } from '../../../shared/ui'
+import { fontSize, radius, spacing, theme } from '../ui'
 
 export interface HoldBannerProps {
   countdown: Countdown | null
@@ -14,6 +14,8 @@ export interface HoldBannerProps {
  * un passager qui cherche son téléphone pour saisir son code Mobile Money doit
  * voir combien de temps il lui reste, sinon la perte de sa place ressemble à
  * une panne (B2).
+ *
+ * Dans `shared/` parce que la réservation et le paiement l'affichent tous deux.
  */
 export function HoldBanner({ countdown }: HoldBannerProps) {
   const { t } = useTranslation()

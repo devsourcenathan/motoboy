@@ -9,10 +9,10 @@ import {
   Text,
   View,
 } from 'react-native'
-import { ApiError, NetworkError } from '@motoboy/api-client'
-import { errorLabel } from '@motoboy/shared'
+import { ApiError } from '@motoboy/api-client'
 import { Button, fontSize, Screen, spacing, theme, TextField } from '../../../shared/ui'
-import { useLocale } from '../../../shared/i18n/useLocale'
+import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
+import { HoldBanner, useHoldCountdown } from '../../../shared/booking'
 import { useCreateBooking } from '../api/useCreateBooking'
 import {
   emptyForm,
@@ -20,8 +20,6 @@ import {
   validate,
   type BookingForm,
 } from '../model/passengerForm'
-import { useHoldCountdown } from '../model/useHoldCountdown'
-import { HoldBanner } from './HoldBanner'
 
 /**
  * Saisie des passagers, puis prise des places.
@@ -35,8 +33,6 @@ import { HoldBanner } from './HoldBanner'
 export function BookingScreen() {
   const { t } = useTranslation()
   const router = useRouter()
-  const locale = useLocale()
-
   const params = useLocalSearchParams<{ reference: string; seats?: string }>()
   const reference = params.reference ?? ''
 
@@ -136,11 +132,7 @@ export function BookingScreen() {
           </View>
 
           {create.error ? (
-            <Conflict
-              error={create.error}
-              locale={locale}
-              onPickAnother={() => router.back()}
-            />
+            <Conflict error={create.error} onPickAnother={() => router.back()} />
           ) : null}
         </ScrollView>
 
@@ -166,25 +158,22 @@ export function BookingScreen() {
  */
 function Conflict({
   error,
-  locale,
   onPickAnother,
 }: {
   error: unknown
-  locale: ReturnType<typeof useLocale>
   onPickAnother: () => void
 }) {
   const { t } = useTranslation()
-
-  if (error instanceof NetworkError) {
-    return <Text style={styles.error}>{t('state.offline', { ns: 'common' })}</Text>
-  }
+  const describe = useErrorMessage()
 
   if (!(error instanceof ApiError)) {
-    return <Text style={styles.error}>{t('state.unexpected', { ns: 'common' })}</Text>
+    return <Text style={styles.error}>{describe(error)}</Text>
   }
 
   const recoverable = error.code === 'SEAT_ALREADY_HELD'
 
+  // Trois conflits d'inventaire ont un texte à eux, parce qu'ils appellent des
+  // gestes différents. Le reste retombe sur le libellé générique du code.
   const message = {
     SEAT_ALREADY_HELD: t('booking.conflict.seatTaken'),
     TRIP_FULL: t('booking.conflict.tripFull'),
@@ -193,7 +182,7 @@ function Conflict({
 
   return (
     <View style={styles.conflict}>
-      <Text style={styles.error}>{message ?? errorLabel(error.code, locale)}</Text>
+      <Text style={styles.error}>{message ?? describe(error)}</Text>
       {recoverable ? (
         <Button
           label={t('booking.conflict.pickAnother')}

@@ -100,6 +100,34 @@ export interface PassengerMessages {
       readonly pickAnother: string
     }
   }
+  readonly payment: {
+    readonly title: string
+    readonly amount: string
+    readonly operator: string
+    readonly payerPhone: string
+    readonly payerHint: string
+    readonly submit: string
+    readonly waiting: {
+      readonly title: string
+      readonly body: string
+      readonly patience: string
+    }
+    readonly failed: {
+      readonly title: string
+      readonly body: string
+      readonly retry: string
+    }
+    readonly succeeded: {
+      readonly title: string
+      readonly body: string
+      readonly seeTicket: string
+    }
+    readonly expired: {
+      readonly title: string
+      readonly body: string
+      readonly restart: string
+    }
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -212,6 +240,40 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         pickAnother: 'Choisir une autre place',
       },
     },
+    payment: {
+      title: 'Paiement',
+      amount: 'Montant à payer',
+      operator: 'Opérateur',
+      payerPhone: 'Numéro à débiter',
+      // Le remboursement repartira **toujours** vers ce compte, jamais vers un
+      // numéro déclaré après coup (B5).
+      payerHint: 'Un remboursement éventuel retournera sur ce numéro.',
+      submit: 'Payer',
+      waiting: {
+        title: 'Vérifiez votre téléphone',
+        // Le trait qui compte : rien n'est encaissé tant que le passager n'a
+        // pas saisi son code sur son propre téléphone.
+        body: 'Une demande de confirmation vous a été envoyée. Saisissez votre code secret pour valider.',
+        patience: 'Cela peut prendre jusqu’à une minute.',
+      },
+      failed: {
+        title: 'Paiement non abouti',
+        // Avec Mobile Money l'échec est banal, et réessayer est le cas
+        // nominal : la place n'est pas perdue pour autant (B2).
+        body: 'Vos places restent tenues. Vous pouvez réessayer.',
+        retry: 'Réessayer',
+      },
+      succeeded: {
+        title: 'Paiement confirmé',
+        body: 'Votre billet est disponible.',
+        seeTicket: 'Voir le billet',
+      },
+      expired: {
+        title: 'Délai écoulé',
+        body: 'Les places ont été libérées. Il faut recommencer la réservation.',
+        restart: 'Nouvelle recherche',
+      },
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -308,6 +370,34 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         tripFull: 'This departure is full.',
         closed: 'Online sales are closed for this departure.',
         pickAnother: 'Pick another seat',
+      },
+    },
+    payment: {
+      title: 'Payment',
+      amount: 'Amount due',
+      operator: 'Operator',
+      payerPhone: 'Number to debit',
+      payerHint: 'Any refund will go back to this number.',
+      submit: 'Pay',
+      waiting: {
+        title: 'Check your phone',
+        body: 'A confirmation request has been sent. Enter your PIN to approve it.',
+        patience: 'This can take up to a minute.',
+      },
+      failed: {
+        title: 'Payment did not go through',
+        body: 'Your seats are still held. You can try again.',
+        retry: 'Try again',
+      },
+      succeeded: {
+        title: 'Payment confirmed',
+        body: 'Your ticket is ready.',
+        seeTicket: 'View ticket',
+      },
+      expired: {
+        title: 'Time is up',
+        body: 'The seats have been released. You will need to book again.',
+        restart: 'New search',
       },
     },
     tabs: {

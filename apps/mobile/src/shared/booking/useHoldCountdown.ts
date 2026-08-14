@@ -11,6 +11,9 @@ import { countdownTo, type Countdown } from '@motoboy/shared'
  * Purement affichage : **l'expiration fait foi côté serveur**. Un client qui
  * voit zéro doit redemander l'état, jamais conclure seul que les places sont
  * perdues — l'horloge d'un téléphone se règle à la main.
+ *
+ * Dans `shared/` et non dans une fonctionnalité : la réservation *et* le
+ * paiement l'affichent, et une fonctionnalité n'en importe pas une autre.
  */
 export function useHoldCountdown(expiresAt: string | null | undefined): Countdown | null {
   const [countdown, setCountdown] = useState<Countdown | null>(() =>

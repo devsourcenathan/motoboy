@@ -9,11 +9,11 @@ import {
   Text,
   View,
 } from 'react-native'
-import { ApiError, NetworkError } from '@motoboy/api-client'
 import type { Seat } from '@motoboy/api-client/types'
-import { errorLabel, formatMoney, formatTime } from '@motoboy/shared'
+import { formatMoney, formatTime } from '@motoboy/shared'
 import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
+import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useSeatMap, useTrip } from '../api/useTrip'
 import { hasSeatMap, isComplete, toggleSeat } from '../model/seatSelection'
 import { SeatGrid } from './SeatGrid'
@@ -31,6 +31,7 @@ export function TripScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const locale = useLocale()
+  const describe = useErrorMessage()
   const params = useLocalSearchParams<{ reference: string; passengers?: string }>()
   const reference = params.reference ?? ''
   const passengers = Math.max(1, Number(params.passengers ?? 1) || 1)
@@ -76,7 +77,7 @@ export function TripScreen() {
     return (
       <Screen>
         <View style={styles.centered}>
-          <Text style={styles.error}>{describe(trip.error, locale, t)}</Text>
+          <Text style={styles.error}>{describe(trip.error)}</Text>
           <Button
             label={t('action.retry', { ns: 'common' })}
             onPress={() => void trip.refetch()}
@@ -139,17 +140,6 @@ export function TripScreen() {
       </View>
     </Screen>
   )
-}
-
-function describe(
-  error: unknown,
-  locale: ReturnType<typeof useLocale>,
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string {
-  if (error instanceof ApiError) return errorLabel(error.code, locale)
-  if (error instanceof NetworkError) return t('state.offline', { ns: 'common' })
-
-  return t('state.unexpected', { ns: 'common' })
 }
 
 const styles = StyleSheet.create({

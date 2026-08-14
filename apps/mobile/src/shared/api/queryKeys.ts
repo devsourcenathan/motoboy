@@ -16,6 +16,7 @@ export const QUERY_ROOT = {
   trip: 'trip',
   bookings: 'bookings',
   tickets: 'tickets',
+  payments: 'payments',
   me: 'me',
 } as const
 
@@ -32,6 +33,8 @@ export const queryKeys = {
 
   bookings: () => [QUERY_ROOT.bookings] as const,
   booking: (reference: string) => [QUERY_ROOT.bookings, reference] as const,
+
+  payment: (reference: string) => [QUERY_ROOT.payments, reference] as const,
 
   tickets: () => [QUERY_ROOT.tickets] as const,
   ticket: (reference: string) => [QUERY_ROOT.tickets, reference] as const,
