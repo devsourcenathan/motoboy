@@ -119,9 +119,15 @@ une URL signée à durée limitée.
    événements. **Au démarrage, jamais à la construction de l'image** : mettre la
    configuration en cache fige les valeurs d'environnement, et celles de
    production ne sont pas connues au moment du build.
-4. `migrate --force --isolated`. Le verrou d'isolation est partagé par le cache
-   en base : deux conteneurs qui démarrent ensemble — le cas normal d'un
-   redéploiement — n'en jouent qu'une seule série.
+4. Les migrations. Le verrou d'isolation est partagé par le cache en base :
+   deux conteneurs qui démarrent ensemble — le cas normal d'un redéploiement —
+   n'en jouent qu'une seule série.
+
+   **Sauf à la toute première.** Ce verrou vit dans `cache_locks`, une table que
+   ces migrations créent : sur une base vierge, `--isolated` échoue avant
+   d'avoir rien migré, sur une erreur qui parle de cache là où le problème est
+   ailleurs. La première passe se fait donc sans verrou — il n'y a de toute
+   façon rien à protéger tant que la base est vide.
 5. `supervisord` lance nginx, php-fpm, le planificateur et le worker.
 
 Le blueprint pointe la sonde de santé sur `/up`.
@@ -149,6 +155,29 @@ render exec motoboy-api -- php artisan db:seed --force
 ```bash
 render exec motoboy-api -- php artisan tinker
 ```
+
+---
+
+## 6 bis. Quand le déploiement reste bloqué sur « no open ports detected »
+
+**Le port n'ouvre qu'après les migrations.** Tout ce qui échoue avant — clé
+absente, base injoignable, migration en erreur — se manifeste donc par une
+absence de port, et l'hébergeur ne rapporte que cela. La cause réelle est
+**au-dessus** dans le journal, et le point d'entrée le dit explicitement avant
+de rendre la main.
+
+Ordre de lecture :
+
+1. `APP_KEY manquante.` — refus volontaire.
+2. `Connexion à la base et migrations…` sans rien après : c'est la base.
+   Vérifier `DB_URL`, et qu'elle pointe l'endpoint **direct** de Neon.
+3. `Migrations à jour.` puis `écoute sur le port N` : le démarrage est allé au
+   bout, et le problème est ailleurs.
+
+**Un hôte qui absorbe les paquets sans les refuser met environ 85 secondes à
+échouer** — c'est la reprise TCP du système, que l'application ne contrôle pas.
+Une vraie erreur de configuration — mot de passe faux, hôte inconnu — échoue en
+quelques secondes.
 
 ---
 
