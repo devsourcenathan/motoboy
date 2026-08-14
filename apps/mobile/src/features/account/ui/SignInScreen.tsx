@@ -10,7 +10,17 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Button, fontSize, Screen, spacing, TextField, theme } from '../../../shared/ui'
+import {
+  Button,
+  fontSize,
+  lineHeight,
+  radius,
+  Screen,
+  sharedStyles,
+  spacing,
+  TextField,
+  theme,
+} from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useRequestOtp } from '../api/useAuth'
 import { validate, type AuthIntent, type CredentialsForm } from '../model/auth'
@@ -69,7 +79,7 @@ export function SignInScreen() {
   }
 
   return (
-    <Screen title={intent === 'signUp' ? t('account.signUp') : t('account.signIn')}>
+    <Screen chrome={false}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -78,9 +88,28 @@ export function SignInScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {next === undefined ? null : (
-            <Text style={styles.why}>{t('account.whyNeeded')}</Text>
-          )}
+          {/*
+            La marque tient lieu d'en-tête ici : c'est le seul écran qu'on peut
+            atteindre sans jamais avoir vu le reste de l'application, et il doit
+            dire chez qui l'on saisit son numéro.
+          */}
+          <View style={styles.hero}>
+            <View style={styles.mark}>
+              <Text style={styles.markLetter}>M</Text>
+            </View>
+            <Text style={styles.wordmark} accessibilityRole="header">
+              MOTOBOY
+            </Text>
+            <Text style={styles.tagline}>{t('account.tagline')}</Text>
+          </View>
+
+          <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            {intent === 'signUp' ? t('account.signUp') : t('account.signIn')}
+          </Text>
+          <Text style={styles.cardBody}>
+            {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
+          </Text>
 
           <TextField
             label={t('account.phone')}
@@ -118,6 +147,7 @@ export function SignInScreen() {
           {request.error ? (
             <Text style={styles.error}>{describe(request.error)}</Text>
           ) : null}
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -148,28 +178,79 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  why: {
+  hero: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.lg,
+  },
+  /*
+   * Un monogramme, pas un logotype : aucun fichier de marque n'existe encore,
+   * et une image absente laisserait un carré vide au premier écran vu.
+   */
+  mark: {
+    width: 88,
+    height: 88,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.brand,
+    marginBottom: spacing.base,
+  },
+  markLetter: {
+    fontSize: 44,
+    lineHeight: 52,
+    fontWeight: '800',
+    color: theme.text.inverse,
+  },
+  wordmark: {
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: theme.text.brand,
+  },
+  tagline: {
     fontSize: fontSize.base,
     color: theme.text.secondary,
   },
+  card: {
+    ...sharedStyles.card,
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  cardTitle: {
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  cardBody: {
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
+    color: theme.text.secondary,
+    marginBottom: spacing.xs,
+  },
   switch: {
+    alignSelf: 'center',
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   switchLabel: {
     fontSize: fontSize.base,
-    color: theme.text.brand,
     fontWeight: '600',
+    color: theme.text.brand,
   },
   footer: {
-    padding: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: theme.surface.card,
     borderTopWidth: 1,
     borderTopColor: theme.surface.border,
   },
   error: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.sm,
     color: theme.text.danger,
   },
 })

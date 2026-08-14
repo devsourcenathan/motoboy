@@ -10,9 +10,19 @@ import {
   View,
 } from 'react-native'
 import { ApiError } from '@motoboy/api-client'
-import { Button, fontSize, Screen, spacing, theme, TextField } from '../../../shared/ui'
+import {
+  Button,
+  fontSize,
+  lineHeight,
+  radius,
+  Screen,
+  sharedStyles,
+  spacing,
+  theme,
+  TextField,
+} from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
-import { HoldBanner, useHoldCountdown } from '../../../shared/booking'
+import { HoldBanner, Stepper, useHoldCountdown } from '../../../shared/booking'
 import { useCreateBooking } from '../api/useCreateBooking'
 import {
   emptyForm,
@@ -78,7 +88,7 @@ export function BookingScreen() {
   }
 
   return (
-    <Screen title={t('booking.title')}>
+    <Screen title={t('booking.title')} subtitle={t('booking.subtitle')}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -87,16 +97,36 @@ export function BookingScreen() {
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
         >
+          <Stepper current="details" />
+
           <HoldBanner countdown={countdown} />
 
           {form.passengers.map((passenger, index) => (
             <View key={index} style={styles.group}>
-              <Text style={styles.groupTitle}>
-                {t('booking.passenger', { index: index + 1 })}
-                {passenger.seatId === null
-                  ? ''
-                  : ` · ${t('booking.seatLabel', { label: seats[index]?.label ?? '' })}`}
-              </Text>
+              <View style={styles.groupHead}>
+                {/*
+                  Le premier voyageur porte une pastille or : c'est lui qui
+                  reçoit le SMS et dont le nom figure sur le contact, ce qui
+                  n'est évident pour personne sans le dire.
+                */}
+                <View style={[styles.rank, index === 0 ? styles.rankFirst : null]}>
+                  <Text
+                    style={[styles.rankLabel, index === 0 ? styles.rankLabelFirst : null]}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
+                <Text style={styles.groupTitle}>
+                  {index === 0
+                    ? t('booking.mainPassenger')
+                    : t('booking.passenger', { index: index + 1 })}
+                </Text>
+                {passenger.seatId === null ? null : (
+                  <View style={styles.seatChip}>
+                    <Text style={styles.seatChipLabel}>{seats[index]?.label ?? ''}</Text>
+                  </View>
+                )}
+              </View>
 
               <TextField
                 label={t('booking.firstName')}
@@ -120,7 +150,9 @@ export function BookingScreen() {
           ))}
 
           <View style={styles.group}>
-            <Text style={styles.groupTitle}>{t('booking.contact')}</Text>
+            <View style={styles.groupHead}>
+              <Text style={styles.groupTitle}>{t('booking.contact')}</Text>
+            </View>
             <TextField
               label={t('booking.contactPhone')}
               hint={t('booking.contactHint')}
@@ -199,20 +231,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   body: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    padding: spacing.md,
+    gap: spacing.md,
   },
+  /** Chaque voyageur dans sa carte : la limite entre deux saisies se voit. */
   group: {
+    ...sharedStyles.card,
     gap: spacing.sm,
+    padding: spacing.md,
+  },
+  groupHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.base,
+    paddingBottom: spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.surface.border,
+  },
+  rank: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.inert,
+  },
+  rankFirst: {
+    backgroundColor: theme.surface.accent,
+  },
+  rankLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '800',
+    color: theme.text.secondary,
+  },
+  rankLabelFirst: {
+    color: theme.text.accent,
   },
   groupTitle: {
-    fontSize: fontSize.sm,
+    flex: 1,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
     fontWeight: '700',
-    color: theme.text.muted,
-    textTransform: 'uppercase',
+    color: theme.text.primary,
+  },
+  seatChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.brandSoft,
+  },
+  seatChipLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    color: theme.text.brand,
   },
   footer: {
-    padding: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: theme.surface.card,
     borderTopWidth: 1,
     borderTopColor: theme.surface.border,
   },

@@ -47,6 +47,29 @@ export function validate(form: CredentialsForm, intent: AuthIntent): Credentials
  */
 export const RESEND_DELAY_SECONDS = 30
 
+/**
+ * Longueur du code envoyé par SMS.
+ *
+ * Six chiffres, comme le serveur les émet. Elle sert à dessiner les cases et à
+ * savoir quand la saisie est complète — pas à valider : seul le serveur décide
+ * si un code est bon.
+ */
+export const OTP_LENGTH = 6
+
+/**
+ * Le numéro tel qu'on le rappelle sur l'écran de vérification.
+ *
+ * Masqué au milieu : il confirme qu'on a visé le bon téléphone sans réafficher
+ * en clair un numéro que quelqu'un peut lire par-dessus l'épaule, dans une gare.
+ */
+export function maskPhone(phone: string): string {
+  const digits = phone.replace(/\s/g, '')
+
+  if (digits.length < 5) return digits
+
+  return `${digits.slice(0, 5)}${'*'.repeat(Math.max(0, digits.length - 7))}${digits.slice(-2)}`
+}
+
 export type OtpError = 'OTP_INVALID' | 'OTP_EXPIRED' | 'OTP_TOO_MANY_ATTEMPTS'
 
 /** Le code se saisit en chiffres : tout le reste est du bruit de clavier. */

@@ -7,3 +7,4 @@
  */
 export { HoldBanner, type HoldBannerProps } from './HoldBanner'
 export { useHoldCountdown } from './useHoldCountdown'
+export { Stepper, BOOKING_STEPS, type BookingStep } from './Stepper'

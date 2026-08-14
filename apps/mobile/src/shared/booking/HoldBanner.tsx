@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 import { formatCountdown, type Countdown } from '@motoboy/shared'
-import { fontSize, radius, spacing, theme } from '../ui'
+import { fontSize, lineHeight, radius, spacing, theme, TimerIcon } from '../ui'
 
 export interface HoldBannerProps {
   countdown: Countdown | null
@@ -32,39 +32,50 @@ export function HoldBanner({ countdown }: HoldBannerProps) {
       accessibilityLiveRegion="polite"
       accessibilityRole="alert"
     >
-      <Text style={styles.title}>{t('booking.held.title')}</Text>
-      <Text style={expired ? styles.expiredText : styles.time}>
-        {expired
-          ? t('booking.held.expired')
-          : t('booking.held.body', { time: formatCountdown(countdown) })}
+      <TimerIcon color={expired ? theme.text.muted : theme.text.onDangerSoft} />
+
+      <Text style={[styles.title, expired ? styles.titleExpired : null]}>
+        {expired ? t('booking.held.expired') : t('booking.held.title')}
       </Text>
+
+      {expired ? null : (
+        <Text style={styles.time}>{formatCountdown(countdown)}</Text>
+      )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  /*
+   * Fond d'alerte et non teinte de marque : ce bandeau annonce une perte
+   * imminente, pas une information. C'est la seule chose à l'écran qui ait le
+   * droit d'être rouge.
+   */
   banner: {
-    gap: spacing.xs / 2,
-    padding: spacing.md,
-    backgroundColor: theme.surface.brandSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.base,
+    padding: spacing.sm,
+    backgroundColor: theme.surface.dangerSoft,
     borderRadius: radius.md,
   },
   expired: {
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.surface.inert,
   },
   title: {
-    fontSize: fontSize.xs,
+    flex: 1,
+    fontSize: fontSize.sm,
     fontWeight: '700',
-    color: theme.text.muted,
-    textTransform: 'uppercase',
+    color: theme.text.onDangerSoft,
+  },
+  titleExpired: {
+    color: theme.text.secondary,
   },
   time: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: theme.text.brand,
-  },
-  expiredText: {
-    fontSize: fontSize.base,
-    color: theme.text.danger,
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '800',
+    color: theme.text.onDangerSoft,
+    fontVariant: ['tabular-nums'],
   },
 })

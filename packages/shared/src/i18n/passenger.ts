@@ -85,6 +85,8 @@ export interface PassengerMessages {
   }
   readonly booking: {
     readonly title: string
+    readonly subtitle: string
+    readonly mainPassenger: string
     readonly passenger: string
     readonly firstName: string
     readonly lastName: string
@@ -108,6 +110,12 @@ export interface PassengerMessages {
   }
   readonly payment: {
     readonly title: string
+    readonly summary: string
+    readonly agency: string
+    readonly route: string
+    readonly seats: string
+    readonly total: string
+    readonly totalToPay: string
     readonly amount: string
     readonly operator: string
     readonly payerPhone: string
@@ -169,12 +177,16 @@ export interface PassengerMessages {
     readonly history: string
     readonly historyEmpty: string
     readonly whyNeeded: string
+    readonly tagline: string
+    readonly authBody: string
     readonly language: string
     readonly languageName: string
     readonly historyHint: string
     readonly otp: {
       readonly title: string
       readonly sentTo: string
+      readonly instruction: string
+      readonly codeField: string
       readonly code: string
       readonly verify: string
       readonly resend: string
@@ -205,6 +217,11 @@ export interface PassengerMessages {
       readonly pending: string
       readonly close: string
     }
+  }
+  readonly steps: {
+    readonly seats: string
+    readonly details: string
+    readonly payment: string
   }
   readonly tabs: {
     readonly home: string
@@ -302,7 +319,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       seatTaken: 'Cette place vient d’être prise',
     },
     booking: {
-      title: 'Vos informations',
+      title: 'Informations passagers',
+      subtitle: 'Renseignez les détails de chaque voyageur.',
+      mainPassenger: 'Passager principal',
       passenger: 'Passager {{index}}',
       firstName: 'Prénom',
       lastName: 'Nom',
@@ -328,6 +347,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     payment: {
       title: 'Paiement',
+      summary: 'Récapitulatif de la commande',
+      agency: 'Agence',
+      route: 'Trajet',
+      seats: 'Places',
+      total: 'Total',
+      totalToPay: 'Total à payer',
       amount: 'Montant à payer',
       operator: 'Opérateur',
       payerPhone: 'Numéro à débiter',
@@ -400,12 +425,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       // choisies : l'exiger d'entrée ferait renoncer quelqu'un qui veut
       // seulement savoir s'il y a un car ce soir (§35).
       whyNeeded: 'Un compte est nécessaire pour finaliser la réservation.',
+      tagline: 'Déplacez-vous en toute confiance.',
+      authBody: 'Saisissez votre numéro pour continuer. Un code de vérification vous sera envoyé par SMS.',
       language: 'Langue',
       languageName: 'Français (Cameroun)',
       historyHint: 'Consultez vos trajets passés et vos reçus',
       otp: {
         title: 'Code de vérification',
         sentTo: 'Un code a été envoyé au {{phone}}.',
+        instruction: 'Entrez le code à {{count}} chiffres envoyé par SMS au',
+        codeField: 'Code de vérification',
         code: 'Code reçu',
         verify: 'Valider',
         resend: 'Renvoyer le code',
@@ -444,6 +473,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         close: 'Terminer',
       },
     },
+    steps: { seats: 'Places', details: 'Infos', payment: 'Paiement' },
     tabs: {
       home: 'Accueil',
       tickets: 'Mes billets',
@@ -526,7 +556,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       seatTaken: 'That seat has just been taken',
     },
     booking: {
-      title: 'Your details',
+      title: 'Passenger details',
+      subtitle: 'Fill in the details for each traveller.',
+      mainPassenger: 'Main passenger',
       passenger: 'Passenger {{index}}',
       firstName: 'First name',
       lastName: 'Last name',
@@ -550,6 +582,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     payment: {
       title: 'Payment',
+      summary: 'Order summary',
+      agency: 'Agency',
+      route: 'Route',
+      seats: 'Seats',
+      total: 'Total',
+      totalToPay: 'Total to pay',
       amount: 'Amount due',
       operator: 'Operator',
       payerPhone: 'Number to debit',
@@ -611,12 +649,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       history: 'My trips',
       historyEmpty: 'No trips yet.',
       whyNeeded: 'An account is needed to complete the booking.',
+      tagline: 'Travel with confidence.',
+      authBody: 'Enter your number to continue. We will text you a verification code.',
       language: 'Language',
       languageName: 'English (Cameroon)',
       historyHint: 'Your past trips and receipts',
       otp: {
         title: 'Verification code',
         sentTo: 'A code was sent to {{phone}}.',
+        instruction: 'Enter the {{count}}-digit code sent by SMS to',
+        codeField: 'Verification code',
         code: 'Code received',
         verify: 'Verify',
         resend: 'Resend the code',
@@ -649,6 +691,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         close: 'Done',
       },
     },
+    steps: { seats: 'Seats', details: 'Details', payment: 'Payment' },
     tabs: {
       home: 'Home',
       tickets: 'My tickets',

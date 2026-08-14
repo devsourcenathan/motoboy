@@ -40,6 +40,21 @@ export function SearchIcon({ color, size = 24 }: IconProps) {
   )
 }
 
+/** Le temps qui reste sur une tenue de place. */
+export function TimerIcon({ color, size = 22 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={13.5} r={7.5} stroke={color} strokeWidth={2} />
+      <Path
+        d="M12 10v3.5l2.5 1.5M9.5 2.5h5M12 6V2.5"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  )
+}
+
 /** Affordance de ligne de menu : il y a quelque chose derrière. */
 export function ChevronIcon({ color, size = 20 }: IconProps) {
   return (

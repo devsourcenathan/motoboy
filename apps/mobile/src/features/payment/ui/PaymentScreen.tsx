@@ -15,15 +15,17 @@ import { formatMoney } from '@motoboy/shared'
 import {
   Button,
   fontSize,
+  lineHeight,
   radius,
   Screen,
+  sharedStyles,
   spacing,
   TextField,
   theme,
 } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
-import { HoldBanner, useHoldCountdown } from '../../../shared/booking'
+import { HoldBanner, Stepper, useHoldCountdown } from '../../../shared/booking'
 import { api } from '../../../shared/api/client'
 import { queryKeys } from '../../../shared/api/queryKeys'
 import { useInitiatePayment, usePaymentStatus } from '../api/usePayment'
@@ -127,14 +129,33 @@ export function PaymentScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        <Stepper current="payment" />
+
         <HoldBanner countdown={countdown} />
 
         {booking.data === undefined ? null : (
-          <View style={styles.amount}>
-            <Text style={styles.amountLabel}>{t('payment.amount')}</Text>
-            <Text style={styles.amountValue}>
-              {formatMoney(booking.data.total, locale)}
-            </Text>
+          <View style={styles.summary}>
+            <Text style={styles.summaryTitle}>{t('payment.summary')}</Text>
+
+            <SummaryRow
+              label={t('payment.agency')}
+              value={booking.data.trip.agency.name}
+            />
+            <SummaryRow
+              label={t('payment.route')}
+              value={`${booking.data.trip.origin_station.city} → ${booking.data.trip.destination_station.city}`}
+            />
+            <SummaryRow
+              label={t('payment.seats')}
+              value={String(booking.data.seats_count)}
+            />
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{t('payment.total')}</Text>
+              <Text style={styles.totalValue}>
+                {formatMoney(booking.data.total, locale)}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -176,7 +197,17 @@ export function PaymentScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {booking.data === undefined ? null : (
+          <View style={styles.footerAmount}>
+            <Text style={styles.footerLabel}>{t('payment.totalToPay')}</Text>
+            <Text style={styles.footerValue}>
+              {formatMoney(booking.data.total, locale)}
+            </Text>
+          </View>
+        )}
+
         <Button
+          style={styles.footerButton}
           label={phase === 'failed' ? t('payment.failed.retry') : t('payment.submit')}
           onPress={() => {
             // Après un échec, on repart d'une tentative neuve : réutiliser la
@@ -189,6 +220,17 @@ export function PaymentScreen() {
         />
       </View>
     </Screen>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
   )
 }
 
@@ -209,6 +251,14 @@ function OperatorChoice({
       onPress={onPress}
       style={[styles.operator, selected ? styles.operatorSelected : null]}
     >
+      {/*
+        Une pastille radio, et pas seulement un cadre coloré : le choix
+        sélectionné doit rester lisible pour qui ne distingue pas le bleu du
+        gris, et sur une dalle délavée en plein soleil.
+      */}
+      <View style={[styles.radio, selected ? styles.radioOn : null]}>
+        {selected ? <View style={styles.radioDot} /> : null}
+      </View>
       <Text style={selected ? styles.operatorLabelSelected : styles.operatorLabel}>
         {operator}
       </Text>
@@ -218,8 +268,8 @@ function OperatorChoice({
 
 const styles = StyleSheet.create({
   content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   centered: {
     flex: 1,
@@ -230,6 +280,7 @@ const styles = StyleSheet.create({
   },
   body: {
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     color: theme.text.secondary,
     textAlign: 'center',
   },
@@ -238,70 +289,141 @@ const styles = StyleSheet.create({
     color: theme.text.muted,
     textAlign: 'center',
   },
-  amount: {
-    gap: spacing.xs / 2,
+  summary: {
+    ...sharedStyles.card,
+    gap: spacing.base,
+    padding: spacing.md,
   },
-  amountLabel: {
-    fontSize: fontSize.xs,
-    color: theme.text.muted,
-    textTransform: 'uppercase',
-  },
-  amountValue: {
-    fontSize: fontSize['2xl'],
+  summaryTitle: {
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
     fontWeight: '700',
     color: theme.text.primary,
   },
-  group: {
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
+    paddingBottom: spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.surface.border,
+  },
+  summaryLabel: {
+    fontSize: fontSize.sm,
+    color: theme.text.muted,
+  },
+  summaryValue: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: theme.text.primary,
+    textAlign: 'right',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  totalLabel: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  totalValue: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '800',
+    color: theme.text.brand,
+  },
+  group: {
+    gap: spacing.base,
   },
   groupTitle: {
-    fontSize: fontSize.xs,
-    color: theme.text.muted,
-    textTransform: 'uppercase',
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '700',
+    color: theme.text.primary,
   },
   operators: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.base,
   },
   operator: {
-    flex: 1,
-    minHeight: 56,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    borderWidth: 1,
+    gap: spacing.sm,
+    minHeight: 56,
+    paddingHorizontal: spacing.md,
+    backgroundColor: theme.surface.card,
+    borderRadius: radius.lg,
+    borderWidth: 2,
     borderColor: theme.surface.border,
-    backgroundColor: theme.surface.raised,
   },
   operatorSelected: {
     borderColor: theme.surface.brand,
-    backgroundColor: theme.surface.brandSoft,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: theme.surface.border,
+  },
+  radioOn: {
+    borderColor: theme.surface.brand,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.brand,
   },
   operatorLabel: {
     fontSize: fontSize.base,
-    fontWeight: '600',
     color: theme.text.secondary,
   },
   operatorLabelSelected: {
     fontSize: fontSize.base,
     fontWeight: '700',
-    color: theme.text.brand,
+    color: theme.text.primary,
   },
   failure: {
     gap: spacing.xs,
     padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: theme.surface.raised,
+    borderRadius: radius.lg,
+    backgroundColor: theme.surface.dangerSoft,
   },
   failureTitle: {
     fontSize: fontSize.base,
     fontWeight: '700',
-    color: theme.text.danger,
+    color: theme.text.onDangerSoft,
   },
+  /** Le total reste sous les yeux au moment d'appuyer : c'est ce qu'on engage. */
   footer: {
-    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: theme.surface.card,
     borderTopWidth: 1,
     borderTopColor: theme.surface.border,
+  },
+  footerAmount: {
+    gap: 1,
+  },
+  footerLabel: {
+    ...sharedStyles.sectionLabel,
+    color: theme.text.muted,
+  },
+  footerValue: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '800',
+    color: theme.text.primary,
+  },
+  footerButton: {
+    flex: 1,
   },
   error: {
     fontSize: fontSize.base,
