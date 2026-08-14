@@ -17,15 +17,14 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | socle complet, onboarding, **recherche et résultats** |
+| `apps/mobile` | socle, onboarding, recherche, résultats, **plan de sièges** · 38 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : le plan de sièges, la réservation, le paiement, le
-billet, le compte — et tout le web.
+**Ce qui n'existe pas** : la réservation, le paiement, le billet, le compte — et
+tout le web.
 
-**Aucun test sur le mobile.** Il n'y a pas encore de harnais : `searchForm.ts`
-porte du calcul de dates — passage de mois, d'année, fuseau — exactement le
-genre de code qui casse en silence. À poser avant que la logique ne s'épaississe.
+**Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
+langue épinglés, branché dans `pnpm verify`. 38 tests.
 
 ---
 
@@ -182,11 +181,28 @@ Les erreurs se distinguent : « pas de réseau » et « le serveur a refusé »
 appellent deux réactions opposées, et le texte affiché vient du **code** de
 l'erreur, jamais de son message.
 
-### 4.4 Détail du départ et plan de sièges
+### 4.4 Détail du départ et plan de sièges — ✅ fait
 
-Le plan distingue libre, tenue et vendue. Une place tenue par un paiement en
-cours est indisponible **au même titre** qu'une place vendue ; l'échéance n'est
-pas montrée au passager, elle ne lui sert à rien.
+Le plan distingue libre, choisie, tenue et vendue. Une place **tenue** par un
+paiement en cours est indisponible **au même titre** qu'une place vendue : la
+laisser cliquable ferait échouer la réservation au dernier écran, après la
+saisie des noms. Les deux se distinguent néanmoins à l'affichage — l'une peut
+se libérer, ce qui explique au passager pourquoi le plan a changé quand il y
+revient. L'échéance, elle, ne lui est pas montrée : elle ne lui sert à rien et
+exposerait le rythme des ventes d'une agence.
+
+**L'état est dit, pas seulement coloré.** Chaque place annonce son numéro et son
+état au lecteur d'écran : une place prise et une place libre ne doivent pas se
+distinguer par la seule couleur.
+
+En mode `CAPACITY`, **aucun plan n'est affiché** — la protection repose sur un
+compteur, et inventer des sièges reviendrait à en montrer qui n'existent pas
+dans le car.
+
+Le plan vieillit vite : il se rafraîchit au tirer, et sa fraîcheur est bornée à
+trente secondes. Mais **l'écran affiche, il ne décide pas** — c'est l'index
+unique partiel qui arbitre au moment de réserver, et deux passagers peuvent
+viser le même siège à la seconde près.
 
 ### 4.5 Réservation
 

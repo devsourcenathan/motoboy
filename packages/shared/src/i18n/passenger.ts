@@ -61,6 +61,22 @@ export interface PassengerMessages {
       readonly from: string
     }
   }
+  readonly trip: {
+    readonly seatMap: string
+    readonly pickSeats: string
+    readonly seatsChosen: string
+    readonly continue: string
+    readonly legend: {
+      readonly available: string
+      readonly selected: string
+      readonly held: string
+      readonly taken: string
+    }
+    readonly heldHint: string
+    readonly capacityMode: string
+    readonly passengers: string
+    readonly seatTaken: string
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -129,6 +145,25 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         from: 'dès {{price}}',
       },
     },
+    trip: {
+      seatMap: 'Choisissez vos places',
+      pickSeats: 'Sélectionnez {{count}} place(s)',
+      seatsChosen: '{{chosen}} / {{total}} sélectionnée(s)',
+      continue: 'Continuer',
+      legend: {
+        available: 'Libre',
+        selected: 'Choisie',
+        held: 'Réservée',
+        taken: 'Vendue',
+      },
+      // Une place tenue est indisponible **au même titre** qu'une place
+      // vendue : le passager n'a pas à connaître l'échéance, elle ne lui sert
+      // à rien et exposerait le rythme des ventes d'une agence (B2).
+      heldHint: 'Une place réservée peut se libérer, mais rien ne le garantit.',
+      capacityMode: 'Places non numérotées sur ce véhicule.',
+      passengers: 'Passagers',
+      seatTaken: 'Cette place vient d’être prise',
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -187,6 +222,22 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         tripsCount: '{{count}} departure(s)',
         from: 'from {{price}}',
       },
+    },
+    trip: {
+      seatMap: 'Choose your seats',
+      pickSeats: 'Select {{count}} seat(s)',
+      seatsChosen: '{{chosen}} / {{total}} selected',
+      continue: 'Continue',
+      legend: {
+        available: 'Free',
+        selected: 'Selected',
+        held: 'Held',
+        taken: 'Sold',
+      },
+      heldHint: 'A held seat may free up, but nothing guarantees it.',
+      capacityMode: 'Unnumbered seating on this vehicle.',
+      passengers: 'Passengers',
+      seatTaken: 'That seat has just been taken',
     },
     tabs: {
       search: 'Search',
