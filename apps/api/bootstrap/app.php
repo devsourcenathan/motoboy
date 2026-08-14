@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Identity\Console\CreateAdminCommand;
 use App\Support\Http\RendersApiErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    /*
+     * Déclarées une par une : la découverte automatique ne scrute que
+     * `app/Console/Commands`, et les commandes vivent ici dans leur module.
+     */
+    ->withCommands([
+        CreateAdminCommand::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         /*
          * Derrière le proxy de l'hébergeur.
