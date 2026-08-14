@@ -1,6 +1,6 @@
 import Constants from 'expo-constants'
 import { createApiClient } from '@motoboy/api-client'
-import { session } from './session'
+import { session } from '../session/session'
 
 /**
  * Adresse de l'API.

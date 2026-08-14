@@ -2,26 +2,34 @@ import { getLocales } from 'expo-localization'
 import i18next from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import {
-  commonMessages,
   DEFAULT_LOCALE,
   resolveLocale,
   SUPPORTED_LOCALES,
   type Locale,
 } from '@motoboy/shared'
-import { screenMessages } from './screens'
+import { commonMessages } from '@motoboy/shared/i18n/common'
+import { passengerMessages } from '@motoboy/shared/i18n/passenger'
 
 /**
- * Deux espaces de noms, deux origines.
+ * Deux espaces de noms, deux catalogues.
  *
- * `common` vient de `@motoboy/shared` — ce qu'un passager et un agent lisent à
- * l'identique. `screens` est propre à cette application. Les garder séparés
- * rend visible, à la lecture d'un composant, ce qui est partagé et ce qui ne
- * l'est pas.
+ * `common` — ce qu'un passager et un agent lisent à l'identique. `screens` —
+ * le parcours passager. Les deux vivent dans `@motoboy/shared`, importés par
+ * **point d'entrée dédié** : les faire passer par l'index du package
+ * embarquerait aussi les textes du back-office, que Metro ne sait pas élaguer.
+ *
+ * Les garder séparés rend visible, à la lecture d'un composant, ce qui est
+ * partagé et ce qui ne l'est pas.
  */
+const NAMESPACES = { common: 'common', screens: 'screens' } as const
+
 const resources = Object.fromEntries(
   SUPPORTED_LOCALES.map((locale) => [
     locale,
-    { common: commonMessages[locale], screens: screenMessages[locale] },
+    {
+      [NAMESPACES.common]: commonMessages[locale],
+      [NAMESPACES.screens]: passengerMessages[locale],
+    },
   ]),
 )
 
@@ -40,8 +48,8 @@ void i18next.use(initReactI18next).init({
   resources,
   lng: deviceLocale(),
   fallbackLng: DEFAULT_LOCALE,
-  defaultNS: 'screens',
-  ns: ['screens', 'common'],
+  defaultNS: NAMESPACES.screens,
+  ns: [NAMESPACES.screens, NAMESPACES.common],
   interpolation: {
     // React échappe déjà ce qu'il rend ; le faire deux fois transforme une
     // apostrophe en `&#39;` à l'écran, et le français en est plein.
@@ -54,4 +62,4 @@ export function setLocale(locale: Locale): void {
   void i18next.changeLanguage(locale)
 }
 
-export { i18next }
+export { i18next, NAMESPACES }

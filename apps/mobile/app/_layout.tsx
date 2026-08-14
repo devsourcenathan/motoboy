@@ -4,10 +4,11 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { I18nextProvider } from 'react-i18next'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { i18next } from '../src/i18n'
-import { persister, queryClient, shouldPersist } from '../src/lib/query'
-import { onSessionExpired } from '../src/lib/session'
-import { theme } from '../src/ui/theme'
+import { i18next } from '../src/shared/i18n'
+import { persister, queryClient } from '../src/shared/api/query'
+import { isPersistedKey } from '../src/shared/api/queryKeys'
+import { onSessionExpired } from '../src/shared/session/session'
+import { theme } from '../src/shared/ui'
 
 /**
  * Coquille de l'application.
@@ -46,7 +47,7 @@ export default function RootLayout() {
           // secret y restent — billets et départs, précisément ce qu'il faut
           // pouvoir consulter sans réseau (I5).
           dehydrateOptions: {
-            shouldDehydrateQuery: (query) => shouldPersist(query.queryKey),
+            shouldDehydrateQuery: (query) => isPersistedKey(query.queryKey),
           },
         }}
       >

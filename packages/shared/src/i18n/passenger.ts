@@ -1,21 +1,24 @@
-import type { Locale } from '@motoboy/shared'
+import type { Locale } from '../locale.js'
 
 /**
- * Textes des écrans du parcours passager.
+ * Textes des écrans du **parcours passager**.
  *
- * **Propres à cette application**, par opposition au vocabulaire métier
- * (`labels.ts`) et aux chaînes communes (`messages.ts`) de `@motoboy/shared`.
- * Le back-office d'agence et le parcours passager ne partagent presque rien :
- * les fondre dans un catalogue unique produirait un dépotoir où l'on ne saurait
- * plus quelle chaîne sert encore.
+ * Un catalogue par espace produit — passager, agence, administration — et non
+ * un par application : c'est le découpage qui a un sens pour qui traduit, et il
+ * survit au jour où le parcours passager existera aussi sur le web.
  *
- * Le type croisé `Record<Locale, ScreenMessages>` fait travailler le
+ * **Point d'entrée dédié.** Ce fichier n'est pas réexporté par l'index du
+ * package : Metro ne secoue pas l'arbre, et le passer par l'index ferait
+ * embarquer au mobile les textes du back-office. On l'importe donc par
+ * `@motoboy/shared/i18n/passenger`.
+ *
+ * Le type croisé `Record<Locale, PassengerMessages>` fait travailler le
  * compilateur dans les deux dimensions : une clé ajoutée casse la compilation
  * tant qu'elle manque **dans une langue**. Le Cameroun est bilingue, et une
  * interface conçue en une seule langue se réécrit pour en accueillir une
  * seconde.
  */
-export interface ScreenMessages {
+export interface PassengerMessages {
   readonly onboarding: {
     readonly skip: string
     readonly next: string
@@ -42,7 +45,7 @@ export interface ScreenMessages {
   }
 }
 
-export const screenMessages: Record<Locale, ScreenMessages> = {
+export const passengerMessages: Record<Locale, PassengerMessages> = {
   fr: {
     onboarding: {
       skip: 'Passer',

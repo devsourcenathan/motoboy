@@ -50,9 +50,18 @@ réécrit pour en accueillir une seconde.
 
 ### 3.1 Catalogues de traduction — ✅ fait
 
-`fr` et `en`, dans `@motoboy/shared` : les chaînes sont les mêmes des deux côtés,
-et les dupliquer garantirait qu'une traduction manque quelque part. Chaque
-application les branche à son propre moteur.
+`fr` et `en`, **tous dans `@motoboy/shared`** : un traducteur ne doit pas les
+chercher à deux endroits, et le ton du produit se tient d'un seul.
+
+Un catalogue **par espace produit** — commun, passager, puis agence et
+administration — et non un par application : c'est le découpage qui a un sens
+pour qui traduit, et il survit au jour où le parcours passager existera aussi
+sur le web.
+
+Chacun s'importe par **point d'entrée dédié** — `@motoboy/shared/i18n/passenger`
+— et n'est pas réexporté par l'index du package : Metro ne secoue pas l'arbre, et
+passer par l'index ferait embarquer au mobile les textes du back-office. Chaque
+application branche ensuite son propre moteur.
 
 ### 3.2 Session et jeton — ✅ fait
 
@@ -114,6 +123,20 @@ convention que `moduleResolution: nodenext` impose pour désigner un `.ts` — e
 Metro cherchait un vrai fichier `.js`. La compilation TypeScript passait ; le
 bundle, lui, échouait. L'écran dit « de vérification de la chaîne » ne vérifiait
 donc rien. Corrigé dans `metro.config.js`, et vérifié par un export réel.
+
+### 4.1 bis Architecture — ✅ posée
+
+Découpage **par fonctionnalité**, décrit dans
+[apps/mobile/ARCHITECTURE.md](../apps/mobile/ARCHITECTURE.md). Les routes
+n'implémentent rien : un fichier de `app/` réexporte l'écran de sa
+fonctionnalité, pour qu'un changement de routeur n'oblige pas à réécrire les
+écrans — et qu'un écran se monte dans un test sans routeur du tout.
+
+Les **clés de cache** sont produites par une fabrique typée plutôt qu'écrites à
+la main dans les écrans. Une clé recopiée est une clé qu'on invalide mal : le
+singulier ici, un identifiant oublié là, et la liste des billets cesse
+silencieusement de se rafraîchir après une réservation. Le bogue n'apparaît pas
+à la compilation, il apparaît quand un passager ne voit pas son billet.
 
 ### 4.2 Recherche
 

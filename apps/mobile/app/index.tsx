@@ -1,8 +1,8 @@
 import { Redirect } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
-import { hasSeenOnboarding } from '../src/lib/onboarding'
-import { sharedStyles, theme } from '../src/ui/theme'
+import { hasSeenOnboarding } from '../src/features/onboarding'
+import { sharedStyles, theme } from '../src/shared/ui'
 
 /**
  * Aiguillage d'entrée.
