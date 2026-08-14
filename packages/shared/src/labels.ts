@@ -153,6 +153,9 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     TICKET_ALREADY_VALIDATED: 'Billet déjà validé.',
     TICKET_WRONG_TRIP: 'Ce billet concerne un autre départ.',
     TICKET_CANCELLED: 'Ce billet a été annulé.',
+    PAYOUT_NOT_APPROVABLE: "Ce reversement n'est plus en attente de validation.",
+    PAYOUT_NOT_SENDABLE: "Ce reversement doit être approuvé avant d'être envoyé.",
+    PAYOUT_ACCOUNT_UNVERIFIED: 'Coordonnées de reversement non vérifiées.',
   },
   en: {
     VALIDATION_FAILED: 'Some of the details are incorrect.',
@@ -176,6 +179,9 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     TICKET_ALREADY_VALIDATED: 'Ticket already checked in.',
     TICKET_WRONG_TRIP: 'This ticket is for a different departure.',
     TICKET_CANCELLED: 'This ticket has been cancelled.',
+    PAYOUT_NOT_APPROVABLE: 'This payout is no longer awaiting approval.',
+    PAYOUT_NOT_SENDABLE: 'This payout must be approved before it can be sent.',
+    PAYOUT_ACCOUNT_UNVERIFIED: 'Payout details have not been verified.',
   },
 }
 

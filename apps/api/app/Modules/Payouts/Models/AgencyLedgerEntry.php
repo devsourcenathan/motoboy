@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Payouts\Models;
 
 use App\Modules\Agencies\Models\Agency;
+use App\Modules\Bookings\Models\Booking;
 use App\Modules\Identity\Models\User;
+use App\Modules\Payouts\Enums\LedgerEntryType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,12 +31,13 @@ final class AgencyLedgerEntry extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'agency_id', 'type', 'amount', 'currency',
+        'agency_id', 'booking_id', 'type', 'amount', 'currency',
         'reference_type', 'reference_id', 'description', 'created_by', 'occurred_at', 'created_at',
     ];
 
     /** @var array<string, string> */
     protected $casts = [
+        'type' => LedgerEntryType::class,
         'occurred_at' => 'immutable_datetime',
         'created_at' => 'immutable_datetime',
     ];
@@ -43,6 +46,18 @@ final class AgencyLedgerEntry extends Model
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class);
+    }
+
+    /**
+     * Null pour ce qui ne concerne aucune réservation — ajustement manuel,
+     * reversement, contre-passation. C'est précisément ce qui est reversable
+     * sans attendre qu'un départ soit parti (B4).
+     *
+     * @return BelongsTo<Booking, $this>
+     */
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class);
     }
 
     /** @return BelongsTo<User, $this> */

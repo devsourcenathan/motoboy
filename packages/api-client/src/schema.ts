@@ -933,6 +933,299 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reversements, toutes agences */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["PayoutStatus"];
+                    page?: components["parameters"]["Page"];
+                    per_page?: components["parameters"]["PerPage"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Payout"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/build": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calculer les reversements dus
+         * @description **Le calcul est automatique, le déclenchement est manuel.** Cette
+         *     opération ne verse rien : elle prépare des propositions à valider.
+         *
+         *     Un job quotidien l'exécute aussi ; elle est exposée pour qu'un
+         *     administrateur puisse la relancer sans attendre le lendemain.
+         *
+         *     Aucun reversement n'est produit sous le seuil minimum de l'agence, ni
+         *     sur un solde négatif — celui-ci se reporte, la dette suit l'agence.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: int64
+                         * @description Restreint le calcul à une agence.
+                         */
+                        agency_id?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            created: components["schemas"]["Payout"][];
+                            /**
+                             * @description Agences écartées et pourquoi. Une omission silencieuse se
+                             *     lit comme « rien à verser », ce qui n'est pas la même
+                             *     chose que « sous le seuil » ou « un versement est en vol ».
+                             */
+                            skipped: {
+                                /** Format: int64 */
+                                agency_id: number;
+                                /** @enum {string} */
+                                reason: "NOTHING_ELIGIBLE" | "BELOW_MINIMUM" | "NEGATIVE_BALANCE" | "PAYOUT_IN_FLIGHT" | "NO_VERIFIED_ACCOUNT";
+                                balance?: components["schemas"]["Money"];
+                            }[];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{reference}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approuver un reversement
+         * @description Les premiers mois produiront des cas non anticipés — remboursement
+         *     arrivé en retard, réservation contestée, coordonnées erronées. **Un
+         *     décaissement Mobile Money du mauvais montant est quasi irréversible** :
+         *     la validation humaine reste le garde-fou tant que le volume ne la rend
+         *     pas impraticable.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Approuvé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payout"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                /** @description Codes possibles — `PAYOUT_NOT_APPROVABLE`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{reference}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Envoyer le décaissement
+         * @description Le débit au compte courant est écrit **à l'envoi**, pas à la
+         *     confirmation : sans cela, un second reversement construit pendant que
+         *     celui-ci est en vol paierait deux fois. Un échec le contre-passe.
+         *
+         *     Le décaissement est refusé vers un compte non vérifié — une erreur de
+         *     saisie envoie l'argent à un inconnu, sans recours.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /**
+                     * @description Rejouer la même clé renvoie le résultat initial sans créer de
+                     *     doublon. Un UUID généré par le client convient.
+                     */
+                    "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+                };
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Décaissement envoyé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payout"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                /** @description Codes possibles — `PAYOUT_NOT_SENDABLE`, `PAYOUT_ACCOUNT_UNVERIFIED`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/webhooks/payouts/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Notification de décaissement
+         * @description Endpoint distinct de celui des paiements, parce que le port l'est :
+         *     rien n'oblige le décaisseur à être l'agrégateur d'encaissement.
+         *
+         *     **C'est cette notification qui fait sortir un reversement de
+         *     `PROCESSING`.** Un reversement en vol interdisant d'en construire un
+         *     second, sans état terminal l'agence ne serait plus jamais payée.
+         *
+         *     Un échec **contre-passe** le débit écrit à l'envoi : sans cela l'agence
+         *     apparaîtrait payée alors qu'elle ne l'est pas.
+         *
+         *     Répond toujours `204`, même sur une charge illisible : les prestataires
+         *     réémettent sur erreur, et un `500` déclencherait une tempête de rejeux.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Reçu */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/webhooks/payments/{provider}": {
         parameters: {
             query?: never;
@@ -1881,6 +2174,206 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ses reversements
+         * @description Le suivi financier repose sur un **compte courant**, pas sur un calcul
+         *     par période : il absorbe les soldes négatifs, les régularisations
+         *     tardives et les corrections manuelles. Un reversement n'est qu'une
+         *     opération de solde jusqu'à une date donnée.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: components["parameters"]["Page"];
+                    per_page?: components["parameters"]["PerPage"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Payout"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/payouts/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Détail d'un reversement
+         * @description Réservations incluses, montant brut, commission, remboursements déduits,
+         *     ajustements, net versé, référence du transfert. **C'est ce document qui
+         *     évite les litiges répétés sur les montants.**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutDetail"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/payouts/{reference}/statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Relevé téléchargeable
+         * @description Le même détail, au format que l'agence ouvre réellement. Le PDF
+         *     attendra d'être demandé : un tableur se relit, se trie et se
+         *     rapproche d'une comptabilité, un PDF non.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Relevé */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/csv": string;
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compte courant
+         * @description Les écritures et leur somme. **Aucun solde n'est stocké** : il se
+         *     calcule. Un solde dénormalisé finit toujours par diverger de ses
+         *     écritures, et sur un compte qui détermine combien l'on verse à une
+         *     agence, la divergence se découvre lors d'une réclamation.
+         *
+         *     Les écritures sont **immuables** : une erreur se corrige par une
+         *     écriture inverse, jamais par une modification.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: components["parameters"]["Page"];
+                    per_page?: components["parameters"]["PerPage"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["LedgerEntry"][];
+                            balance: components["schemas"]["Money"];
+                            /**
+                             * @description Part du solde reversable aujourd'hui : une réservation
+                             *     devient éligible quand son départ est parti **et** que le
+                             *     délai configuré est écoulé.
+                             */
+                            eligible_balance?: components["schemas"]["Money"];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/trips/{reference}/cancel": {
         parameters: {
             query?: never;
@@ -2376,7 +2869,7 @@ export interface components {
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED";
         Error: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -2634,6 +3127,79 @@ export interface components {
             /** Format: date-time */
             completed_at?: string | null;
         };
+        Payout: {
+            reference: string;
+            /** Format: int64 */
+            agency_id?: number;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            status: components["schemas"]["PayoutStatus"];
+            gross: components["schemas"]["Money"];
+            commission: components["schemas"]["Money"];
+            refunds: components["schemas"]["Money"];
+            /**
+             * @description Écritures du compte courant sans réservation en face — corrections
+             *     manuelles, frais retenus. Elles n'apparaissent dans aucune ligne,
+             *     d'où leur total séparé.
+             */
+            adjustments: components["schemas"]["Money"];
+            /**
+             * @description Fait foi. C'est la somme du compte courant éligible, pas un total
+             *     recalculé depuis les lignes — celles-ci ne sont que le justificatif.
+             */
+            net: components["schemas"]["Money"];
+            /** Format: date-time */
+            approved_at?: string | null;
+            /** Format: date-time */
+            paid_at?: string | null;
+            provider_reference?: string | null;
+            failure_reason?: string | null;
+        };
+        PayoutDetail: components["schemas"]["Payout"] & {
+            account: components["schemas"]["PayoutAccount"];
+            lines: components["schemas"]["PayoutLine"][];
+        };
+        PayoutLine: {
+            booking_reference: string;
+            trip_reference?: string | null;
+            /** Format: date-time */
+            departure_at?: string | null;
+            gross: components["schemas"]["Money"];
+            commission: components["schemas"]["Money"];
+            refunds: components["schemas"]["Money"];
+            net: components["schemas"]["Money"];
+        };
+        PayoutAccount: {
+            /** @enum {string} */
+            type: "MOBILE_MONEY" | "BANK";
+            operator?: string | null;
+            account_name: string;
+            /**
+             * @description Tronqué. Le numéro complet n'a pas à circuler dans une réponse
+             *     d'API : le changer est un vecteur de fraude classique, le lire est
+             *     la première étape.
+             */
+            masked_number: string;
+            verified: boolean;
+        };
+        /** @enum {string} */
+        PayoutStatus: "DRAFT" | "PENDING_VALIDATION" | "APPROVED" | "PROCESSING" | "PAID" | "FAILED";
+        LedgerEntry: {
+            type: components["schemas"]["LedgerEntryType"];
+            /** @description Signé — positif au crédit, négatif au débit. */
+            amount: components["schemas"]["Money"];
+            description?: string | null;
+            reference_type?: string | null;
+            /**
+             * Format: date-time
+             * @description Date d'effet, distincte de la date d'écriture.
+             */
+            occurred_at: string;
+        };
+        /** @enum {string} */
+        LedgerEntryType: "BOOKING_CREDIT" | "COMMISSION_DEBIT" | "REFUND_DEBIT" | "COMMISSION_REVERSAL_CREDIT" | "AGGREGATOR_FEE_DEBIT" | "COUNTER_COMMISSION_DEBIT" | "COUNTER_COMMISSION_REVERSAL" | "ADJUSTMENT" | "PAYOUT_DEBIT" | "PAYOUT_REVERSAL_CREDIT";
         BookingCancellation: {
             booking: components["schemas"]["Booking"];
             /**

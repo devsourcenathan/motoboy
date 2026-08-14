@@ -20,8 +20,8 @@ dans `apps/api`.
 | Chantier | État | Vérification |
 |---|---|---|
 | Décisions produit | 6 points bloquants et 10 points importants tranchés | [BRIEF.md](BRIEF.md) |
-| Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 21 migrations |
-| Contrat d'API | passager, embarquement, back-office, guichet, annulation — 36 chemins, 41 opérations | couverture vérifiée par test, liste d'attente vide |
+| Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 22 migrations |
+| Contrat d'API | passager, embarquement, back-office, guichet, annulation, reversements — 45 chemins, 50 opérations | couverture vérifiée par test, liste d'attente vide |
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
@@ -34,13 +34,15 @@ dans `apps/api`.
 | **Embarquement** | liste, synchronisation par élément, secours manuel, portée par agence | idem |
 | **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | idem |
 | **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | idem |
-| **Annulation et remboursement** | partielle ou totale, départ annulé, répartition des frais, rejeu | 124 tests, 430 assertions |
+| **Annulation et remboursement** | partielle ou totale, départ annulé, répartition des frais, rejeu | idem |
+| **Reversements** | solde du compte courant, validation humaine, décaissement, réconciliation | 146 tests, 515 assertions |
 
-**Ce qui n'existe pas encore** : les reversements, les écrans de suivi de
-l'agence, la PWA, et l'administration. Le parcours passager de
-[§35](BRIEF.md) est complet côté API — jusqu'à l'annulation et au remboursement —
-une agence peut l'alimenter, et elle peut vendre au comptoir sans que la
-disponibilité affichée cesse d'être vraie.
+**Ce qui n'existe pas encore** : les écrans de suivi de l'agence, la PWA, et
+l'administration au-delà du circuit de reversement. **Le circuit financier est
+complet côté API** — le passager paie, l'agence est créditée, remboursée le cas
+échéant, et reversée. Le parcours de [§35](BRIEF.md) l'est aussi, une agence peut
+alimenter l'inventaire, et elle peut vendre au comptoir sans que la disponibilité
+affichée cesse d'être vraie.
 
 ---
 
@@ -254,14 +256,61 @@ gratuite). Elle suppose un endpoint de **modification** de départ, que le lot
 back-office n'a pas construit : il couvre la création et la génération, pas
 l'édition. À écrire en même temps que celle-ci, plutôt qu'à moitié maintenant.
 
-### 3.8 Reversements
+### 3.8 Reversements — ✅ côté API
 
-*Dépend de* : commissions, donc paiement confirmé.
+`EligibleBalance`, `BuildPayout`, `BuildDuePayouts`, `ApprovePayout`,
+`SendPayout`, `ConfirmPayout`, `ReconcilePayments`, plus les endpoints agence et
+administration.
 
-- Écritures au compte courant, sans solde stocké
-- `BuildPayout` puis `ApprovePayout` — calcul automatique, **déclenchement manuel**
-- Réconciliation quotidienne avec l'agrégateur
-- Relevé téléchargeable
+**Un reversement n'est qu'une opération de solde du compte courant jusqu'à une
+date donnée.** La somme du compte fait foi pour le net ; le brut, la commission
+et les remboursements n'en sont qu'une décomposition destinée au relevé — et si
+elle ne se recompose pas exactement, l'action refuse d'écrire plutôt que de
+proposer un montant injustifiable devant l'agence.
+
+Le débit est écrit **à l'envoi**, pas à la confirmation : sans cela, un
+reversement construit pendant que le précédent est en vol verrait un solde encore
+entier et paierait deux fois. Un échec le contre-passe. Une écriture arrivée
+tardivement — un remboursement postérieur — est reprise au reversement suivant, et
+un solde négatif se reporte : **la dette suit l'agence** au lieu de disparaître.
+C'est précisément ce pour quoi le compte courant a été préféré à un calcul par
+période.
+
+Trois choses que l'écriture a révélées :
+
+- **Les écritures ne disaient pas à quelle réservation elles se rapportaient.**
+  `reference_type`/`reference_id` désignent l'objet écrit — une commission, un
+  remboursement —, pas la réservation. Déterminer l'éligibilité en comparant ces
+  identifiants aurait fait correspondre une commission à une réservation portant
+  le même numéro. D'où `agency_ledger_entries.booking_id`, et un `null` qui
+  signifie exactement « reversable sans attendre un départ ».
+- **Un reversement restait `PROCESSING` sans fin.** Comme un reversement en vol
+  interdit d'en construire un second, l'agence n'aurait plus jamais été payée. Il
+  fallait un état terminal : d'où `ConfirmPayout` et
+  `POST /v1/webhooks/payouts/{provider}`.
+- **Trois codes d'erreur n'avaient pas de libellé** dans `@motoboy/shared`. Le
+  typage du catalogue l'a signalé au premier `pnpm verify` — c'est ce pour quoi
+  il est typé.
+
+Le port de décaissement est **distinct** de celui d'encaissement : verser à une
+agence et encaisser auprès d'un passager sont deux capacités séparées dans la
+grille de [B4](BRIEF.md), et une agence de transfert peut couvrir la seconde sans
+faire la première. Les fondre imposerait à tout adaptateur d'implémenter les deux.
+
+La **réconciliation quotidienne** confronte le relevé du prestataire aux
+paiements enregistrés, dans les deux sens : sans elle, « le passager a payé mais
+n'a pas de billet » ne se découvre que par réclamation. Elle **ne corrige rien** —
+confirmer un paiement sur la foi d'un relevé émettrait un billet sans avoir vu le
+webhook, et un relevé erroné se propagerait en billets.
+
+⚠️ **Le seuil minimum de reversement vaut `0` par défaut**, alors que
+[B4](BRIEF.md) demande « au moins 10× le coût unitaire d'un décaissement ». Il est
+infixable tant que l'agrégateur n'est pas choisi : le mécanisme est en place et
+testé, la valeur attend le prestataire.
+
+**Ouvre partiellement l'administration.** Quatre opérations sous `/v1/admin/…` —
+lister, calculer, approuver, envoyer. Sans elles le circuit financier ne se
+referme jamais. Le reste de l'espace d'administration reste à construire.
 
 ---
 

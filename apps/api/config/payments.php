@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Payments\Gateways\FakePaymentGateway;
+use App\Modules\Payouts\Gateways\FakePayoutGateway;
 
 return [
 
@@ -22,6 +23,19 @@ return [
 
     'gateways' => [
         'fake' => FakePaymentGateway::class,
+    ],
+
+    /*
+     * Décaisseur vers les agences.
+     *
+     * Port distinct : encaisser auprès d'un passager et verser à une agence sont
+     * deux capacités séparées dans la grille de B4, et une agence de transfert
+     * peut couvrir la seconde sans faire la première.
+     */
+    'payout_gateway' => env('PAYOUT_GATEWAY', 'fake'),
+
+    'payout_gateways' => [
+        'fake' => FakePayoutGateway::class,
     ],
 
     /*

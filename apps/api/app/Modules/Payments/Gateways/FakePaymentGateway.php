@@ -7,12 +7,15 @@ namespace App\Modules\Payments\Gateways;
 use App\Modules\Payments\Contracts\PaymentGateway;
 use App\Modules\Payments\Data\GatewayCharge;
 use App\Modules\Payments\Data\GatewayRefund;
+use App\Modules\Payments\Data\GatewayTransaction;
 use App\Modules\Payments\Data\PaymentIntent;
 use App\Modules\Payments\Data\RefundEvent;
 use App\Modules\Payments\Data\RefundIntent;
 use App\Modules\Payments\Data\WebhookEvent;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Enums\RefundStatus;
+use App\Modules\Payments\Models\Payment;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -34,6 +37,19 @@ final class FakePaymentGateway implements PaymentGateway
 
     private static ?GatewayRefund $nextRefund = null;
 
+    /** @var list<GatewayTransaction>|null */
+    private static ?array $transactions = null;
+
+    /**
+     * Force le relevé du prestataire, pour fabriquer un écart de réconciliation.
+     *
+     * @param  list<GatewayTransaction>  $transactions
+     */
+    public static function willReport(array $transactions): void
+    {
+        self::$transactions = $transactions;
+    }
+
     public static function willReject(string $reason = 'Solde insuffisant'): void
     {
         self::$nextCharge = GatewayCharge::rejected($reason);
@@ -52,6 +68,7 @@ final class FakePaymentGateway implements PaymentGateway
     {
         self::$nextCharge = null;
         self::$nextRefund = null;
+        self::$transactions = null;
     }
 
     public function charge(PaymentIntent $intent): GatewayCharge
@@ -151,6 +168,39 @@ final class FakePaymentGateway implements PaymentGateway
             failureReason: isset($data['reason']) ? (string) $data['reason'] : null,
             feeAmount: isset($data['fee']) ? (int) $data['fee'] : 0,
         );
+    }
+
+    /**
+     * Le pilote factice **rejoue ce que la base connaît déjà**.
+     *
+     * Un prestataire fictif ne peut pas inventer des transactions plausibles ;
+     * en revanche, renvoyer les paiements aboutis permet de vérifier que la
+     * réconciliation ne signale rien quand tout concorde — et les tests
+     * fabriquent les écarts en retirant ou en ajoutant une ligne.
+     *
+     * @return list<GatewayTransaction>
+     */
+    public function listTransactions(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        if (self::$transactions !== null) {
+            return self::$transactions;
+        }
+
+        $transactions = Payment::query()
+            ->where('status', PaymentStatus::Succeeded->value)
+            ->whereNotNull('provider_reference')
+            ->whereBetween('paid_at', [$from, $to])
+            ->get()
+            ->map(fn (Payment $payment): GatewayTransaction => new GatewayTransaction(
+                providerReference: (string) $payment->provider_reference,
+                amount: $payment->amount,
+                currency: $payment->currency,
+                status: PaymentStatus::Succeeded,
+                occurredAt: CarbonImmutable::parse((string) $payment->paid_at),
+            ))
+            ->all();
+
+        return array_values($transactions);
     }
 
     public function name(): string

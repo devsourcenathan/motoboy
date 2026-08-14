@@ -11,6 +11,9 @@ use App\Modules\Bookings\Http\Controllers\BookingController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\WebhookController;
+use App\Modules\Payouts\Http\Controllers\AdminPayoutController;
+use App\Modules\Payouts\Http\Controllers\AgencyPayoutController;
+use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Tickets\Http\Controllers\BoardingController;
 use App\Modules\Tickets\Http\Controllers\TicketController;
@@ -138,6 +141,32 @@ Route::prefix('v1')->group(function (): void {
              */
             Route::post('trips/{reference}/cancel', [CancellationController::class, 'trip']);
             Route::post('bookings/{reference}/cancel', [CancellationController::class, 'booking']);
+
+            /*
+             * Ce que l'agence voit de son argent (B4).
+             *
+             * Le compte courant est en lecture seule : les écritures sont
+             * immuables, et une correction se fait par écriture inverse depuis
+             * l'administration.
+             */
+            Route::get('payouts', [AgencyPayoutController::class, 'index']);
+            Route::get('payouts/{reference}', [AgencyPayoutController::class, 'show']);
+            Route::get('payouts/{reference}/statement', [AgencyPayoutController::class, 'statement']);
+            Route::get('ledger', [AgencyPayoutController::class, 'ledger']);
+        });
+
+        /*
+         * Administration — ouverte au strict nécessaire.
+         *
+         * Sans ces trois opérations le circuit financier ne se referme jamais :
+         * le calcul est automatique, mais rien ne le valide ni ne l'envoie. Le
+         * reste de l'espace d'administration reste à construire.
+         */
+        Route::prefix('admin')->group(function (): void {
+            Route::get('payouts', [AdminPayoutController::class, 'index']);
+            Route::post('payouts/build', [AdminPayoutController::class, 'build']);
+            Route::post('payouts/{reference}/approve', [AdminPayoutController::class, 'approve']);
+            Route::post('payouts/{reference}/send', [AdminPayoutController::class, 'send']);
         });
     });
 
@@ -149,5 +178,14 @@ Route::prefix('v1')->group(function (): void {
      * par l'adaptateur, et chaque appel est journalisé avant tout traitement.
      */
     Route::post('webhooks/payments/{provider}', WebhookController::class);
+
+    /*
+     * Décaissements — endpoint distinct parce que le port l'est : rien n'oblige
+     * le décaisseur à être l'agrégateur d'encaissement.
+     *
+     * C'est cette notification qui fait sortir un reversement de `PROCESSING` ;
+     * sans elle, un reversement en vol bloquerait à jamais les suivants.
+     */
+    Route::post('webhooks/payouts/{provider}', PayoutWebhookController::class);
 
 });

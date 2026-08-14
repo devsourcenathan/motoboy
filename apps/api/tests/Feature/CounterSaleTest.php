@@ -19,6 +19,7 @@ use App\Modules\Notifications\Models\Notification;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payments\Models\Refund;
+use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Commission;
 use App\Modules\Tickets\Models\Ticket;
@@ -131,7 +132,7 @@ final class CounterSaleTest extends TestCase
         $this->assertSame(1, AgencyLedgerEntry::query()->count());
 
         $entry = AgencyLedgerEntry::query()->firstOrFail();
-        $this->assertSame('COUNTER_COMMISSION_DEBIT', $entry->type);
+        $this->assertSame(LedgerEntryType::CounterCommissionDebit, $entry->type);
 
         // C'est l'agence qui **doit** cette commission à MOTOBOY : un débit seul,
         // déduit de son prochain reversement.

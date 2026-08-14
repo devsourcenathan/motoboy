@@ -169,6 +169,7 @@ final class RefundPayment
             // l'agence percevra, quelle que soit la période où il survient (B4).
             AgencyLedgerEntry::query()->create([
                 'agency_id' => $booking->agency_id,
+                'booking_id' => $booking->id,
                 'type' => 'REFUND_DEBIT',
                 'amount' => -$amount,
                 'currency' => $payment->currency,

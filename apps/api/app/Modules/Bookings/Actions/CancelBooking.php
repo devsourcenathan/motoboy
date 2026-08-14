@@ -191,6 +191,7 @@ final class CancelBooking
 
         AgencyLedgerEntry::query()->create([
             'agency_id' => $booking->agency_id,
+            'booking_id' => $booking->id,
             'type' => 'COUNTER_COMMISSION_REVERSAL',
             'amount' => $amount,
             'currency' => $booking->currency,

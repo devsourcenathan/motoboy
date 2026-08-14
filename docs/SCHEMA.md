@@ -683,7 +683,8 @@ Le suivi financier repose sur un **compte courant** plutôt que sur un calcul pa
 |---|---|---|
 | `id` | bigserial | PK |
 | `agency_id` | bigint | FK |
-| `type` | varchar(30) | `BOOKING_CREDIT`, `COMMISSION_DEBIT`, `REFUND_DEBIT`, `COMMISSION_REVERSAL_CREDIT`, `AGGREGATOR_FEE_DEBIT`, `COUNTER_COMMISSION_DEBIT`, `COUNTER_COMMISSION_REVERSAL`, `ADJUSTMENT`, `PAYOUT_DEBIT` |
+| `booking_id` | bigint | FK nullable — à quelle réservation l'écriture se rapporte. `reference_type`/`reference_id` désignent l'objet **écrit** (une commission, un remboursement), pas la réservation ; sans cette colonne, déterminer ce qui est reversable comparerait des identifiants entre familles. **Null** pour ce qui est reversable immédiatement : ajustement, reversement, contre-passation |
+| `type` | varchar(30) | `BOOKING_CREDIT`, `COMMISSION_DEBIT`, `REFUND_DEBIT`, `COMMISSION_REVERSAL_CREDIT`, `AGGREGATOR_FEE_DEBIT`, `COUNTER_COMMISSION_DEBIT`, `COUNTER_COMMISSION_REVERSAL`, `ADJUSTMENT`, `PAYOUT_DEBIT`, `PAYOUT_REVERSAL_CREDIT` |
 | `amount` | bigint | **signé** — positif au crédit, négatif au débit |
 | `currency` | char(3) | |
 | `reference_type` | varchar(50) | polymorphe — `booking`, `refund`, `payout`… |
@@ -694,6 +695,8 @@ Le suivi financier repose sur un **compte courant** plutôt que sur un calcul pa
 | `created_at` | timestamptz | |
 
 **Une annulation se corrige par contre-passation, jamais par réécriture.** Le `BOOKING_CREDIT` et le `COMMISSION_DEBIT` d'origine restent en place ; s'y ajoutent un `COMMISSION_REVERSAL_CREDIT` — la commission rémunère un transport qui n'a pas eu lieu — et un `AGGREGATOR_FEE_DEBIT` par lequel MOTOBOY récupère ses frais réels, plafonné aux frais d'annulation retenus. Réécrire les lignes d'origine ferait cesser un relevé déjà envoyé à l'agence de correspondre à son compte.
+
+**Un reversement est une opération de solde.** Il écrit un `PAYOUT_DEBIT` de son net **à l'envoi**, pas à la confirmation : sans cela, un reversement construit pendant que celui-ci est en vol verrait un solde encore entier et paierait deux fois. Un échec le contre-passe par `PAYOUT_REVERSAL_CREDIT`. Une écriture arrivée tardivement — un remboursement postérieur — est reprise au reversement suivant, et un solde négatif se reporte : la dette suit l'agence.
 
 **Aucun solde stocké.** Le solde se calcule par somme. Un solde dénormalisé finit toujours par diverger de ses écritures, et sur un compte qui détermine combien l'on verse à une agence, la divergence se découvre lors d'une réclamation.
 

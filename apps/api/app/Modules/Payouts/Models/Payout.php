@@ -7,6 +7,7 @@ namespace App\Modules\Payouts\Models;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Identity\Models\User;
+use App\Modules\Payouts\Enums\PayoutStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,6 +34,7 @@ final class Payout extends Model
 
     /** @var array<string, string> */
     protected $casts = [
+        'status' => PayoutStatus::class,
         'period_start' => 'immutable_date',
         'period_end' => 'immutable_date',
         'approved_at' => 'immutable_datetime',

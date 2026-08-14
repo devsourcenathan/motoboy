@@ -88,6 +88,7 @@ final class RecordCancellationSettlement
 
         AgencyLedgerEntry::query()->create([
             'agency_id' => $booking->agency_id,
+            'booking_id' => $booking->id,
             'type' => 'COMMISSION_REVERSAL_CREDIT',
             'amount' => $amount,
             'currency' => $booking->currency,
@@ -127,6 +128,7 @@ final class RecordCancellationSettlement
     {
         AgencyLedgerEntry::query()->create([
             'agency_id' => $booking->agency_id,
+            'booking_id' => $booking->id,
             'type' => 'AGGREGATOR_FEE_DEBIT',
             'amount' => -$amount,
             'currency' => $refund->currency,

@@ -47,6 +47,10 @@ enum ErrorCode: string
     case TicketWrongTrip = 'TICKET_WRONG_TRIP';
     case TicketCancelled = 'TICKET_CANCELLED';
 
+    case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
+    case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';
+    case PayoutAccountUnverified = 'PAYOUT_ACCOUNT_UNVERIFIED';
+
     /** Statut HTTP associé, pour que chaque code ait une réponse cohérente. */
     public function status(): int
     {

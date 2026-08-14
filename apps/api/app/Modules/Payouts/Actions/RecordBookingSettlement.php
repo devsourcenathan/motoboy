@@ -50,6 +50,7 @@ final class RecordBookingSettlement
 
             AgencyLedgerEntry::query()->create([
                 'agency_id' => $booking->agency_id,
+                'booking_id' => $booking->id,
                 'type' => 'BOOKING_CREDIT',
                 'amount' => $booking->total_amount,
                 'currency' => $booking->currency,
@@ -62,6 +63,7 @@ final class RecordBookingSettlement
 
             AgencyLedgerEntry::query()->create([
                 'agency_id' => $booking->agency_id,
+                'booking_id' => $booking->id,
                 'type' => 'COMMISSION_DEBIT',
                 // Signé : le compte courant se calcule par somme, sans solde
                 // stocké — un solde dénormalisé finit toujours par diverger.

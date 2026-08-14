@@ -6,10 +6,12 @@ namespace App\Modules\Payments\Contracts;
 
 use App\Modules\Payments\Data\GatewayCharge;
 use App\Modules\Payments\Data\GatewayRefund;
+use App\Modules\Payments\Data\GatewayTransaction;
 use App\Modules\Payments\Data\PaymentIntent;
 use App\Modules\Payments\Data\RefundEvent;
 use App\Modules\Payments\Data\RefundIntent;
 use App\Modules\Payments\Data\WebhookEvent;
+use Carbon\CarbonImmutable;
 
 /**
  * Port de l'agrégateur de paiement.
@@ -63,6 +65,18 @@ interface PaymentGateway
      * @param  array<string, list<string|null>>  $headers
      */
     public function parseWebhook(string $payload, array $headers): WebhookEvent|RefundEvent|null;
+
+    /**
+     * Transactions du prestataire sur une fenêtre, pour la réconciliation.
+     *
+     * **Sans cette capacité, « le passager a payé mais n'a pas de billet » ne se
+     * découvre que par réclamation** : un webhook perdu ne laisse aucune trace
+     * locale, et rien ne signale l'écart (B4, I7). C'est pourquoi elle figure
+     * parmi les critères éliminatoires de choix du prestataire.
+     *
+     * @return list<GatewayTransaction>
+     */
+    public function listTransactions(CarbonImmutable $from, CarbonImmutable $to): array;
 
     /** Identifiant du prestataire, tel que stocké dans `payments.provider`. */
     public function name(): string;

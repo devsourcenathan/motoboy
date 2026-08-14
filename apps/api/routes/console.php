@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Modules\Bookings\Actions\ReleaseExpiredHolds;
+use App\Modules\Payments\Actions\ReconcilePayments;
 use App\Modules\Payments\Actions\RetryFailedRefunds;
+use App\Modules\Payouts\Actions\BuildDuePayouts;
 use App\Modules\Trips\Actions\GenerateTrips;
 use Illuminate\Support\Facades\Schedule;
 
@@ -50,4 +52,29 @@ Schedule::call(fn (GenerateTrips $action) => $action->handle())
 Schedule::call(fn (RetryFailedRefunds $action) => $action->handle())
     ->name('payments:retry-failed-refunds')
     ->everyTenMinutes()
+    ->withoutOverlapping();
+
+/*
+ * Construction des reversements dus (B4).
+ *
+ * Quotidienne, mais chaque agence n'est retenue que le jour de sa cadence :
+ * planifier une tâche par agence multiplierait les entrées sans rien ajouter.
+ *
+ * Le calcul est automatique, le **déclenchement reste manuel** — ce job ne verse
+ * rien, il prépare des propositions à valider.
+ */
+Schedule::call(fn (BuildDuePayouts $action) => $action->handle())
+    ->name('payouts:build-due')
+    ->dailyAt('04:00')
+    ->withoutOverlapping();
+
+/*
+ * Réconciliation des paiements (B4, I7).
+ *
+ * Sans ce contrôle, « le passager a payé mais n'a pas de billet » — webhook
+ * perdu — ne se découvre jamais autrement que par une réclamation.
+ */
+Schedule::call(fn (ReconcilePayments $action) => $action->handle())
+    ->name('payments:reconcile')
+    ->dailyAt('05:00')
     ->withoutOverlapping();
