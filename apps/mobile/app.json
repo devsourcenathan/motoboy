@@ -22,7 +22,12 @@
       "favicon": "./assets/favicon.png"
     },
     "scheme": "motoboy",
-    "plugins": ["expo-router", "expo-secure-store", "expo-localization"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      "@react-native-community/datetimepicker"
+    ],
     "experiments": {
       "typedRoutes": true
     }

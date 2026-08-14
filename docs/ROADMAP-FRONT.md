@@ -17,11 +17,15 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | Expo Router, i18n, session, cache persisté, primitives, **onboarding** |
+| `apps/mobile` | socle complet, onboarding, **recherche et résultats** |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : les écrans du parcours — recherche, résultats,
-réservation, paiement, billet — et tout le web.
+**Ce qui n'existe pas** : le plan de sièges, la réservation, le paiement, le
+billet, le compte — et tout le web.
+
+**Aucun test sur le mobile.** Il n'y a pas encore de harnais : `searchForm.ts`
+porte du calcul de dates — passage de mois, d'année, fuseau — exactement le
+genre de code qui casse en silence. À poser avant que la logique ne s'épaississe.
 
 ---
 
@@ -138,16 +142,45 @@ singulier ici, un identifiant oublié là, et la liste des billets cesse
 silencieusement de se rafraîchir après une réservation. Le bogue n'apparaît pas
 à la compilation, il apparaît quand un passager ne voit pas son billet.
 
-### 4.2 Recherche
+### 4.2 Recherche — ✅ fait
 
-Deux villes et une date. L'autocomplétion tape le référentiel fermé — c'est ce
-qui fait que « Douala », « douala » et « Dla » retournent la même chose.
+Deux villes et une date, et rien d'autre. Les filtres — prix, horaire, agence —
+vivent sur les résultats : les demander avant d'avoir montré une offre ferait
+renoncer quelqu'un qui veut simplement savoir s'il y a un car ce soir.
 
-### 4.3 Résultats
+L'autocomplétion tape le référentiel fermé — c'est ce qui fait que « Douala »,
+« douala » et « Dla » retournent la même chose. Elle propose villes **et**
+gares, mais une gare **résout vers sa ville** : sans cela, deux agences
+desservant Douala depuis deux gares différentes ne seraient jamais comparées, ce
+qui est précisément l'objet du produit.
 
-Prix, horaire, places restantes, **et les conditions d'annulation** : elles
-varient d'une agence à l'autre et deviennent un critère de comparaison affiché,
-pas une ligne de conditions générales ([B5](BRIEF.md)).
+Le sélecteur de ville est en plein écran, pas en liste déroulante : le clavier
+occupe la moitié d'un téléphone, et une liste coincée dans ce qui reste
+n'afficherait que deux résultats.
+
+La date du jour est calculée dans le **fuseau d'affichage**, pas celui de
+l'appareil : construire la date depuis l'horloge du téléphone ferait chercher la
+veille pour quelqu'un qui ouvre l'application à une heure du matin.
+
+### 4.3 Résultats — ✅ fait
+
+Prix, horaire, agence, places restantes, **et les conditions d'annulation** :
+elles varient d'une agence à l'autre et deviennent un critère de comparaison
+affiché, pas une ligne de conditions générales ([B5](BRIEF.md)). Les frais nuls
+se disent « annulation gratuite » — c'est un argument commercial.
+
+Les critères passent par l'URL et non par un état partagé : un résultat doit
+être partageable et rouvrable par un lien profond, et un état en mémoire
+disparaîtrait au premier retour arrière.
+
+**Jamais de page vide.** Quand rien ne sort, l'écran affiche les dates proches
+disponibles et les axes desservis depuis la même ville — que le serveur renvoie
+déjà dans le même appel. La couverture sera faible au lancement, ce cas sera
+fréquent, et un passager déçu deux fois ne revient pas.
+
+Les erreurs se distinguent : « pas de réseau » et « le serveur a refusé »
+appellent deux réactions opposées, et le texte affiché vient du **code** de
+l'erreur, jamais de son message.
 
 ### 4.4 Détail du départ et plan de sièges
 

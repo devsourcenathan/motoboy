@@ -33,10 +33,33 @@ export interface PassengerMessages {
     readonly from: string
     readonly to: string
     readonly date: string
+    readonly today: string
+    readonly tomorrow: string
     readonly submit: string
     readonly swap: string
     readonly pickCity: string
+    readonly searchCity: string
     readonly noCity: string
+    readonly typeMore: string
+    readonly sameCity: string
+  }
+  readonly results: {
+    readonly title: string
+    readonly seatsLeft: string
+    readonly soldOut: string
+    readonly directOnly: string
+    readonly via: string
+    readonly freeCancellation: string
+    readonly cancellationFee: string
+    readonly noCancellation: string
+    readonly empty: {
+      readonly title: string
+      readonly body: string
+      readonly nearbyDates: string
+      readonly otherRoutes: string
+      readonly tripsCount: string
+      readonly from: string
+    }
   }
   readonly tabs: {
     readonly search: string
@@ -76,10 +99,35 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       from: 'Départ',
       to: 'Arrivée',
       date: 'Date',
+      today: "Aujourd'hui",
+      tomorrow: 'Demain',
       submit: 'Rechercher',
       swap: 'Inverser',
       pickCity: 'Choisir une ville',
+      searchCity: 'Ville ou gare',
       noCity: 'Aucune ville trouvée',
+      typeMore: 'Saisissez au moins deux lettres',
+      sameCity: 'Le départ et l’arrivée doivent être différents',
+    },
+    results: {
+      title: '{{from}} → {{to}}',
+      seatsLeft: '{{count}} place(s)',
+      soldOut: 'Complet',
+      directOnly: 'Direct',
+      via: 'via {{stops}}',
+      // Les conditions varient d'une agence à l'autre : c'est un critère de
+      // comparaison affiché, pas une ligne de conditions générales (B5).
+      freeCancellation: 'Annulation gratuite jusqu’à H-{{hours}}',
+      cancellationFee: 'Annulation {{fee}} jusqu’à H-{{hours}}',
+      noCancellation: 'Non annulable',
+      empty: {
+        title: 'Aucun départ ce jour-là',
+        body: 'Voici ce que nous avons trouvé de plus proche.',
+        nearbyDates: 'Autres dates',
+        otherRoutes: 'Depuis {{city}}',
+        tripsCount: '{{count}} départ(s)',
+        from: 'dès {{price}}',
+      },
     },
     tabs: {
       search: 'Rechercher',
@@ -112,10 +160,33 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       from: 'From',
       to: 'To',
       date: 'Date',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
       submit: 'Search',
       swap: 'Swap',
       pickCity: 'Pick a city',
+      searchCity: 'City or station',
       noCity: 'No city found',
+      typeMore: 'Type at least two letters',
+      sameCity: 'Origin and destination must differ',
+    },
+    results: {
+      title: '{{from}} → {{to}}',
+      seatsLeft: '{{count}} seat(s)',
+      soldOut: 'Sold out',
+      directOnly: 'Direct',
+      via: 'via {{stops}}',
+      freeCancellation: 'Free cancellation until H-{{hours}}',
+      cancellationFee: 'Cancellation {{fee}} until H-{{hours}}',
+      noCancellation: 'Non-refundable',
+      empty: {
+        title: 'No departures that day',
+        body: 'Here is the closest we found.',
+        nearbyDates: 'Other dates',
+        otherRoutes: 'From {{city}}',
+        tripsCount: '{{count}} departure(s)',
+        from: 'from {{price}}',
+      },
     },
     tabs: {
       search: 'Search',
