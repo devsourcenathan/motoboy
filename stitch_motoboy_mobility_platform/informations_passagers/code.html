@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Informations Passagers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed-dim": "#ffb4a6", "secondary-fixed-dim": "#efc11f", "on-secondary": "#ffffff", "surface-bright": "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-secondary-fixed": "#241a00", "on-primary-fixed": "#02006e", "surface-container-highest": "#e4e1ec", "on-tertiary-fixed-variant": "#852313", error: "#ba1a1a", "outline-variant": "#c7c4d6", "inverse-primary": "#bfc2ff", secondary: "#745b00", "on-background": "#1b1b22", "surface-container-lowest": "#ffffff", "on-surface-variant": "#464554", surface: "#fcf8ff", "on-primary-fixed-variant": "#2b30bb", "surface-variant": "#e4e1ec", "surface-tint": "#464dd3", "on-primary-container": "#838aff", "tertiary-container": "#610700", "on-tertiary-container": "#ee6f58", "on-secondary-container": "#705900", "tertiary-fixed": "#ffdad4", "secondary-fixed": "#ffe089", "on-primary": "#ffffff", primary: "#010067", "surface-container-low": "#f5f2fd", "inverse-on-surface": "#f3effa", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", outline: "#777585", "surface-container-high": "#eae6f2", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#574400", "inverse-surface": "#303038", "on-tertiary": "#ffffff", "surface-container": "#f0ecf7", "on-error-container": "#93000a", background: "#fcf8ff", "primary-fixed": "#e0e0ff", "secondary-container": "#fecf30", tertiary: "#3b0300", "on-error": "#ffffff", "primary-container": "#0400a4", "surface-dim": "#dcd8e3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", base: "8px", lg: "24px", "container-margin": "16px", sm: "12px", xs: "4px", xl: "32px", gutter: "12px"}, fontFamily: {"display-lg": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "headline-sm": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background h-full font-sans antialiased overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-container-margin h-16 bg-surface dark:bg-inverse-surface shadow-sm docked full-width top-0 sticky z-50">
+<button aria-label="Retour" class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container transition-colors text-primary" type="button">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary dark:text-primary-fixed uppercase tracking-tight">MOTOBOY</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</header>
+<main class="max-w-7xl mx-auto px-container-margin py-lg grid grid-cols-1 lg:grid-cols-12 gap-lg pb-48">
+<!-- Left Column: Progress & Forms -->
+<div class="lg:col-span-8 flex flex-col gap-lg">
+<!-- Progress Bar -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-surface-variant flex items-center justify-between relative">
+<!-- Line background -->
+<div class="absolute top-1/2 left-8 right-8 h-1 bg-surface-variant -translate-y-1/2 z-0"></div>
+<!-- Line active -->
+<div class="absolute top-1/2 left-8 w-1/2 h-1 bg-primary-container -translate-y-1/2 z-0"></div>
+<!-- Step 1 -->
+<div class="relative z-10 flex flex-col items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="check">check</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface">Places</span>
+</div>
+<!-- Step 2 (Active) -->
+<div class="relative z-10 flex flex-col items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md ring-4 ring-primary-container/30">
+<span class="font-label-bold text-label-bold">2</span>
+</div>
+<span class="font-label-bold text-label-bold text-primary">Infos</span>
+</div>
+<!-- Step 3 -->
+<div class="relative z-10 flex flex-col items-center gap-base">
+<div class="w-8 h-8 rounded-full bg-surface text-on-surface-variant flex items-center justify-center border border-outline-variant">
+<span class="font-label-bold text-label-bold">3</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface-variant">Paiement</span>
+</div>
+</div>
+<!-- Header & Timer -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-md">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Informations Passagers</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Veuillez renseigner les détails pour chaque voyageur.</p>
+</div>
+<div class="bg-surface-variant text-on-surface-variant px-md py-sm rounded-lg flex items-center gap-base shadow-sm self-start sm:self-auto border border-error/20">
+<span class="material-symbols-outlined animate-pulse" data-icon="timer">timer</span>
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold uppercase opacity-80">Temps restant</span>
+<span class="font-headline-sm text-headline-sm tabular-nums font-bold" id="countdown-timer">00:00</span>
+</div>
+</div>
+</div>
+<!-- Forms Container -->
+<div class="flex flex-col gap-lg">
+<!-- Passenger 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-md sm:p-lg shadow-sm border border-surface-variant hover:shadow-md transition-shadow duration-300">
+<div class="flex items-center gap-sm mb-lg pb-sm border-b border-surface-variant">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-display-md text-display-md">
+                            1
+                        </div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Passager Principal</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-bold text-label-bold text-on-surface-variant" for="p1-name">Nom complet</label>
+<input class="w-full bg-surface border-outline-variant rounded-lg px-md py-sm font-body-lg text-body-lg text-on-surface focus:border-secondary focus:ring-secondary placeholder:text-on-surface-variant/50 transition-colors" id="p1-name" placeholder="Ex: Jean Dupont" type="text" value="Jean Dupont"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-bold text-label-bold text-on-surface-variant" for="p1-phone">Numéro de téléphone <span class="text-xs font-normal opacity-80">(Pour le billet)</span></label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-body-lg text-body-lg">+237</span>
+<input class="w-full bg-surface border-outline-variant rounded-lg pl-16 pr-md py-sm font-body-lg text-body-lg text-on-surface focus:border-secondary focus:ring-secondary placeholder:text-on-surface-variant/50 transition-colors" id="p1-phone" placeholder="6 XX XX XX XX" type="tel" value="6 90 12 34 56"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Passenger 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-md sm:p-lg shadow-sm border border-surface-variant hover:shadow-md transition-shadow duration-300">
+<div class="flex items-center gap-sm mb-lg pb-sm border-b border-surface-variant">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-display-md text-display-md">
+                            2
+                        </div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Passager 2</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-bold text-label-bold text-on-surface-variant" for="p2-name">Nom complet</label>
+<input class="w-full bg-surface border-outline-variant rounded-lg px-md py-sm font-body-lg text-body-lg text-on-surface focus:border-secondary focus:ring-secondary placeholder:text-on-surface-variant/50 transition-colors" id="p2-name" placeholder="Ex: Marie Dupont" type="text"/>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-bold text-label-bold text-on-surface-variant" for="p2-phone">Numéro de téléphone <span class="text-xs font-normal opacity-80">(Optionnel)</span></label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant font-body-lg text-body-lg">+237</span>
+<input class="w-full bg-surface border-outline-variant rounded-lg pl-16 pr-md py-sm font-body-lg text-body-lg text-on-surface focus:border-secondary focus:ring-secondary placeholder:text-on-surface-variant/50 transition-colors" id="p2-phone" placeholder="6 XX XX XX XX" type="tel"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Summary Card -->
+<div class="lg:col-span-4">
+<div class="bg-secondary text-on-secondary rounded-2xl shadow-lg overflow-hidden sticky top-24">
+<!-- Visual Map Area -->
+<div class="h-32 bg-secondary-fixed relative overflow-hidden flex items-center justify-center">
+<div class="absolute inset-0 opacity-20" data-alt="A stylized, minimalist vector map of an urban area in Cameroon, showing winding roads and topographical lines in monochromatic dark blue tones. The aesthetic is clean, modern, and corporate." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBUuv4Ttv3QbrAKoFjpIpqQulPu04T2Ic09nPCiZ-CP8fBHCzw2zk8QVPE_jimGNMAHvAtlAUcx1Pg_slJiB1pzcXAjA3Q40nXGYvM2t7_vW1OfjOlxZIDdij9fveiJfNCVgSS69DKOeSrpqKI9Zc_ktrhvaIS93m9lYQgKwvxmL3tnJ_cxZtSmBk4usLkaCK4nU0D5Nw_VoAIjonAjrXFsVFDqKpGG1eOD65-NsQO_G6bVCRSFxVMB')"></div>
+<!-- Route visualization -->
+<div class="relative z-10 w-full px-lg flex items-center justify-between">
+<div class="flex flex-col items-center gap-xs">
+<div class="w-4 h-4 rounded-full bg-secondary border-2 border-on-secondary"></div>
+<span class="font-label-bold text-label-bold text-on-secondary-fixed bg-secondary-fixed/80 px-2 py-1 rounded backdrop-blur-sm">DLA</span>
+</div>
+<div class="flex-1 border-t-2 border-dashed border-on-secondary/50 mx-sm relative">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-secondary-fixed rounded-full p-1 shadow-sm">
+<span class="material-symbols-outlined text-on-secondary-fixed text-sm" data-icon="two_wheeler">two_wheeler</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<div class="w-4 h-4 rounded-full bg-primary-container border-2 border-on-secondary shadow-[0_0_10px_rgba(255,210,0,0.8)]"></div>
+<span class="font-label-bold text-label-bold text-on-secondary-fixed bg-secondary-fixed/80 px-2 py-1 rounded backdrop-blur-sm">YDE</span>
+</div>
+</div>
+</div>
+<div class="p-lg flex flex-col gap-lg">
+<div class="flex flex-col gap-base">
+<h3 class="font-headline-sm text-headline-sm opacity-90 border-b border-on-secondary/20 pb-sm">Récapitulatif</h3>
+<div class="flex justify-between items-start pt-sm">
+<div class="flex flex-col">
+<span class="font-label-bold text-label-bold opacity-70">Départ</span>
+<span class="font-body-lg text-body-lg font-semibold">Douala (Deido)</span>
+<span class="font-body-md text-body-md opacity-80">Jeu. 24 Oct, 08:30</span>
+</div>
+<div class="text-right flex flex-col">
+<span class="font-label-bold text-label-bold opacity-70">Arrivée</span>
+<span class="font-body-lg text-body-lg font-semibold">Yaoundé (Mvan)</span>
+<span class="font-body-md text-body-md opacity-80">~ 12:45</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-sm bg-on-secondary/10 p-md rounded-xl backdrop-blur-sm border border-on-secondary/10">
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md opacity-90">Billet Standard x2</span>
+<span class="font-body-md text-body-md font-semibold">6 000 FCFA</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-md text-body-md opacity-90">Frais de service</span>
+<span class="font-body-md text-body-md font-semibold">500 FCFA</span>
+</div>
+<div class="w-full h-px bg-on-secondary/20 my-xs"></div>
+<div class="flex justify-between items-center">
+<span class="font-headline-sm text-headline-sm">Total</span>
+<span class="font-display-md text-display-md text-primary-fixed">12 500 <span class="text-lg font-normal">FCFA</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Bar for Mobile / Fixed Button for Desktop -->
+<div class="fixed bottom-0 left-0 w-full p-md bg-surface border-t border-surface-variant shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:static lg:bg-transparent lg:border-none lg:shadow-none lg:p-0 lg:mt-lg z-40">
+<button class="w-full bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary transition-all duration-300 font-headline-sm text-headline-sm py-lg rounded-xl shadow-md hover:shadow-lg flex items-center justify-center gap-sm active:scale-[0.98] active:shadow-sm" type="button">
+                    Procéder au paiement
+                    <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<script>
+        // Simple countdown timer logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const timerDisplay = document.getElementById('countdown-timer');
+            let totalSeconds = 9 * 60 + 59; // 9:59 starting point based on HTML
+
+            const interval = setInterval(() => {
+                if (totalSeconds <= 0) {
+                    clearInterval(interval);
+                    timerDisplay.textContent = "00:00";
+                    timerDisplay.parentElement.parentElement.classList.replace('bg-error-container', 'bg-surface-variant');
+                    timerDisplay.parentElement.parentElement.classList.replace('text-on-error-container', 'text-on-surface-variant');
+                    return;
+                }
+
+                totalSeconds--;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        });
+    </script>
+<nav class="fixed bottom-0 left-0 w-full bg-surface border-t border-surface-variant px-lg py-sm flex justify-between items-center z-50 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center gap-xs text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-bold font-label-bold">Accueil</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-primary" href="#">
+<div class="relative">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<div class="absolute -top-1 -right-1 w-2 h-2 bg-primary-container rounded-full border border-surface"></div>
+</div>
+<span class="text-label-bold font-label-bold">Billets</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-label-bold font-label-bold">Profil</span>
+</a>
+</nav></body></html>

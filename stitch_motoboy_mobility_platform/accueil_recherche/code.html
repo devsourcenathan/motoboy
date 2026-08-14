@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Accueil</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed-dim": "#ffb4a6", "secondary-fixed-dim": "#efc11f", "on-secondary": "#ffffff", "surface-bright": "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-secondary-fixed": "#241a00", "on-primary-fixed": "#02006e", "surface-container-highest": "#e4e1ec", "on-tertiary-fixed-variant": "#852313", error: "#ba1a1a", "outline-variant": "#c7c4d6", "inverse-primary": "#bfc2ff", secondary: "#745b00", "on-background": "#1b1b22", "surface-container-lowest": "#ffffff", "on-surface-variant": "#464554", surface: "#fcf8ff", "on-primary-fixed-variant": "#2b30bb", "surface-variant": "#e4e1ec", "surface-tint": "#464dd3", "on-primary-container": "#838aff", "tertiary-container": "#610700", "on-tertiary-container": "#ee6f58", "on-secondary-container": "#705900", "tertiary-fixed": "#ffdad4", "secondary-fixed": "#ffe089", "on-primary": "#ffffff", primary: "#010067", "surface-container-low": "#f5f2fd", "inverse-on-surface": "#f3effa", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", outline: "#777585", "surface-container-high": "#eae6f2", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#574400", "inverse-surface": "#303038", "on-tertiary": "#ffffff", "surface-container": "#f0ecf7", "on-error-container": "#93000a", background: "#fcf8ff", "primary-fixed": "#e0e0ff", "secondary-container": "#fecf30", tertiary: "#3b0300", "on-error": "#ffffff", "primary-container": "#0400a4", "surface-dim": "#dcd8e3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", base: "8px", lg: "24px", "container-margin": "16px", sm: "12px", xs: "4px", xl: "32px", gutter: "12px"}, fontFamily: {"display-lg": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "headline-sm": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface pb-24">
+<!-- TopAppBar -->
+<header class="fixed w-full top-0 z-50 bg-surface dark:bg-inverse-surface shadow-sm">
+<div class="flex justify-between items-center w-full px-container-margin h-16">
+<button class="text-on-surface-variant hover:bg-surface-container transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary dark:text-primary-fixed">MOTOBOY</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 px-container-margin flex flex-col gap-lg max-w-md mx-auto md:max-w-4xl">
+<!-- Hero Section -->
+<section class="flex flex-col gap-sm">
+<h2 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface">Où allez-vous aujourd'hui ?</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Réservez votre trajet en toute sécurité.</p>
+</section>
+<!-- Search Form (Card) -->
+<section class="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0_2px_4px_rgba(0,0,0,0.05)] p-md flex flex-col gap-md relative">
+<div class="relative flex flex-col gap-base">
+<!-- Departure -->
+<div class="flex items-center gap-sm bg-surface-container-lowest border border-surface-variant rounded-lg p-sm focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary transition-all">
+<span class="material-symbols-outlined text-secondary" data-icon="my_location">my_location</span>
+<div class="flex flex-col w-full">
+<label class="font-label-bold text-label-bold text-on-surface-variant">Départ</label>
+<input class="bg-transparent border-none p-0 focus:ring-0 font-body-lg text-body-lg text-on-surface w-full" placeholder="Ex: Douala" type="text"/>
+</div>
+</div>
+<!-- Swap Button -->
+<button class="absolute top-1/2 right-4 -translate-y-1/2 bg-surface border border-surface-variant rounded-full p-2 z-10 hover:bg-surface-container shadow-sm active:shadow-none transition-all">
+<span class="material-symbols-outlined text-on-surface" data-icon="swap_vert">swap_vert</span>
+</button>
+<!-- Arrival -->
+<div class="flex items-center gap-sm bg-surface-container-lowest border border-surface-variant rounded-lg p-sm focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary transition-all">
+<span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+<div class="flex flex-col w-full">
+<label class="font-label-bold text-label-bold text-on-surface-variant">Arrivée</label>
+<input class="bg-transparent border-none p-0 focus:ring-0 font-body-lg text-body-lg text-on-surface w-full" placeholder="Ex: Yaoundé" type="text"/>
+</div>
+</div>
+</div>
+<!-- Date and Passengers -->
+<div class="flex gap-sm">
+<!-- Date -->
+<div class="flex-1 flex items-center gap-sm bg-surface-container-lowest border border-surface-variant rounded-lg p-sm focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="calendar_today">calendar_today</span>
+<div class="flex flex-col w-full">
+<label class="font-label-bold text-label-bold text-on-surface-variant">Date</label>
+<input class="bg-transparent border-none p-0 focus:ring-0 font-body-md text-body-md text-on-surface w-full" type="date"/>
+</div>
+</div>
+<!-- Passengers -->
+<div class="flex-1 flex items-center justify-between bg-surface-container-lowest border border-surface-variant rounded-lg p-sm focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary transition-all">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="person">person</span>
+<div class="flex flex-col">
+<label class="font-label-bold text-label-bold text-on-surface-variant">Passagers</label>
+<span class="font-body-md text-body-md text-on-surface">1</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Search Action -->
+<button class="w-full bg-primary-container text-on-primary-container font-headline-sm text-headline-sm py-sm px-md flex justify-center items-center gap-2 hover:bg-[#ffe07c] active:shadow-none shadow-[0_4px_12px_rgba(204,171,0,0.3)] transition-all rounded-full">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+                Rechercher des trajets
+            </button>
+</section>
+<!-- Popular Destinations Bento Grid -->
+<section class="flex flex-col gap-md">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Destinations populaires</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+<!-- Destination Card 1 -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant group cursor-pointer aspect-square">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="A vibrant, sunlit street scene in Douala, Cameroon. The image features modern architectural elements mixed with bustling urban energy, captured in a bright, light-mode aesthetic with crisp details. The color palette emphasizes warm sunlight, clear blue skies, and dynamic shadows, reflecting a professional yet lively atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBVEsJ78WSb5lW6UlC5xvqFEfnD1T3JYz8iVSda4jQYMN3CEZYkbq9LII9YqVMYTo6oL4tC-ksidgXhbGOTO3FATwai6qGHljOP4OLR95vgOPaOizlhbX2w9z0koKqRR_zmnGTpqYycm0bYEsVxdZDEtWpozhX4CUDkQG-d2Bp8NKg4XbE8-FTndpM9y2GvcJr2tdSy9PD37wvliNHjIY-7hRjAGVPlkYJx3pZYpl2664M4Tpg7Jxeg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-sm text-white">
+<span class="font-label-bold text-label-bold uppercase tracking-wider opacity-90">Depuis Douala</span>
+<h4 class="font-headline-sm text-headline-sm leading-tight">Yaoundé</h4>
+</div>
+</div>
+<!-- Destination Card 2 -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant group cursor-pointer aspect-square">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="A scenic, elevated view of Bamenda, Cameroon, highlighting lush green hills meeting urban infrastructure. The scene is illuminated by bright daylight, conveying a modern, clean travel aesthetic. The composition uses a light-mode color scheme with strong contrasts between the natural greenery and the crisp architectural lines, evoking a sense of calm and reliability." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBzG6qPnfM61qle4ZmbNx3B4YFRd6RN8rh7ZRBeaWX5xpj2kRoUqCOjCmm6as2s048EZD5f3aY0p2NR4V9kUJSb5759RmANrT-ydfCaxEzJWpg2bA-mkQ0R4y7E4kzh39l-GMQ6SioEfkDl9LUOtiAgt6caghy5ec5Rgj4iGMzMvum0MiqNTzjIDmVqKCxeADaUROfo35myupGZdvNTP7iHtLygdYe6tCo-DD2GXW5-ox7seAtr2H2C')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-sm text-white">
+<span class="font-label-bold text-label-bold uppercase tracking-wider opacity-90">Depuis Douala</span>
+<h4 class="font-headline-sm text-headline-sm leading-tight">Bamenda</h4>
+</div>
+</div>
+<!-- Destination Card 3 -->
+<div class="relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant group cursor-pointer aspect-square">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105" data-alt="A clean, coastal view of Kribi, Cameroon, featuring bright sandy beaches alongside a modern road network. The lighting is sunny and high-key, perfectly aligning with a light-mode UI design. The visual style is crisp and professional, emphasizing the clear blue ocean, white sands, and a sense of safe, institutional mobility." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD589sPuYX5ZAdhzd__VWoBjCch_6vAAuuzcZNsomQSJTrZV_axs8iy6EaaTJ3WIF8IVhX4CdOMsPVaNk5rMkPrShi2eFsP_WD2J6-KA70ovGtP1vyiGVPp6k9SFJao6apgVJrSHooxElBLSNkmI5yUheIWid4bs8SwroRiZL83oEZDKlsurSPqX_AVyWc1X_ds3tTv9pW3lG9k8ae2HojxYnxmzXk1fkg8ZT7bSHwq3WtcUdnyBuP_')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-sm text-white">
+<span class="font-label-bold text-label-bold uppercase tracking-wider opacity-90">Depuis Yaoundé</span>
+<h4 class="font-headline-sm text-headline-sm leading-tight">Kribi</h4>
+</div>
+</div>
+<!-- Promo Card -->
+<div class="bg-tertiary-container text-on-tertiary-container rounded-xl p-sm flex flex-col justify-center items-center text-center aspect-square shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+<span class="material-symbols-outlined text-[32px] mb-xs" data-icon="local_offer">local_offer</span>
+<h4 class="font-headline-sm text-headline-sm">-10%</h4>
+<p class="font-label-bold text-label-bold mt-xs">Sur votre 1er trajet</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full flex justify-around items-center px-4 py-2 border-t border-outline-variant bg-surface-container-lowest dark:bg-inverse-surface shadow-lg z-50">
+<!-- Active Tab: Accueil -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined fill" data-icon="home" data-weight="fill">home</span>
+<span class="font-label-bold text-label-bold">Accueil</span>
+</a>
+<!-- Inactive Tab: Mes Billets -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-label-bold text-label-bold">Mes Billets</span>
+</a>
+<!-- Inactive Tab: Profil -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</nav>
+</body></html>

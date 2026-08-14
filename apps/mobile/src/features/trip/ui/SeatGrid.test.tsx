@@ -54,8 +54,11 @@ describe('SeatGrid', () => {
       />,
     )
 
-    fireEvent.press(screen.getByText('1A'))
-    fireEvent.press(screen.getByText('1B'))
+    // Visées par leur libellé d'accessibilité et non par leur texte : une place
+    // indisponible porte une croix à la place de son numéro, et c'est ce
+    // libellé — « 1B, prise » — qui reste la façon dont elle s'identifie.
+    fireEvent.press(screen.getByLabelText(/^1A,/))
+    fireEvent.press(screen.getByLabelText(/^1B,/))
 
     expect(onToggle).not.toHaveBeenCalled()
   })

@@ -7,6 +7,8 @@
  */
 export * from './Button'
 export * from './Field'
+export * from './Icons'
 export * from './Screen'
+export * from './TabIcon'
 export * from './TextField'
 export * from './theme'

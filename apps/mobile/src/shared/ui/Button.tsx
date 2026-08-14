@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react'
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
+  View,
   type ViewStyle,
 } from 'react-native'
 import { fontSize, radius, spacing, theme, TOUCH_TARGET } from './theme'
@@ -22,15 +24,34 @@ export interface ButtonProps {
    */
   busy?: boolean
   disabled?: boolean
+  /** Glyphe placé avant le libellé — loupe, QR, partage. */
+  icon?: ReactNode
   style?: ViewStyle
 }
 
+/**
+ * Bouton d'action.
+ *
+ * **Capsule et non rectangle** : le système réserve le rayon 24 aux actions,
+ * pour qu'elles ne se confondent pas avec les cartes d'information qui portent
+ * un rayon de 16.
+ *
+ * Le primaire est **bleu plein**, pas or. Le document du système annonce
+ * l'inverse, mais chaque maquette montre un CTA bleu et l'or en contour sur les
+ * actions secondaires — « Télécharger PDF » contre « Partager ». L'écran fait
+ * foi.
+ *
+ * L'état inactif porte un **aplat gris**, pas une simple opacité : à 50 %
+ * d'opacité sur fond lavande, un bouton bleu reste bleu et se lit encore comme
+ * disponible.
+ */
 export function Button({
   label,
   onPress,
   variant = 'primary',
   busy = false,
   disabled = false,
+  icon,
   style,
 }: ButtonProps) {
   const inactive = disabled || busy
@@ -44,27 +65,34 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         styles[variant],
+        // À l'appui, l'élément perd son ombre : une pression physique vers la
+        // surface plutôt qu'un changement de couleur.
         pressed && !inactive ? styles.pressed : null,
         inactive ? styles.inactive : null,
         style,
       ]}
     >
       {busy ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? theme.text.inverse : theme.text.brand}
-        />
+        <ActivityIndicator color={inactive ? theme.text.muted : labelColor(variant)} />
       ) : (
-        <Text
-          style={[
-            styles.label,
-            variant === 'primary' ? styles.labelOnBrand : styles.labelOnPage,
-          ]}
-        >
-          {label}
-        </Text>
+        <View style={styles.content}>
+          {icon}
+          <Text
+            style={[styles.label, { color: inactive ? theme.text.muted : labelColor(variant) }]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+        </View>
       )}
     </Pressable>
   )
+}
+
+function labelColor(variant: Variant): string {
+  if (variant === 'primary') return theme.text.inverse
+
+  return variant === 'secondary' ? theme.text.accent : theme.text.brand
 }
 
 const styles = StyleSheet.create({
@@ -75,31 +103,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.base,
   },
   primary: {
     backgroundColor: theme.surface.brand,
   },
+  /** Contour or — l'action présente mais non prioritaire. */
   secondary: {
-    backgroundColor: theme.surface.brandSoft,
+    backgroundColor: 'transparent',
+    borderColor: theme.surface.accent,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.9,
   },
   inactive: {
-    opacity: 0.5,
+    backgroundColor: theme.surface.inert,
+    borderColor: 'transparent',
   },
   label: {
     fontSize: fontSize.base,
-    fontWeight: '600',
-  },
-  labelOnBrand: {
-    color: theme.text.inverse,
-  },
-  labelOnPage: {
-    color: theme.text.brand,
+    fontWeight: '700',
   },
 })

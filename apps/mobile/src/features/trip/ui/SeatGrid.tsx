@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Seat } from '@motoboy/api-client/types'
-import { fontSize, radius, spacing, theme } from '../../../shared/ui'
+import { CrossIcon, fontSize, radius, spacing, theme } from '../../../shared/ui'
 import { byRow, isSelectable } from '../model/seatSelection'
 
 export interface SeatGridProps {
@@ -37,9 +37,18 @@ export function SeatGrid({ seats, selected, onToggle }: SeatGridProps) {
                 onPress={() => onToggle(seat)}
                 style={[styles.seat, seatStyle(seat, chosen)]}
               >
-                <Text style={[styles.label, chosen ? styles.labelChosen : null]}>
-                  {seat.label}
-                </Text>
+                {/*
+                  Une place prise porte une croix, pas son numéro : le numéro
+                  n'aide qu'à choisir, et celle-là ne se choisit plus. Le
+                  lecteur d'écran, lui, continue d'annoncer « B3, prise ».
+                */}
+                {free || chosen ? (
+                  <Text style={[styles.label, chosen ? styles.labelChosen : null]}>
+                    {seat.label}
+                  </Text>
+                ) : (
+                  <CrossIcon color={theme.text.muted} />
+                )}
               </Pressable>
             )
           })}
@@ -90,38 +99,41 @@ const styles = StyleSheet.create({
     height: SEAT_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
   },
   label: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
-    color: theme.text.secondary,
+    fontWeight: '700',
+    color: theme.text.primary,
   },
   labelChosen: {
     color: theme.text.inverse,
   },
   available: {
-    backgroundColor: theme.surface.page,
+    backgroundColor: theme.surface.card,
     borderColor: theme.seat.available,
   },
   chosen: {
-    backgroundColor: theme.surface.brand,
-    borderColor: theme.surface.brand,
+    backgroundColor: theme.seat.chosen,
+    borderColor: theme.seat.chosen,
   },
+  /**
+   * Tenue par quelqu'un d'autre : contour or **tireté**, et non un aplat.
+   * Elle peut se libérer, ce qui explique au passager pourquoi le plan a changé
+   * quand il y revient (B2) — un aplat identique à « prise » ne le dirait pas.
+   */
   held: {
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.surface.card,
     borderColor: theme.seat.held,
     borderStyle: 'dashed',
   },
   taken: {
-    backgroundColor: theme.surface.border,
-    borderColor: theme.surface.border,
+    backgroundColor: theme.seat.taken,
+    borderColor: 'transparent',
   },
   unavailable: {
-    backgroundColor: 'transparent',
-    borderColor: theme.surface.border,
-    borderStyle: 'dotted',
-    opacity: 0.5,
+    backgroundColor: theme.seat.taken,
+    borderColor: 'transparent',
   },
 })

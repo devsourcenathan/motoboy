@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Connexion / Inscription - MOTOBOY</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-tertiary": "#ffffff", secondary: "#745b00", "on-secondary": "#ffffff", "on-secondary-fixed": "#241a00", error: "#ba1a1a", outline: "#777585", "on-surface-variant": "#464554", "surface-container-high": "#eae6f2", background: "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-background": "#1b1b22", "secondary-fixed": "#ffe089", "on-secondary-fixed-variant": "#574400", "inverse-primary": "#bfc2ff", "secondary-fixed-dim": "#efc11f", "on-tertiary-fixed-variant": "#852313", "on-tertiary-fixed": "#3f0300", "tertiary-container": "#610700", "on-surface": "#1b1b22", "surface-container-highest": "#e4e1ec", "on-error-container": "#93000a", "on-secondary-container": "#705900", "on-primary-container": "#838aff", "surface-tint": "#464dd3", "tertiary-fixed-dim": "#ffb4a6", "secondary-container": "#fecf30", tertiary: "#3b0300", "error-container": "#ffdad6", "surface-variant": "#e4e1ec", "primary-container": "#0400a4", "on-tertiary-container": "#ee6f58", "inverse-surface": "#303038", "surface-container-low": "#f5f2fd", "surface-container": "#f0ecf7", "primary-fixed": "#e0e0ff", "surface-dim": "#dcd8e3", surface: "#fcf8ff", "surface-container-lowest": "#ffffff", primary: "#010067", "tertiary-fixed": "#ffdad4", "surface-bright": "#fcf8ff", "inverse-on-surface": "#f3effa", "on-primary-fixed-variant": "#2b30bb", "on-primary-fixed": "#02006e", "outline-variant": "#c7c4d6", "on-primary": "#ffffff", "on-error": "#ffffff"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", "container-margin": "16px", base: "8px", sm: "12px", gutter: "12px", lg: "24px", xs: "4px", xl: "32px"}, fontFamily: {"body-md": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "display-lg": ["Inter"], "headline-sm": ["Inter"], "display-lg-mobile": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom floating label styles */
+        .floating-input:focus-within label,
+        .floating-input input:not(:placeholder-shown) + label {
+            transform: translateY(-50%) scale(0.85);
+            top: 0;
+            background-color: theme('colors.surface-container-lowest');
+            padding: 0 4px;
+            color: theme('colors.secondary-fixed-variant');
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col items-center justify-center p-4">
+<!-- Main Container -->
+<main class="w-full max-w-md mx-auto flex flex-col">
+<!-- Header / Logo Area -->
+<header class="w-full flex flex-col items-center justify-center mb-xl">
+<!-- Simulated Logo Graphic -->
+<div class="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-md shadow-sm">
+<span class="material-symbols-outlined fill-icon text-display-lg text-on-primary-container" style="font-size: 40px;">two_wheeler</span>
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary tracking-tight">MOTOBOY</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs text-center">Déplacez-vous en toute confiance.</p>
+</header>
+<!-- Authentication Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-outline-variant p-lg w-full">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Connexion / Inscription</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">Saisissez vos coordonnées pour continuer. Un code de vérification vous sera envoyé.</p>
+<form action="#" class="flex flex-col gap-lg" method="POST">
+<!-- Phone Number Input Group -->
+<div class="relative floating-input">
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest overflow-hidden focus-within:border-secondary focus-within:border-2 focus-within:-m-[1px] transition-all">
+<!-- Country Code Select -->
+<div class="flex items-center pl-sm pr-xs py-sm bg-surface-container-low border-r border-outline-variant text-on-surface-variant cursor-pointer">
+<span class="font-body-md text-body-md font-semibold">+237</span>
+<span class="material-symbols-outlined text-[16px] ml-xs">arrow_drop_down</span>
+</div>
+<!-- Phone Input -->
+<input class="peer w-full bg-transparent border-none focus:ring-0 px-sm py-sm font-body-lg text-body-lg text-on-surface" id="phone" name="phone" placeholder=" " required="" type="tel"/>
+<label class="absolute left-[88px] top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant transition-all duration-200 pointer-events-none" for="phone">
+                            Numéro de téléphone
+                        </label>
+</div>
+</div>
+<!-- Email Input Group -->
+<div class="relative floating-input">
+<div class="flex items-center border border-outline-variant rounded-lg bg-surface-container-lowest focus-within:border-secondary focus-within:border-2 focus-within:-m-[1px] transition-all">
+<span class="material-symbols-outlined text-on-surface-variant pl-sm pr-xs py-sm">mail</span>
+<input class="peer w-full bg-transparent border-none focus:ring-0 px-sm py-sm font-body-lg text-body-lg text-on-surface" id="email" name="email" placeholder=" " required="" type="email"/>
+<label class="absolute left-10 top-1/2 -translate-y-1/2 font-body-md text-body-md text-on-surface-variant transition-all duration-200 pointer-events-none" for="email">
+                            Adresse e-mail
+                        </label>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary-container text-on-primary-container font-label-bold text-label-bold py-[14px] rounded-full mt-sm hover:bg-surface-tint hover:text-on-primary transition-colors flex items-center justify-center gap-xs active:shadow-none active:scale-[0.98]" type="submit">
+<span class="">Recevoir le code</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</form>
+<!-- Legal / Terms -->
+<p class="font-body-md text-body-md text-on-surface-variant text-center mt-lg text-[12px] leading-tight">
+                En continuant, vous acceptez nos <a class="text-secondary font-semibold underline decoration-secondary/30 underline-offset-2" href="#">Conditions d'utilisation</a> et notre <a class="text-secondary font-semibold underline decoration-secondary/30 underline-offset-2" href="#">Politique de confidentialité</a>.
+            </p>
+</div>
+</main>
+<script>
+        // Simple micro-interaction for button press effect
+        const btn = document.querySelector('button[type="submit"]');
+        if(btn) {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.98)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body></html>

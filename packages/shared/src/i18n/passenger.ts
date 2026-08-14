@@ -192,7 +192,7 @@ export interface PassengerMessages {
     }
   }
   readonly tabs: {
-    readonly search: string
+    readonly home: string
     readonly tickets: string
     readonly account: string
   }
@@ -413,9 +413,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     tabs: {
-      search: 'Rechercher',
+      home: 'Accueil',
       tickets: 'Mes billets',
-      account: 'Compte',
+      account: 'Profil',
     },
   },
   en: {
@@ -603,9 +603,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     tabs: {
-      search: 'Search',
+      home: 'Home',
       tickets: 'My tickets',
-      account: 'Account',
+      account: 'Profile',
     },
   },
 }

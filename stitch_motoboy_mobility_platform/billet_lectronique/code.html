@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Billet Électronique</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed-dim": "#ffb4a6", "secondary-fixed-dim": "#efc11f", "on-secondary": "#ffffff", "surface-bright": "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-secondary-fixed": "#241a00", "on-primary-fixed": "#02006e", "surface-container-highest": "#e4e1ec", "on-tertiary-fixed-variant": "#852313", error: "#ba1a1a", "outline-variant": "#c7c4d6", "inverse-primary": "#bfc2ff", secondary: "#745b00", "on-background": "#1b1b22", "surface-container-lowest": "#ffffff", "on-surface-variant": "#464554", surface: "#fcf8ff", "on-primary-fixed-variant": "#2b30bb", "surface-variant": "#e4e1ec", "surface-tint": "#464dd3", "on-primary-container": "#838aff", "tertiary-container": "#610700", "on-tertiary-container": "#ee6f58", "on-secondary-container": "#705900", "tertiary-fixed": "#ffdad4", "secondary-fixed": "#ffe089", "on-primary": "#ffffff", primary: "#010067", "surface-container-low": "#f5f2fd", "inverse-on-surface": "#f3effa", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", outline: "#777585", "surface-container-high": "#eae6f2", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#574400", "inverse-surface": "#303038", "on-tertiary": "#ffffff", "surface-container": "#f0ecf7", "on-error-container": "#93000a", background: "#fcf8ff", "primary-fixed": "#e0e0ff", "secondary-container": "#fecf30", tertiary: "#3b0300", "on-error": "#ffffff", "primary-container": "#0400a4", "surface-dim": "#dcd8e3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", base: "8px", lg: "24px", "container-margin": "16px", sm: "12px", xs: "4px", xl: "32px", gutter: "12px"}, fontFamily: {"display-lg": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "headline-sm": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-inverse-surface flex justify-between items-center w-full px-container-margin h-16 shadow-sm sticky top-0 z-40">
+<button aria-label="Retour" class="text-primary dark:text-primary-fixed hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors p-2 rounded-full focus:outline-none">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary dark:text-primary-fixed flex-1 text-center pr-10">MOTOBOY</h1>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center px-container-margin py-lg max-w-lg mx-auto w-full">
+<!-- Success Message -->
+<div class="flex flex-col items-center text-center mb-lg w-full">
+<div class="bg-primary-container text-on-primary-container p-4 rounded-full mb-4 shadow-sm">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="font-display-lg-mobile text-display-lg-mobile text-on-background mb-2">Voyage confirmé !</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Présentez ce QR Code à l'embarquement.</p>
+</div>
+<!-- Electronic Ticket Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant w-full overflow-hidden mb-lg relative">
+<!-- Ticket Header (Agency & Passenger) -->
+<div class="bg-surface-container-low p-md border-b border-surface-variant flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A clean, modern corporate logo for a transportation agency, featuring dynamic geometric shapes in navy blue and bright yellow on a crisp white background. The logo suggests speed and reliability. High-quality vector style graphic design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAqhoIA9a5TIXz5IHpRJyVl_sPQMZMvWpwsC_ABqpFN-cCQqxRqVc9e8_OkoCWDo7yfM7i66kaoJHFD5Mxp77q6lSxlsQUcEp5Dghd04D45KH31j2BqprXoUSgCPshQaC0nYvr10OWdDFk0hIsfKaUYqNGO0iEHXoXUm2MfGfDsn8cNBRZ9TVxlm0KVDkxNvmwteaJImRHUmxrdHCXS0dShcJ6vf8jYB0dPsVQ7KLTXtGMoWVn5Nor"/>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Agence</p>
+<p class="font-headline-sm text-headline-sm text-on-background">Bucavoyages</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Passager</p>
+<p class="font-body-lg text-body-lg text-on-background font-semibold">Jean Dupont</p>
+</div>
+</div>
+<!-- Ticket Body (QR & Details) -->
+<div class="p-lg flex flex-col items-center">
+<!-- QR Code -->
+<div class="w-48 h-48 bg-surface-container rounded-lg p-2 mb-md border-2 border-primary-container">
+<img class="w-full h-full object-cover rounded" data-alt="A high-contrast, crisp, and highly legible QR code centered on a plain white background. The QR code should look like a realistic digital ticket asset, perfectly squared and sharply defined for scanning purposes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_1bqvAWqnYScX0zjuN8kAmL_sb_WiU2JAQktydtOpFRI54xaJRV5DXpU44ZNpiJCWlExrbA8G3A6tEYCgF5eRVB-unZqC8YBTjhUnxiWEZBBLuXrKkHV-FhGLVJI_Ux5zbi5g2zL6OYzQ1c7lqHqYUP4yImvTEoXP7O-jlz_z7uqom4LOj4MFmGmd4ixjK-6N12gbLC_2LcbkYIlWLyXD600nn4akwZjqZ3V5MHiGw4lcxQsS7tkZ"/>
+</div>
+<!-- Separator Line (Perforated look) -->
+<div class="w-full border-t-2 border-dashed border-surface-variant my-md relative">
+<div class="absolute -left-3 -top-3 w-6 h-6 bg-background rounded-full border-r border-surface-variant shadow-[inset_-1px_0_2px_rgba(0,0,0,0.05)]"></div>
+<div class="absolute -right-3 -top-3 w-6 h-6 bg-background rounded-full border-l border-surface-variant shadow-[inset_1px_0_2px_rgba(0,0,0,0.05)]"></div>
+</div>
+<!-- Journey Details -->
+<div class="w-full grid grid-cols-2 gap-y-md gap-x-4">
+<div class="col-span-1">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-1">Départ</p>
+<p class="font-body-lg text-body-lg text-on-background font-semibold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary block"></span>
+                            Douala
+                        </p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Gare d'Akwa</p>
+</div>
+<div class="col-span-1 text-right">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-1">Destination</p>
+<p class="font-body-lg text-body-lg text-on-background font-semibold flex items-center justify-end gap-2">
+                            Yaoundé
+                            <span class="w-2 h-2 rounded-full bg-primary block"></span>
+</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Agence Mvan</p>
+</div>
+<div class="col-span-2 flex justify-center py-sm">
+<div class="h-px bg-surface-variant w-full flex-1 self-center"></div>
+<span class="material-symbols-outlined text-surface-variant mx-2">directions_bus</span>
+<div class="h-px bg-surface-variant w-full flex-1 self-center"></div>
+</div>
+<div class="col-span-1">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-1">Date</p>
+<p class="font-body-lg text-body-lg text-on-background font-semibold">12 Nov 2023</p>
+</div>
+<div class="col-span-1 text-right">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-1">Heure</p>
+<p class="font-body-lg text-body-lg text-on-background font-semibold">08:30</p>
+</div>
+<div class="col-span-2 pt-2 text-center border-t border-surface-variant mt-2">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-1 inline-block">Place</p>
+<p class="font-display-md text-display-md text-primary inline-block ml-2">42B</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex gap-md w-full mb-lg">
+<button class="flex-1 bg-surface-container-lowest border-2 border-secondary text-secondary font-headline-sm text-headline-sm py-3 px-4 flex items-center justify-center gap-2 hover:bg-surface-container transition-colors focus:ring-2 focus:ring-secondary focus:outline-none rounded-full">
+<span class="material-symbols-outlined">download</span>
+                Télécharger PDF
+            </button>
+<button class="flex-1 bg-primary text-on-primary font-headline-sm text-headline-sm py-3 px-4 flex items-center justify-center gap-2 hover:bg-primary-container hover:text-on-primary-container shadow-sm transition-all focus:ring-2 focus:ring-primary focus:outline-none active:scale-95 duration-150 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">share</span>
+                Partager
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center px-4 py-2 bg-surface-container-lowest dark:bg-inverse-surface shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden">
+<!-- Inactive: Accueil -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-bold text-label-bold">Accueil</span>
+</a>
+<!-- Active: Mes Billets (Exact Match mapped contextually) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-label-bold text-label-bold">Mes Billets</span>
+</a>
+<!-- Inactive: Profil -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</nav>
+</body></html>
