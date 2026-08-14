@@ -1,0 +1,239 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Modules\Administration\Http\Controllers\AdminAgencyController;
+use App\Modules\Administration\Http\Controllers\AdminDashboardController;
+use App\Modules\Administration\Http\Controllers\AdminReferenceController;
+use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
+use App\Modules\Agencies\Http\Controllers\CancellationController;
+use App\Modules\Agencies\Http\Controllers\CounterSaleController;
+use App\Modules\Agencies\Http\Controllers\FleetController;
+use App\Modules\Agencies\Http\Controllers\RoutingController;
+use App\Modules\Agencies\Http\Controllers\StationController;
+use App\Modules\Bookings\Http\Controllers\BookingController;
+use App\Modules\Identity\Http\Controllers\AuthController;
+use App\Modules\Payments\Http\Controllers\PaymentController;
+use App\Modules\Payments\Http\Controllers\WebhookController;
+use App\Modules\Payouts\Http\Controllers\AdminPayoutController;
+use App\Modules\Payouts\Http\Controllers\AgencyPayoutController;
+use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
+use App\Modules\Places\Http\Controllers\PlaceController;
+use App\Modules\Tickets\Http\Controllers\BoardingController;
+use App\Modules\Tickets\Http\Controllers\TicketController;
+use App\Modules\Trips\Http\Controllers\SearchController;
+use App\Modules\Trips\Http\Controllers\TripController;
+use Illuminate\Support\Facades\Route;
+
+/*
+ * API versionnée dès le départ (§29 du brief).
+ *
+ * Les préfixes portent la frontière d'autorisation, visible dans la route comme
+ * dans le client généré : `/v1/…` public ou passager, `/v1/agency/…`,
+ * `/v1/owner/…`, `/v1/admin/…`.
+ *
+ * Le contrat fait foi : `docs/openapi.yaml` est normatif, et l'implémentation
+ * est vérifiée contre lui — pas l'inverse.
+ */
+
+Route::prefix('v1')->group(function (): void {
+
+    // Recherche et consultation : publiques, sans authentification. C'est le
+    // premier écran du passager, et il doit fonctionner avant tout compte.
+    Route::get('places/autocomplete', [PlaceController::class, 'autocomplete']);
+    Route::get('search', SearchController::class);
+    Route::get('trips/{reference}', [TripController::class, 'show']);
+    Route::get('trips/{reference}/seats', [TripController::class, 'seats']);
+
+    /*
+     * Authentification.
+     *
+     * La limitation de débit protège autant le budget que le compte : chaque
+     * demande de code envoie un SMS payant, et l'OTP est le seul canal sans
+     * alternative (I8). Une borne par adresse complète celle par numéro, portée
+     * par l'Action — sans quoi un attaquant balaierait les numéros un par un.
+     */
+    Route::middleware('throttle:10,1')->group(function (): void {
+        Route::post('auth/register', [AuthController::class, 'register']);
+        Route::post('auth/login', [AuthController::class, 'login']);
+        Route::post('auth/otp/resend', [AuthController::class, 'resend']);
+        Route::post('auth/otp/verify', [AuthController::class, 'verify']);
+
+        /*
+         * Inscription d'une agence (§23).
+         *
+         * Même limitation de débit que l'inscription passager : elle envoie un
+         * SMS payant, et c'est le seul canal de vérification.
+         */
+        Route::post('agencies/register', [AgencyAccountController::class, 'register']);
+    });
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('auth/logout', [AuthController::class, 'logout']);
+
+        // Réservation. La prise de places est l'opération atomique du produit :
+        // elle tient les places avant même la saisie du paiement (B2).
+        Route::post('bookings', [BookingController::class, 'store']);
+        Route::get('bookings', [BookingController::class, 'index']);
+        Route::get('bookings/{reference}', [BookingController::class, 'show']);
+
+        /*
+         * Annulation et remboursement (B5).
+         *
+         * Le devis précède l'annulation : le passager doit voir ce qu'il
+         * récupérera avant de confirmer, sinon une règle acceptée devient un
+         * litige.
+         */
+        Route::get('bookings/{reference}/cancellation-quote', [BookingController::class, 'cancellationQuote']);
+        Route::post('bookings/{reference}/cancel', [BookingController::class, 'cancel']);
+
+        Route::post('bookings/{reference}/payments', [PaymentController::class, 'store']);
+        Route::get('payments/{reference}', [PaymentController::class, 'show']);
+
+        // Billets. Le client les met en cache : ils doivent rester consultables
+        // sans réseau, en gare (I5).
+        Route::get('tickets', [TicketController::class, 'index']);
+        Route::get('tickets/{reference}', [TicketController::class, 'show']);
+
+        /*
+         * Embarquement — rôle `AGENT`.
+         *
+         * L'autorisation est vérifiée **par départ**, pas par le groupe de
+         * routes : la permission est portée pour une agence donnée, et le
+         * départ est ce qui désigne laquelle (B3).
+         */
+        Route::prefix('agency')->group(function (): void {
+            Route::get('trips', [BoardingController::class, 'trips']);
+            Route::get('trips/{reference}/boarding-list', [BoardingController::class, 'list']);
+            Route::post('trips/{reference}/validations', [BoardingController::class, 'sync']);
+            Route::post('tickets/lookup', [BoardingController::class, 'lookup']);
+
+            /*
+             * Alimentation de l'inventaire.
+             *
+             * Sans ces écrans, la recherche ne renvoie rien et le produit
+             * n'existe pas : c'est le chantier qui devait avancer en parallèle
+             * du parcours passager, pas après.
+             */
+            Route::get('stations', [StationController::class, 'index']);
+            Route::post('stations', [StationController::class, 'store']);
+            Route::patch('stations/{id}', [StationController::class, 'update']);
+            Route::post('city-requests', [StationController::class, 'requestCity']);
+
+            Route::get('vehicles', [FleetController::class, 'vehicles']);
+            Route::post('vehicles', [FleetController::class, 'storeVehicle']);
+            Route::get('vehicles/{id}/seats', [FleetController::class, 'seats']);
+
+            Route::get('drivers', [FleetController::class, 'drivers']);
+            Route::post('drivers', [FleetController::class, 'storeDriver']);
+
+            Route::get('routes', [RoutingController::class, 'routes']);
+            Route::post('routes', [RoutingController::class, 'storeRoute']);
+            Route::post('routes/{routeId}/schedules', [RoutingController::class, 'storeSchedule']);
+            Route::post('trips/generate', [RoutingController::class, 'generate']);
+
+            /*
+             * Vente au comptoir (I2).
+             *
+             * C'est elle qui porte l'intégrité de toute la disponibilité
+             * affichée : une agence qui vend vingt places sans les saisir fait
+             * déplacer des passagers pour rien. Un seul appel, donc — la saisie
+             * doit être plus rapide que le cahier.
+             */
+            Route::post('counter-sales', [CounterSaleController::class, 'store']);
+            Route::get('trips/{reference}/seats', [CounterSaleController::class, 'seats']);
+
+            /*
+             * Annulations à l'initiative de l'agence (B5).
+             *
+             * L'annulation d'une réservation par l'agence n'est pas du confort :
+             * un passager de vente au comptoir n'a pas de compte et ne peut rien
+             * annuler lui-même.
+             */
+            Route::post('trips/{reference}/cancel', [CancellationController::class, 'trip']);
+            Route::post('bookings/{reference}/cancel', [CancellationController::class, 'booking']);
+
+            /*
+             * Ce que l'agence voit de son argent (B4).
+             *
+             * Le compte courant est en lecture seule : les écritures sont
+             * immuables, et une correction se fait par écriture inverse depuis
+             * l'administration.
+             */
+            Route::get('payouts', [AgencyPayoutController::class, 'index']);
+            Route::get('payouts/{reference}', [AgencyPayoutController::class, 'show']);
+            Route::get('payouts/{reference}/statement', [AgencyPayoutController::class, 'statement']);
+            Route::get('ledger', [AgencyPayoutController::class, 'ledger']);
+
+            /*
+             * Dossier de l'agence (§23, B4).
+             *
+             * Les coordonnées de reversement se **déclarent** ici mais ne
+             * s'appliquent pas : elles naissent non vérifiées et n'encaissent
+             * rien tant que l'administration ne les a pas vérifiées.
+             */
+            Route::get('payout-accounts', [AgencyAccountController::class, 'payoutAccounts']);
+            Route::post('payout-accounts', [AgencyAccountController::class, 'submitPayoutAccount']);
+            Route::get('documents', [AgencyAccountController::class, 'documents']);
+            Route::post('documents', [AgencyAccountController::class, 'uploadDocument']);
+        });
+
+        /*
+         * Administration — ouverte au strict nécessaire.
+         *
+         * Sans ces trois opérations le circuit financier ne se referme jamais :
+         * le calcul est automatique, mais rien ne le valide ni ne l'envoie. Le
+         * reste de l'espace d'administration reste à construire.
+         */
+        Route::prefix('admin')->group(function (): void {
+            Route::get('payouts', [AdminPayoutController::class, 'index']);
+            Route::post('payouts/build', [AdminPayoutController::class, 'build']);
+            Route::post('payouts/{reference}/approve', [AdminPayoutController::class, 'approve']);
+            Route::post('payouts/{reference}/send', [AdminPayoutController::class, 'send']);
+
+            Route::get('dashboard', AdminDashboardController::class);
+
+            /*
+             * Validation des agences (§23).
+             *
+             * Valider une agence et vérifier ses coordonnées de reversement sont
+             * **deux gestes distincts** : l'un dit « cette entreprise existe »,
+             * l'autre « cet argent peut partir là ».
+             */
+            Route::get('agencies', [AdminAgencyController::class, 'index']);
+            Route::get('agencies/{reference}', [AdminAgencyController::class, 'show']);
+            Route::post('agencies/{reference}/approve', [AdminAgencyController::class, 'approve']);
+            Route::post('agencies/{reference}/reject', [AdminAgencyController::class, 'reject']);
+            Route::patch('agencies/{reference}/commercial-terms', [AdminAgencyController::class, 'updateTerms']);
+            Route::post('agencies/{reference}/ledger-adjustments', [AdminAgencyController::class, 'adjustLedger']);
+            Route::post('payout-accounts/{id}/verify', [AdminAgencyController::class, 'verifyAccount']);
+
+            // Référentiel géographique (B1) et journal d'audit (§28).
+            Route::get('city-requests', [AdminReferenceController::class, 'cityRequests']);
+            Route::post('city-requests/{id}/resolve', [AdminReferenceController::class, 'resolveCityRequest']);
+            Route::get('stations', [AdminReferenceController::class, 'stations']);
+            Route::post('stations/{id}/moderate', [AdminReferenceController::class, 'moderateStation']);
+            Route::get('audit-logs', [AdminReferenceController::class, 'auditLogs']);
+        });
+    });
+
+    /*
+     * Webhook de l'agrégateur.
+     *
+     * Hors `auth:sanctum` — l'appelant est un prestataire, pas un passager.
+     * L'authentification repose sur la signature de la charge utile, vérifiée
+     * par l'adaptateur, et chaque appel est journalisé avant tout traitement.
+     */
+    Route::post('webhooks/payments/{provider}', WebhookController::class);
+
+    /*
+     * Décaissements — endpoint distinct parce que le port l'est : rien n'oblige
+     * le décaisseur à être l'agrégateur d'encaissement.
+     *
+     * C'est cette notification qui fait sortir un reversement de `PROCESSING` ;
+     * sans elle, un reversement en vol bloquerait à jamais les suivants.
+     */
+    Route::post('webhooks/payouts/{provider}', PayoutWebhookController::class);
+
+});

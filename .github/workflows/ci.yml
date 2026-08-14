@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  javascript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Le contrat OpenAPI est normatif : si les types générés diffèrent de
+      # ceux commités, quelqu'un a édité le package à la main ou oublié de
+      # regénérer après avoir modifié la spécification.
+      - name: Les types générés sont à jour
+        run: |
+          pnpm api:types
+          git diff --exit-code packages/api-client/src/schema.ts
+
+      # Formatage, pureté de @motoboy/shared, lint, typecheck.
+      - run: pnpm verify
+
+  php:
+    name: Laravel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    # Les tests tournent sur PostgreSQL, pas sur SQLite. Le schéma s'appuie sur
+    # des index uniques partiels et des contraintes de vérification, et surtout
+    # le modèle de verrouillage de SQLite diffère fondamentalement : un test de
+    # double-vente qui y passerait ne prouverait rien sur la production.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: motoboy_test
+          POSTGRES_USER: motoboy
+          POSTGRES_PASSWORD: motoboy
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U motoboy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+
+      - run: composer install --prefer-dist --no-progress --no-interaction
+
+      - run: cp .env.example .env && php artisan key:generate
+
+      - name: Formatage
+        run: composer format:check
+
+      - name: Analyse statique — niveau 8
+        run: composer analyse
+
+      - name: Migrations
+        run: php artisan migrate --force
+
+      # Les seeders de référence tournent en production : s'ils cassent, on le
+      # découvre ici et pas au déploiement.
+      - name: Seeders de référence
+        run: php artisan db:seed --force
+
+      - name: Tests
+        run: php artisan test

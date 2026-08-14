@@ -1,0 +1,145 @@
+# Déploiement de l'API MOTOBOY sur Render.
+#
+# **Un seul service pour l'instant.** Le conteneur sert le web, la file d'attente
+# et le planificateur ensemble : le travail de fond n'est pas accessoire ici —
+# sans planificateur, `ReleaseExpiredHolds` ne tourne plus et l'inventaire se
+# gèle. Un déploiement web-seul casserait le produit sans qu'aucune erreur ne le
+# signale (B2).
+#
+# Le jour où le volume le justifie, deux services de fond se déclarent avec la
+# même image et `CONTAINER_ROLE=worker` / `scheduler`, et le service web passe
+# `RUN_QUEUE=false` / `RUN_SCHEDULER=false`.
+#
+# La base est chez **Neon**, hors de Render : aucun `databases:` ici.
+
+services:
+  - type: web
+    name: motoboy-api
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /up
+    autoDeploy: true
+
+    envVars:
+      - key: APP_NAME
+        value: MOTOBOY
+
+      - key: APP_ENV
+        value: production
+
+      # ⚠️ **Ne jamais régénérer cette clé après la première mise en service.**
+      # Elle ne chiffre pas seulement les sessions : la clé de signature des QR
+      # Codes en est dérivée. La changer invalide **tous** les billets déjà
+      # émis, qui ne passeront plus l'embarquement (I5).
+      - key: APP_KEY
+        generateValue: true
+
+      - key: APP_DEBUG
+        value: false
+
+      - key: APP_URL
+        fromService:
+          type: web
+          name: motoboy-api
+          property: hostport
+
+      - key: APP_LOCALE
+        value: fr
+
+      - key: APP_FALLBACK_LOCALE
+        value: fr
+
+      # Le Cameroun est bilingue et la plateforme sert les deux langues ; le
+      # fuseau d'affichage est celui du pays, pas celui du serveur.
+      - key: APP_DISPLAY_TIMEZONE
+        value: Africa/Douala
+
+      - key: LOG_CHANNEL
+        value: stderr
+
+      - key: LOG_LEVEL
+        value: info
+
+      # ─────────────────────────────── Neon ───────────────────────────────
+      #
+      # `DB_URL` est fournie par Neon, en un seul morceau. Deux réglages
+      # comptent :
+      #
+      # 1. `sslmode=require` — Neon refuse une connexion en clair. La chaîne
+      #    fournie par Neon le porte déjà ; `DB_SSLMODE` couvre le cas où elle
+      #    serait recomposée à la main.
+      # 2. **L'endpoint direct plutôt que le pooler.** Le pooler de Neon est un
+      #    PgBouncer en mode transaction, où les requêtes préparées côté serveur
+      #    — ce que fait PDO par défaut — se marchent dessus d'une connexion à
+      #    l'autre. Avec huit processus PHP, l'endpoint direct suffit largement.
+      #    Passer au pooler demandera d'émuler les requêtes préparées, et de le
+      #    vérifier.
+      - key: DB_CONNECTION
+        value: pgsql
+
+      - key: DB_URL
+        sync: false
+
+      - key: DB_SSLMODE
+        value: require
+
+      # File et cache en base : pas de Redis à déployer, et le verrou de
+      # `withoutOverlapping` est alors partagé entre conteneurs — ce qui compte
+      # dès qu'il y en a plus d'un.
+      - key: QUEUE_CONNECTION
+        value: database
+
+      - key: CACHE_STORE
+        value: database
+
+      - key: SESSION_DRIVER
+        value: database
+
+      # ──────────────────────── Stockage — Cloudflare R2 ────────────────────
+      #
+      # **Obligatoire en production.** Le système de fichiers d'un conteneur est
+      # éphémère : un document d'agence déposé sur le disque local disparaît au
+      # redéploiement suivant, et le dossier de validation avec lui.
+      - key: DOCUMENTS_DISK
+        value: r2
+
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+
+      - key: R2_BUCKET
+        sync: false
+
+      - key: R2_ENDPOINT
+        sync: false
+
+      - key: R2_REGION
+        value: auto
+
+      # ──────────────────────────── Prestataires ────────────────────────────
+      #
+      # Les pilotes factices restent actifs tant que les prestataires ne sont pas
+      # choisis. Ils ne simulent pas un succès : un paiement reste en attente et
+      # un SMS part dans les journaux. C'est ce qui permet de déployer sans
+      # attendre l'agrégateur — pas de faire croire que l'encaissement marche.
+      - key: PAYMENT_GATEWAY
+        value: fake
+
+      - key: PAYOUT_GATEWAY
+        value: fake
+
+      - key: SMS_DRIVER
+        value: log
+
+      # Travail de fond dans le conteneur web. À passer à `false` le jour où des
+      # services dédiés sont déclarés.
+      - key: RUN_SCHEDULER
+        value: true
+
+      - key: RUN_QUEUE
+        value: true

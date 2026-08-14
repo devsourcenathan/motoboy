@@ -1,0 +1,39 @@
+# Le contexte de build ne contient que ce qui sert à l'exécution.
+#
+# `vendor` en particulier : il est réinstallé dans l'image à partir du
+# `composer.lock`, et l'envoyer depuis la machine de développement y ferait
+# entrer les dépendances de développement — Larastan, PHPUnit, Faker.
+
+vendor
+node_modules
+
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.gitattributes
+.editorconfig
+
+tests
+phpunit.xml
+phpstan.neon
+pint.json
+.phpunit.result.cache
+
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/documents/*
+
+# ⚠️ Les caches construits sur la machine de développement.
+#
+# `packages.php` y liste les paquets **de développement** — Pail, Larastan. Copié
+# dans l'image, il fait référencer un fournisseur de services absent de
+# `--no-dev`, et le conteneur meurt au démarrage sur « Class not found » avant
+# même d'avoir touché la base. Les caches se reconstruisent au démarrage.
+bootstrap/cache/*.php
+
+README.md

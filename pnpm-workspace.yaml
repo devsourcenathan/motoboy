@@ -1,0 +1,11 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+  # apps/api est l'API Laravel : elle vit dans le dépôt mais **hors du
+  # workspace JS** (§6 du brief). Composer la gère, pnpm l'ignore.
+  #
+  # L'exclusion est explicite plutôt qu'implicite : Laravel embarque un
+  # package.json par défaut pour ses assets, et il suffirait qu'une commande
+  # artisan le recrée pour que l'API entre silencieusement dans le workspace.
+  - '!apps/api'

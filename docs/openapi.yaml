@@ -1,0 +1,3301 @@
+openapi: 3.1.0
+
+info:
+  title: MOTOBOY API
+  version: 1.0.0-draft
+  description: |
+    Contrat de l'API MOTOBOY.
+
+    Parcours passager, embarquement, et back-office agence. L'administration et
+    l'espace propriétaire restent à spécifier.
+
+    ## Statut du document
+
+    Cette spécification est **normative** : elle est la source de vérité du
+    contrat, et l'implémentation Laravel est vérifiée contre elle. Elle n'est
+    pas générée depuis le code.
+
+    Un test de couverture compare les routes enregistrées aux chemins déclarés
+    ici, dans les deux sens. **Aucun endpoint ne peut être servi sans être
+    spécifié** — c'est ce qui rend le mot « normative » vrai plutôt
+    qu'aspirationnel. Les chemins spécifiés mais pas encore implémentés sont
+    déclarés explicitement dans ce test, jamais tolérés en silence.
+
+    Les types TypeScript du package `api-client` en sont générés et ne sont
+    jamais édités à la main.
+
+    ## Conventions
+
+    ### Erreurs
+
+    Toute erreur porte un **code typé**. Les clients branchent sur `code` et
+    composent le texte affiché eux-mêmes, dans la langue de l'utilisateur.
+
+    `message` est un **diagnostic** : journaux, exploitation, débogage. Il
+    n'est jamais affiché, sa langue n'est pas garantie, et son libellé peut
+    changer sans préavis. C'est ce qui permet de localiser les erreurs
+    entièrement côté client, sans négociation `Accept-Language`.
+
+    ### Langues
+
+    Français et anglais dès le lancement. Le contenu généré par le serveur —
+    SMS, notifications, billet guichet — est localisé côté serveur à partir de
+    `users.locale`, ou de la langue par défaut de l'agence pour un passager
+    sans compte.
+
+    ### Idempotence
+
+    L'en-tête `Idempotency-Key` est **obligatoire** sur la création de
+    réservation, l'initiation de paiement, le remboursement et la
+    synchronisation des validations. Rejouer une requête avec la même clé
+    renvoie le résultat initial sans créer de doublon.
+
+    ### Namespaces
+
+    | Préfixe | Rôle requis |
+    |---|---|
+    | `/v1/…` | `PASSENGER` ou public |
+    | `/v1/agency/…` | `AGENCY` ou `AGENT` |
+    | `/v1/owner/…` | `OWNER` |
+    | `/v1/admin/…` | `ADMIN` ou `SUPER_ADMIN` |
+
+    ### Pagination
+
+    Par offset, avec une enveloppe `meta` constante.
+
+    ### Montants
+
+    Entiers, en unités entières de devise. Le XAF n'a pas de subdivision en
+    circulation.
+
+servers:
+  - url: https://api.motoboy.cm/api
+    description: Production
+  - url: http://localhost:8000/api
+    description: Développement local
+
+tags:
+  - name: Auth
+    description: Inscription, OTP, session
+  - name: Places
+    description: Référentiel géographique et autocomplétion
+  - name: Search
+    description: Recherche de trajets
+  - name: Trips
+    description: Départs et disponibilité des places
+  - name: Bookings
+    description: Réservation, tenue des places, annulation
+  - name: Payments
+    description: Paiement et suivi de transaction
+  - name: Tickets
+    description: Billets électroniques
+  - name: Boarding
+    description: Embarquement — rôle AGENT, fonctionne hors ligne
+  - name: Agency
+    description: |
+      Back-office agence. Sans ces endpoints, la recherche ne renvoie rien et le
+      produit n'existe pas.
+  - name: Webhooks
+    description: Entrées appelées par les prestataires. Exclues de la génération du client.
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ────────────────────────────── Auth ──────────────────────────────
+
+  /v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscrire un passager
+      description: |
+        Crée le compte puis envoie un OTP au numéro fourni. Le compte reste
+        inutilisable tant que le téléphone n'est pas vérifié.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, first_name, last_name]
+              properties:
+                phone:
+                  type: string
+                  description: Format E.164
+                  examples: ['+237690000000']
+                email:
+                  type: string
+                  format: email
+                first_name: { type: string, maxLength: 100 }
+                last_name: { type: string, maxLength: 100 }
+                locale:
+                  $ref: '#/components/schemas/Locale'
+                  description: |
+                    Défaut `fr`. Détermine la langue de l'OTP, donc du tout
+                    premier message reçu — avant même que le compte existe.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '202':
+          description: OTP envoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '409':
+          description: Numéro déjà inscrit
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Demander un OTP de connexion
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '202':
+          description: OTP envoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '404':
+          description: Aucun compte pour ce numéro
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Vérifier un OTP et ouvrir une session
+      description: |
+        L'OTP est valide 10 minutes et accepte 4 tentatives au maximum.
+        Au-delà, il est invalidé et un nouvel envoi est nécessaire.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code, purpose]
+              properties:
+                phone: { type: string }
+                code: { type: string, minLength: 4, maxLength: 8 }
+                purpose: { $ref: '#/components/schemas/OtpPurpose' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Session ouverte
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, user]
+                properties:
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+        '422':
+          description: |
+            Code invalide, expiré, ou nombre de tentatives dépassé.
+            Codes possibles — `OTP_INVALID`, `OTP_EXPIRED`, `OTP_TOO_MANY_ATTEMPTS`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/auth/otp/resend:
+    post:
+      tags: [Auth]
+      summary: Renvoyer un OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, purpose]
+              properties:
+                phone: { type: string }
+                purpose: { $ref: '#/components/schemas/OtpPurpose' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '202':
+          description: OTP renvoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '429':
+          description: Trop de demandes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/me:
+    get:
+      tags: [Auth]
+      summary: Profil de l'utilisateur courant
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Révoquer le jeton courant
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '204': { description: Session close }
+
+  # ────────────────────────────── Places ──────────────────────────────
+
+  /v1/places/autocomplete:
+    get:
+      tags: [Places]
+      summary: Autocomplétion des lieux
+      description: |
+        Propose **villes et gares**. Une gare sélectionnée résout vers sa
+        ville : la recherche s'exécute toujours au niveau ville.
+
+        La comparaison est insensible aux accents et à la casse, et s'appuie
+        sur une liste d'alias par ville. Les accents n'étant pratiquement
+        jamais saisis sur un clavier de téléphone, une correspondance stricte
+        échouerait sur une grande part des saisies réelles.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 25 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/PlaceSuggestion' }
+
+  # ────────────────────────────── Search ──────────────────────────────
+
+  /v1/search:
+    get:
+      tags: [Search]
+      summary: Rechercher des trajets
+      description: |
+        Requête centrale du produit. Le filtrage porte sur le couple
+        **ville de départ / ville d'arrivée** : la réservation étant
+        point-à-point, une ville d'escale ne rend pas un trajet éligible.
+
+        Les départs dont la fenêtre de vente en ligne est fermée
+        n'apparaissent pas dans les résultats.
+
+        **Lorsque `data` est vide**, la réponse porte un bloc `suggestions`
+        — dates proches disponibles et axes desservis au départ de la même
+        ville. Un seul aller-retour, et le client a toujours quelque chose
+        à afficher.
+      security: []
+      parameters:
+        - name: origin_city_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: destination_city_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: passengers
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: price_min
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: price_max
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: departure_from
+          in: query
+          description: Heure locale minimale, format HH:MM
+          schema: { type: string }
+        - name: departure_to
+          in: query
+          schema: { type: string }
+        - name: agency_ids
+          in: query
+          schema:
+            type: array
+            items: { type: integer, format: int64 }
+        - name: vehicle_type
+          in: query
+          schema: { $ref: '#/components/schemas/VehicleType' }
+        - name: only_available
+          in: query
+          schema: { type: boolean, default: false }
+        - name: sort
+          in: query
+          description: |
+            Le prix est un critère important du classement pour le MVP.
+          schema:
+            type: string
+            enum: [best, price_asc, departure_asc, duration_asc]
+            default: best
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, suggestions]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TripSummary' }
+                  suggestions:
+                    $ref: '#/components/schemas/SearchSuggestions'
+
+  # ────────────────────────────── Trips ──────────────────────────────
+
+  /v1/trips/{reference}:
+    get:
+      tags: [Trips]
+      summary: Détail d'un départ
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TripDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/trips/{reference}/seats:
+    get:
+      tags: [Trips]
+      summary: Plan des places et disponibilité
+      description: |
+        En mode `SEATED`, renvoie le plan complet avec l'état de chaque
+        siège. En mode `CAPACITY`, `seats` est vide et seuls les compteurs
+        sont renseignés.
+
+        Une place **tenue** par un paiement en cours est indisponible, au
+        même titre qu'une place vendue.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SeatMap' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ────────────────────────────── Bookings ──────────────────────────────
+
+  /v1/bookings:
+    post:
+      tags: [Bookings]
+      summary: Créer une réservation et tenir les places
+      description: |
+        Opération atomique de prise de places. Elle crée la réservation en
+        `PENDING_PAYMENT` et renvoie `expires_at`.
+
+        Les places sont tenues **dès cet appel**, donc avant la saisie des
+        informations passagers côté client : tenir la place seulement au
+        paiement laisserait deux passagers saisir en parallèle et l'un des
+        deux perdrait sa place au dernier écran.
+
+        La durée du hold est de 10 minutes par défaut, paramétrable par
+        agence. Un échec de paiement **ne libère pas** les places : la
+        fenêtre court en entier, seule une annulation explicite libère
+        avant terme.
+
+        Une réservation de plusieurs places est prise en tout ou rien.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trip_reference, passengers]
+              properties:
+                trip_reference: { type: string }
+                passengers:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [first_name, last_name]
+                    properties:
+                      first_name: { type: string, maxLength: 100 }
+                      last_name: { type: string, maxLength: 100 }
+                      phone: { type: string }
+                      seat_id:
+                        type: [integer, 'null']
+                        format: int64
+                        description: Requis en mode SEATED, ignoré en mode CAPACITY
+                contact_name:
+                  type: string
+                  description: Requis si la réservation est faite pour un tiers
+                contact_phone: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Réservation créée, places tenues
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Booking' }
+        '409':
+          description: |
+            Conflit sur l'inventaire ou la fenêtre de vente.
+
+            Codes possibles — `SEAT_ALREADY_HELD`, `TRIP_FULL`,
+            `ONLINE_SALES_CLOSED`, `TRIP_CANCELLED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                seatAlreadyHeld:
+                  summary: Siège déjà pris ou tenu
+                  value:
+                    code: SEAT_ALREADY_HELD
+                    message: Ce siège vient d'être réservé.
+                    details: { seat_ids: [42] }
+                onlineSalesClosed:
+                  summary: Vente en ligne fermée
+                  value:
+                    code: ONLINE_SALES_CLOSED
+                    message: Les réservations en ligne sont closes pour ce départ.
+                    details: { closed_at: '2026-08-14T07:30:00Z' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+    get:
+      tags: [Bookings]
+      summary: Historique des réservations
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/BookingStatus' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Booking' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/bookings/{reference}:
+    get:
+      tags: [Bookings]
+      summary: Détail d'une réservation
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Booking' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/bookings/{reference}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Annuler tout ou partie d'une réservation
+      description: |
+        Sans `passenger_ids`, la réservation entière est annulée. Avec, seuls
+        les passagers désignés le sont — l'annulation partielle est
+        supportée dès le MVP.
+
+        Les conditions applicables sont celles **figées sur la réservation**
+        à sa création : un durcissement ultérieur des conditions de l'agence
+        est sans effet.
+
+        Le remboursement part toujours vers le compte source du paiement.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passenger_ids:
+                  type: array
+                  items: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Annulation enregistrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingCancellation' }
+        '409':
+          description: |
+            Codes possibles — `CANCELLATION_DEADLINE_PASSED`,
+            `BOOKING_NOT_CANCELLABLE`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/bookings/{reference}/cancellation-quote:
+    get:
+      tags: [Bookings]
+      summary: Simuler une annulation
+      description: |
+        Renvoie le montant remboursable et les frais retenus, sans rien
+        exécuter. Permet d'afficher au passager ce qu'il récupérera avant
+        qu'il confirme.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - name: passenger_ids
+          in: query
+          schema:
+            type: array
+            items: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CancellationQuote' }
+
+  # ────────────────────────────── Payments ──────────────────────────────
+
+  /v1/bookings/{reference}/payments:
+    post:
+      tags: [Payments]
+      summary: Initier un paiement
+      description: |
+        Le paiement Mobile Money est **asynchrone** : le passager reçoit une
+        sollicitation sur son téléphone et doit saisir son code. La réponse
+        est donc `PENDING` ou `PROCESSING`, jamais `SUCCEEDED` immédiatement.
+
+        Le client suit ensuite l'état par `GET /v1/payments/{reference}` ou
+        par notification.
+
+        Une réservation porte **plusieurs tentatives**, dont une seule
+        aboutie. Réessayer après un échec est le cas nominal.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { $ref: '#/components/schemas/PaymentMethod' }
+                operator:
+                  type: string
+                  enum: [MTN, ORANGE]
+                  description: Requis si method = MOBILE_MONEY
+                payer_phone:
+                  type: string
+                  description: |
+                    Compte débité. Le remboursement éventuel retournera
+                    toujours vers ce compte, jamais vers un numéro déclaré
+                    après coup.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '202':
+          description: Paiement initié
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '409':
+          description: |
+            Codes possibles — `PAYMENT_ALREADY_SUCCEEDED`, `BOOKING_EXPIRED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                bookingExpired:
+                  summary: Le hold a expiré
+                  value:
+                    code: BOOKING_EXPIRED
+                    message: Le délai de paiement est dépassé, les places ont été libérées.
+                    details: { expired_at: '2026-08-13T09:41:00Z' }
+
+  /v1/payments/{reference}:
+    get:
+      tags: [Payments]
+      summary: État d'un paiement
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ─────────────────────────── Administration ───────────────────────────
+
+  /v1/admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Chiffres de la plateforme
+      description: |
+        Les compteurs de supervision. Calculés à la demande : pré-agréger avant
+        d'avoir du volume produirait un cache à invalider pour rien, et une
+        divergence de plus à déboguer.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminDashboard' }
+
+  /v1/admin/agencies:
+    get:
+      tags: [Admin]
+      summary: Agences
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminAgency' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/admin/agencies/{reference}:
+    get:
+      tags: [Admin]
+      summary: Dossier d'une agence
+      description: Documents, coordonnées de reversement et conditions commerciales.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgencyDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/agencies/{reference}/approve:
+    post:
+      tags: [Admin]
+      summary: Valider une agence
+      description: |
+        L'agence peut alors publier son offre. Journalisé — c'est l'une des
+        opérations que §28 impose de tracer.
+
+        La validation **ne vérifie pas les coordonnées de reversement** : ce sont
+        deux gestes distincts, et les confondre ferait approuver un compte
+        bancaire en approuvant une raison sociale.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Validée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgency' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `AGENCY_NOT_PENDING`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/admin/agencies/{reference}/reject:
+    post:
+      tags: [Admin]
+      summary: Refuser une agence
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: |
+                    Obligatoire. Un refus sans motif laisse l'agence sans
+                    recours et fait revenir le dossier à l'identique.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Refusée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgency' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/agencies/{reference}/commercial-terms:
+    patch:
+      tags: [Admin]
+      summary: Modifier les conditions commerciales
+      description: |
+        **Réservé au super administrateur.** Ce sont des termes négociés, pas un
+        réglage en libre-service.
+
+        Les bornes de B4 sont imposées côté serveur. Trois d'entre elles sont
+        volontairement fermées : reverser avant le départ est exclu, le passager
+        ne peut jamais porter les frais d'agrégateur, et les frais d'annulation
+        ne peuvent pas dépasser la moitié du montant payé.
+
+        Modifier ces conditions **ne réécrit aucune réservation existante** :
+        elles y sont figées à la création.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommercialTermsInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Modifiées
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommercialTerms' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/admin/agencies/{reference}/ledger-adjustments:
+    post:
+      tags: [Admin]
+      summary: Ajuster le compte courant
+      description: |
+        Écriture manuelle, **motif obligatoire**, journalisée. C'est ce qui
+        permet de rattraper les cas que les premiers mois produiront ; sans
+        elle, un compte courant faux ne se corrige que par requête SQL.
+
+        Le montant est **signé** : positif au crédit, négatif au débit. Aucune
+        écriture n'est jamais modifiée ni supprimée — une erreur se corrige par
+        une écriture inverse.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, description]
+              properties:
+                amount: { type: integer, format: int64 }
+                description: { type: string, minLength: 3, maxLength: 255 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Écriture passée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LedgerEntry' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/admin/payout-accounts/{id}/verify:
+    post:
+      tags: [Admin]
+      summary: Vérifier des coordonnées de reversement
+      description: |
+        **Le geste qui autorise l'argent à partir.** Une erreur de saisie envoie
+        les fonds à un inconnu, sans recours : aucun décaissement n'est possible
+        vers un compte non vérifié.
+
+        Vérifier de nouvelles coordonnées **désactive les précédentes** : une
+        agence n'a qu'un compte actif, et en laisser deux rendrait le choix
+        implicite au moment du versement.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Vérifiées
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutAccount' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/city-requests:
+    get:
+      tags: [Admin]
+      summary: Demandes d'ajout de ville
+      description: |
+        Sans ce circuit, une agence desservant une ville absente du référentiel
+        est bloquée sans recours et abandonne.
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CityRequest' }
+
+  /v1/admin/city-requests/{id}/resolve:
+    post:
+      tags: [Admin]
+      summary: Traiter une demande de ville
+      description: |
+        Approuver crée la ville dans le référentiel fermé, ou rattache la demande
+        à une ville existante quand il s'agissait d'une variante d'orthographe —
+        auquel cas un alias est ajouté pour que l'autocomplétion la trouve la
+        prochaine fois.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [APPROVE, REJECT] }
+                city_id:
+                  type: [integer, 'null']
+                  format: int64
+                  description: |
+                    Rattache à une ville existante au lieu d'en créer une. Un
+                    alias est alors enregistré.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Traitée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CityRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/stations:
+    get:
+      tags: [Admin]
+      summary: Gares à modérer
+      description: |
+        Modération **a posteriori** : la gare est publiée sans attendre. Une
+        validation préalable bloquerait une agence motivée plusieurs jours, et
+        elle renoncerait.
+      parameters:
+        - name: moderated
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyStation' }
+
+  /v1/admin/stations/{id}/moderate:
+    post:
+      tags: [Admin]
+      summary: Modérer une gare
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [KEEP, DEACTIVATE] }
+                reason: { type: [string, 'null'], maxLength: 255 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Modérée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Journal d'audit
+      description: |
+        **Réservé au super administrateur** (I4). Qui a créé ce trajet, modifié
+        ce prix, annulé cette réservation, remboursé, approuvé ce reversement,
+        changé ces coordonnées.
+
+        Les entrées sont **immuables** : aucune écriture ni suppression n'est
+        exposée, ici ou ailleurs.
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: auditable_type
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditEntry' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/admin/payouts:
+    get:
+      tags: [Admin]
+      summary: Reversements, toutes agences
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/PayoutStatus' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Payout' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/admin/payouts/build:
+    post:
+      tags: [Admin]
+      summary: Calculer les reversements dus
+      description: |
+        **Le calcul est automatique, le déclenchement est manuel.** Cette
+        opération ne verse rien : elle prépare des propositions à valider.
+
+        Un job quotidien l'exécute aussi ; elle est exposée pour qu'un
+        administrateur puisse la relancer sans attendre le lendemain.
+
+        Aucun reversement n'est produit sous le seuil minimum de l'agence, ni
+        sur un solde négatif — celui-ci se reporte, la dette suit l'agence.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agency_id:
+                  type: [integer, 'null']
+                  format: int64
+                  description: Restreint le calcul à une agence.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, skipped]
+                properties:
+                  created:
+                    type: array
+                    items: { $ref: '#/components/schemas/Payout' }
+                  skipped:
+                    type: array
+                    description: |
+                      Agences écartées et pourquoi. Une omission silencieuse se
+                      lit comme « rien à verser », ce qui n'est pas la même
+                      chose que « sous le seuil » ou « un versement est en vol ».
+                    items:
+                      type: object
+                      required: [agency_id, reason]
+                      properties:
+                        agency_id: { type: integer, format: int64 }
+                        reason:
+                          type: string
+                          enum:
+                            [
+                              NOTHING_ELIGIBLE,
+                              BELOW_MINIMUM,
+                              NEGATIVE_BALANCE,
+                              PAYOUT_IN_FLIGHT,
+                              NO_VERIFIED_ACCOUNT,
+                            ]
+                        balance: { $ref: '#/components/schemas/Money' }
+
+  /v1/admin/payouts/{reference}/approve:
+    post:
+      tags: [Admin]
+      summary: Approuver un reversement
+      description: |
+        Les premiers mois produiront des cas non anticipés — remboursement
+        arrivé en retard, réservation contestée, coordonnées erronées. **Un
+        décaissement Mobile Money du mauvais montant est quasi irréversible** :
+        la validation humaine reste le garde-fou tant que le volume ne la rend
+        pas impraticable.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Approuvé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payout' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `PAYOUT_NOT_APPROVABLE`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/admin/payouts/{reference}/send:
+    post:
+      tags: [Admin]
+      summary: Envoyer le décaissement
+      description: |
+        Le débit au compte courant est écrit **à l'envoi**, pas à la
+        confirmation : sans cela, un second reversement construit pendant que
+        celui-ci est en vol paierait deux fois. Un échec le contre-passe.
+
+        Le décaissement est refusé vers un compte non vérifié — une erreur de
+        saisie envoie l'argent à un inconnu, sans recours.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Décaissement envoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payout' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `PAYOUT_NOT_SENDABLE`, `PAYOUT_ACCOUNT_UNVERIFIED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/webhooks/payouts/{provider}:
+    post:
+      tags: [Webhooks]
+      summary: Notification de décaissement
+      description: |
+        Endpoint distinct de celui des paiements, parce que le port l'est :
+        rien n'oblige le décaisseur à être l'agrégateur d'encaissement.
+
+        **C'est cette notification qui fait sortir un reversement de
+        `PROCESSING`.** Un reversement en vol interdisant d'en construire un
+        second, sans état terminal l'agence ne serait plus jamais payée.
+
+        Un échec **contre-passe** le débit écrit à l'envoi : sans cela l'agence
+        apparaîtrait payée alors qu'elle ne l'est pas.
+
+        Répond toujours `204`, même sur une charge illisible : les prestataires
+        réémettent sur erreur, et un `500` déclencherait une tempête de rejeux.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '204': { description: Reçu }
+
+  /v1/webhooks/payments/{provider}:
+    post:
+      tags: [Webhooks]
+      summary: Notification de l'agrégateur
+      description: |
+        Appelé par le prestataire de paiement. Le traitement est
+        **idempotent** : le couple `(provider, event_id)` est unique, un
+        rejeu ne produit aucun doublon.
+
+        Chaque appel est journalisé — reçu, rejoué, échoué — ce qui rend un
+        paiement perdu débogable.
+
+        Cas particulier : si le succès arrive **après** l'expiration du hold
+        et que la place a été revendue, un remboursement intégral est
+        déclenché automatiquement avec le motif `LATE_PAYMENT`.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '204': { description: Reçu }
+        '401': { description: Signature invalide }
+
+  # ────────────────────────────── Tickets ──────────────────────────────
+
+  /v1/tickets:
+    get:
+      tags: [Tickets]
+      summary: Billets du passager
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ticket' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/tickets/{reference}:
+    get:
+      tags: [Tickets]
+      summary: Détail d'un billet
+      description: |
+        La réponse porte `qr_payload`, à partir duquel le client **regénère
+        le QR Code localement**. Il n'est jamais téléchargé comme image : un
+        billet dont le QR ne s'affiche pas en gare ne vaut rien.
+
+        Le billet est mis en cache par le client et reste consultable sans
+        réseau.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ticket' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ────────────────────────────── Boarding ──────────────────────────────
+
+  /v1/agency/trips:
+    get:
+      tags: [Boarding]
+      summary: Départs de l'agence
+      description: Portée au rôle `AGENT` ou `AGENCY`, limitée à l'agence de l'utilisateur.
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TripSummary' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/agency/trips/{reference}/boarding-list:
+    get:
+      tags: [Boarding]
+      summary: Liste d'embarquement
+      description: |
+        Téléchargée **avant le départ** et conservée localement par la PWA.
+        Les scans sont ensuite vérifiés hors ligne contre cette liste.
+
+        `generated_at` permet à l'agent de savoir si sa copie est fraîche.
+
+        La fermeture des ventes en ligne 30 minutes avant le départ et le
+        délai limite d'annulation passager font qu'aucun passager ne peut
+        annuler entre le téléchargement et l'embarquement : le risque de
+        liste périmée se limite aux actions de l'agence.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BoardingList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/trips/{reference}/validations:
+    post:
+      tags: [Boarding]
+      summary: Synchroniser les validations
+      description: |
+        Envoi groupé des validations mises en file hors ligne, avec un
+        **résultat par élément**.
+
+        Ce n'est délibérément pas du tout-ou-rien : un doublon ne doit pas
+        faire échouer les quarante autres validations du même car. La
+        réponse renvoie donc `200` même lorsque certains éléments sont
+        rejetés, et chaque résultat porte son propre statut.
+
+        `client_id` est un identifiant local à l'appareil : il permet au
+        client de corréler les résultats et de purger sa file.
+
+        **La double validation hors ligne est un coût accepté.** Deux agents
+        disposant de la liste peuvent valider le même billet ; le serveur la
+        signale plutôt que de la bloquer, les deux agents relevant de la
+        même agence.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validations]
+              properties:
+                device_id: { type: string, maxLength: 100 }
+                validations:
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  items:
+                    type: object
+                    required: [client_id, ticket_reference, validated_at, method]
+                    properties:
+                      client_id:
+                        type: string
+                        description: Identifiant local, corrélation et purge de la file
+                      ticket_reference: { type: string }
+                      validated_at:
+                        type: string
+                        format: date-time
+                        description: Horodatage de l'appareil, l'agent pouvant être hors ligne
+                      method: { $ref: '#/components/schemas/ValidationMethod' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Synchronisation traitée, résultat par élément
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/ValidationResult' }
+              examples:
+                mixed:
+                  summary: Un doublon parmi des validations acceptées
+                  value:
+                    results:
+                      - client_id: 'q-1'
+                        ticket_reference: MTB-7F3K2A
+                        status: ACCEPTED
+                      - client_id: 'q-2'
+                        ticket_reference: MTB-9B1X4C
+                        status: DUPLICATE
+                        code: TICKET_ALREADY_VALIDATED
+                        first_validated_at: '2026-08-14T07:12:31Z'
+                      - client_id: 'q-3'
+                        ticket_reference: MTB-2K8M5D
+                        status: REJECTED
+                        code: TICKET_WRONG_TRIP
+
+  /v1/agency/tickets/lookup:
+    post:
+      tags: [Boarding]
+      summary: Vérifier un billet en ligne
+      description: |
+        Secours utilisé lorsque l'agent dispose du réseau — saisie manuelle
+        d'une référence, ou levée de doute sur un cas affiché par la PWA.
+
+        Les cinq issues sont distinctes : un simple « invalide » est
+        inexploitable pour l'agent, qui doit savoir **pourquoi**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference, trip_reference]
+              properties:
+                reference:
+                  type: string
+                  description: Référence du billet ou de la réservation
+                trip_reference: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Billet valide
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BoardingPassenger' }
+        '409':
+          description: |
+            Codes possibles — `TICKET_ALREADY_VALIDATED`, `TICKET_WRONG_TRIP`,
+            `TICKET_CANCELLED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Référence inconnue — code `TICKET_NOT_FOUND`
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ──────────────────── Back-office agence — inventaire ────────────────────
+  #
+  # Sans ces endpoints, la recherche ne renvoie rien et le produit n'existe
+  # pas : c'est le chantier qui devait avancer en parallèle du parcours
+  # passager, pas après.
+  #
+  # Toute écriture est portée par l'agence de l'utilisateur. Une ressource
+  # appartenant à une autre agence répond `404` et non `403` : dire « interdit »
+  # confirmerait son existence et permettrait d'énumérer le parc d'un
+  # concurrent.
+
+  /v1/agency/stations:
+    get:
+      tags: [Agency]
+      summary: Gares de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyStation' }
+
+    post:
+      tags: [Agency]
+      summary: Créer une gare
+      description: |
+        La gare **appartient à l'agence** et est publiée immédiatement : la
+        modération est a posteriori, car bloquer une agence motivée pendant
+        plusieurs jours la ferait renoncer.
+
+        La ville, elle, vient du **référentiel fermé** curé par MOTOBOY : si
+        chaque agence pouvait créer la sienne, « Douala », « douala » et « Dla »
+        coexisteraient et la recherche cesserait de regrouper les offres.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyStationInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Gare créée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/stations/{id}:
+    patch:
+      tags: [Agency]
+      summary: Modifier une gare
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 150 }
+                address: { type: [string, 'null'] }
+                latitude: { type: [number, 'null'] }
+                longitude: { type: [number, 'null'] }
+                is_active: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/city-requests:
+    post:
+      tags: [Agency]
+      summary: Demander l'ajout d'une ville
+      description: |
+        Sans ce circuit, une agence desservant une ville absente du référentiel
+        est bloquée sans recours et abandonne.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [country_id, requested_name]
+              properties:
+                country_id: { type: integer, format: int64 }
+                requested_name: { type: string, maxLength: 120 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Demande enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, requested_name, status]
+                properties:
+                  id: { type: integer, format: int64 }
+                  requested_name: { type: string }
+                  status:
+                    type: string
+                    enum: [PENDING, APPROVED, REJECTED]
+
+  /v1/agency/vehicles:
+    get:
+      tags: [Agency]
+      summary: Véhicules de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyVehicle' }
+
+    post:
+      tags: [Agency]
+      summary: Enregistrer un véhicule
+      description: |
+        En mode `SEATED`, le **plan de sièges est généré** à partir de la
+        capacité : demander à une agence de créer trente sièges un par un
+        garantirait qu'elle ne le fasse pas, et sans plan le passager ne peut
+        pas choisir sa place.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyVehicleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Véhicule enregistré
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyVehicle' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/vehicles/{id}/seats:
+    get:
+      tags: [Agency]
+      summary: Plan de sièges d'un véhicule
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Vide en mode CAPACITY
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencySeat' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/drivers:
+    get:
+      tags: [Agency]
+      summary: Chauffeurs de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyDriver' }
+
+    post:
+      tags: [Agency]
+      summary: Enregistrer un chauffeur
+      description: |
+        Le chauffeur reste un acteur métier **sans application dédiée**. Il peut
+        en revanche porter le rôle `AGENT` pour l'embarquement : le rôle est
+        fonctionnel, pas lié à un métier.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyDriverInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Chauffeur enregistré
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyDriver' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/routes:
+    get:
+      tags: [Agency]
+      summary: Itinéraires de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyRoute' }
+
+    post:
+      tags: [Agency]
+      summary: Créer un itinéraire
+      description: |
+        Un itinéraire n'est **jamais daté** — un départ l'est toujours. Les
+        gares de départ et d'arrivée doivent appartenir à l'agence.
+
+        Les escales sont **purement informatives** : la réservation est
+        point-à-point, et une ville d'escale ne rend pas un départ éligible à
+        une recherche qui la viserait.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyRouteInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Itinéraire créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyRoute' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/routes/{routeId}/schedules:
+    post:
+      tags: [Agency]
+      summary: Créer un horaire récurrent
+      description: |
+        Sans horaires récurrents, une agence ressaisit ses départs chaque matin
+        et abandonne au bout d'une semaine — l'application afficherait alors des
+        données mortes, ce qui tue un comparateur plus sûrement qu'une absence
+        d'offre.
+
+        Modifier un horaire **n'affecte pas les départs déjà générés** : le
+        changement s'applique aux départs créés ensuite.
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgencyScheduleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Horaire créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencySchedule' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/trips/generate:
+    post:
+      tags: [Agency]
+      summary: Générer les départs manquants
+      description: |
+        Génère sur l'horizon glissant, **sans jamais modifier un départ
+        existant** : une régénération qui les écraserait réécrirait des départs
+        portant déjà des réservations.
+
+        Exposé pour que l'agence voie immédiatement l'effet d'un horaire qu'elle
+        vient de créer ; un job quotidien fait avancer la fenêtre.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, horizon_days]
+                properties:
+                  created: { type: integer }
+                  horizon_days: { type: integer }
+
+  /v1/agencies/register:
+    post:
+      tags: [Agencies]
+      summary: Inscrire une agence
+      description: |
+        Crée l'agence en `PENDING` et le compte de son dirigeant, puis envoie un
+        code de vérification comme pour un passager.
+
+        **L'agence ne publie rien tant qu'elle n'est pas validée.** Elle doit
+        d'abord fournir ses documents, et l'administration saisir et **vérifier**
+        ses coordonnées de reversement — une erreur de saisie enverrait l'argent
+        à un inconnu, sans recours.
+      security: []
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Inscription enregistrée, code envoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [name, phone, manager_first_name, manager_last_name, manager_phone]
+              properties:
+                name: { type: string, maxLength: 150 }
+                legal_name: { type: [string, 'null'], maxLength: 200 }
+                phone: { type: string, maxLength: 20 }
+                email: { type: [string, 'null'], format: email }
+                manager_first_name: { type: string, maxLength: 100 }
+                manager_last_name: { type: string, maxLength: 100 }
+                manager_phone:
+                  type: string
+                  maxLength: 20
+                  description: Reçoit le code de vérification.
+                locale: { $ref: '#/components/schemas/Locale' }
+
+  /v1/agency/payout-accounts:
+    get:
+      tags: [Agency]
+      summary: Ses coordonnées de reversement
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/PayoutAccount' }
+    post:
+      tags: [Agency]
+      summary: Déclarer ou changer ses coordonnées
+      description: |
+        **Le changement n'est jamais appliqué en libre-service.** Les nouvelles
+        coordonnées naissent non vérifiées et n'encaissent rien tant qu'un
+        administrateur ne les a pas vérifiées ; les précédentes restent actives
+        jusque-là.
+
+        Compromission du compte agence, modification du numéro, attente du jour
+        de paie : c'est un vecteur de fraude classique, et c'est pourquoi
+        l'opération est journalisée et notifiée aux contacts connus de l'agence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PayoutAccountInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Coordonnées enregistrées, en attente de vérification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutAccount' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/documents:
+    get:
+      tags: [Agency]
+      summary: Ses documents
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyDocument' }
+    post:
+      tags: [Agency]
+      summary: Déposer un document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, file]
+              properties:
+                type:
+                  type: string
+                  enum: [REGISTRATION, TRANSPORT_LICENCE, INSURANCE, ID_DOCUMENT, OTHER]
+                file: { type: string, format: binary }
+                expires_at: { type: [string, 'null'], format: date }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Document déposé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyDocument' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/payouts:
+    get:
+      tags: [Agency]
+      summary: Ses reversements
+      description: |
+        Le suivi financier repose sur un **compte courant**, pas sur un calcul
+        par période : il absorbe les soldes négatifs, les régularisations
+        tardives et les corrections manuelles. Un reversement n'est qu'une
+        opération de solde jusqu'à une date donnée.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Payout' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/agency/payouts/{reference}:
+    get:
+      tags: [Agency]
+      summary: Détail d'un reversement
+      description: |
+        Réservations incluses, montant brut, commission, remboursements déduits,
+        ajustements, net versé, référence du transfert. **C'est ce document qui
+        évite les litiges répétés sur les montants.**
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/payouts/{reference}/statement:
+    get:
+      tags: [Agency]
+      summary: Relevé téléchargeable
+      description: |
+        Le même détail, au format que l'agence ouvre réellement. Le PDF
+        attendra d'être demandé : un tableur se relit, se trie et se
+        rapproche d'une comptabilité, un PDF non.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Relevé
+          content:
+            text/csv:
+              schema: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/ledger:
+    get:
+      tags: [Agency]
+      summary: Compte courant
+      description: |
+        Les écritures et leur somme. **Aucun solde n'est stocké** : il se
+        calcule. Un solde dénormalisé finit toujours par diverger de ses
+        écritures, et sur un compte qui détermine combien l'on verse à une
+        agence, la divergence se découvre lors d'une réclamation.
+
+        Les écritures sont **immuables** : une erreur se corrige par une
+        écriture inverse, jamais par une modification.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, balance, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/LedgerEntry' }
+                  balance: { $ref: '#/components/schemas/Money' }
+                  eligible_balance:
+                    allOf:
+                      - $ref: '#/components/schemas/Money'
+                    description: |
+                      Part du solde reversable aujourd'hui : une réservation
+                      devient éligible quand son départ est parti **et** que le
+                      délai configuré est écoulé.
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/agency/trips/{reference}/cancel:
+    post:
+      tags: [Agency]
+      summary: Annuler un départ
+      description: |
+        Le cas le plus fréquent sur le terrain — panne, effectif insuffisant,
+        route coupée — et le plus lourd : plusieurs dizaines de passagers déjà
+        payés.
+
+        **Remboursement intégral automatique, sans frais, sans validation
+        manuelle.** L'agence a décidé d'annuler ; faire attendre une approbation
+        laisserait des passagers payer pour un car qui ne partira pas.
+
+        Le motif est obligatoire. Le taux d'annulation est suivi en
+        administration, et seuls les départs **portant des réservations
+        confirmées** y entrent : supprimer un départ généré non assuré relève de
+        la gestion de planning, pas de l'incident.
+
+        **Rembourser d'abord, proposer ensuite.** Le transfert vers un autre
+        départ n'est pas au MVP : le passager est remboursé et reçoit des
+        alternatives dans sa notification. Les notifications partent en file —
+        notifier trente passagers en synchrone ferait expirer la requête au pire
+        moment.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { $ref: '#/components/schemas/TripCancellationReason' }
+                note: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Départ annulé, remboursements enregistrés
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TripCancellation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `TRIP_CANCELLED` (déjà annulé).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/agency/bookings/{reference}/cancel:
+    post:
+      tags: [Agency]
+      summary: Annuler tout ou partie d'une réservation, au guichet
+      description: |
+        Même mécanique que l'annulation passager, avec deux différences.
+
+        **L'agence peut annuler une réservation qu'elle a vendue au comptoir.**
+        Ce n'est pas du confort : ce passager n'a pas de compte et ne peut rien
+        annuler lui-même — sans cette route, son siège resterait bloqué jusqu'au
+        départ.
+
+        **Une vente au comptoir ne produit aucun remboursement par la
+        plateforme** : l'argent n'y est jamais passé, l'agence rend les espèces.
+        La réponse porte alors `refund: null`, et la commission guichet
+        éventuellement débitée est contre-passée.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passenger_ids:
+                  type: array
+                  items: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Annulation enregistrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BookingCancellation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `CANCELLATION_DEADLINE_PASSED`,
+            `BOOKING_NOT_CANCELLABLE`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/agency/counter-sales:
+    post:
+      tags: [Agency]
+      summary: Vendre au guichet
+      description: |
+        **Le critère est la vitesse.** Si saisir une vente au comptoir prend plus
+        de temps que d'écrire une ligne dans le cahier, l'agence ne le fera pas —
+        et toute la fiabilité de la disponibilité affichée s'effondre. D'où un
+        seul appel : départ, places, nom et téléphone.
+
+        Trois conséquences, toutes délibérées :
+
+        - **le passager n'a pas de compte** — ni inscription ni OTP ;
+        - la réservation est créée directement en `CONFIRMED`, **sans tenue ni
+          tunnel de paiement** : l'argent est déjà dans la caisse ;
+        - un paiement de méthode `CASH` est enregistré, **sans transiter par
+          l'agrégateur**, pour que statistiques et compte courant restent
+          cohérents.
+
+        La vente au guichet reste ouverte **jusqu'au départ**, alors que la vente
+        en ligne ferme trente minutes avant : l'agence voit le véhicule et
+        maîtrise sa situation.
+
+        Une place tenue par un paiement en ligne en cours reste indisponible ici,
+        au même titre qu'une place vendue.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CounterSaleInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Vente enregistrée, billets émis
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CounterSale' }
+        '409':
+          description: |
+            Codes possibles — `SEAT_ALREADY_HELD`, `TRIP_FULL`, `TRIP_CANCELLED`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/trips/{reference}/seats:
+    get:
+      tags: [Agency]
+      summary: Plan des places, vu du guichet
+      description: |
+        Identique au plan public, à une différence près : les places **tenues**
+        portent leur échéance.
+
+        Le hold l'emporte sur le guichet — donner la priorité au comptoir
+        obligerait à rembourser un passager venant de payer avec succès. Mais
+        l'agent doit distinguer « vendue » de « tenue, se libère dans six
+        minutes » pour savoir s'il attend ou s'il oriente son client vers un
+        autre siège.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CounterSeatMap' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Jeton Laravel Sanctum
+
+  parameters:
+    Reference:
+      name: reference
+      in: path
+      required: true
+      description: Référence publique, lisible et non devinable
+      schema: { type: string }
+      examples:
+        booking:
+          value: MTB-7F3K2A
+
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Rejouer la même clé renvoie le résultat initial sans créer de
+        doublon. Un UUID généré par le client convient.
+      schema: { type: string, maxLength: 100 }
+
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    DefaultError:
+      description: |
+        Réponse d'erreur par défaut, déclarée sur **toutes** les opérations.
+
+        Sans elle, une opération n'ayant que des réponses `2xx` produit un
+        type d'erreur `never` dans le client généré : le consommateur ne peut
+        alors pas traiter l'échec de façon typée, alors qu'un `401`, un `429`
+        ou un `500` restent toujours possibles.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+    Unauthorized:
+      description: Jeton absent ou invalide
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Permission insuffisante pour la ressource demandée
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Corps de requête invalide
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ValidationErrorBody' }
+
+  schemas:
+    # ── Erreurs ──
+
+    CounterSaleInput:
+      type: object
+      required: [trip_reference, passengers, contact_phone]
+      properties:
+        trip_reference: { type: string }
+        passengers:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: object
+            required: [first_name, last_name]
+            properties:
+              first_name: { type: string, maxLength: 100 }
+              last_name: { type: string, maxLength: 100 }
+              seat_id:
+                type: [integer, 'null']
+                format: int64
+                description: Requis en mode SEATED, ignoré en mode CAPACITY.
+        contact_phone:
+          type: string
+          maxLength: 20
+          description: |
+            Destinataire du billet par SMS. Aucun compte n'est créé : c'est une
+            vente au comptoir, pas un tunnel de conversion.
+        contact_name: { type: [string, 'null'], maxLength: 150 }
+
+    CounterSale:
+      type: object
+      required: [booking, amount_due, ticket_references, sms_sent]
+      properties:
+        booking: { $ref: '#/components/schemas/Booking' }
+        amount_due:
+          $ref: '#/components/schemas/Money'
+        ticket_references:
+          type: array
+          items: { type: string }
+        sms_sent:
+          type: boolean
+          description: |
+            Faux si l'agence a désactivé l'envoi. C'est le seul cas où la
+            plateforme paierait un SMS sur une vente ne portant aucune
+            commission, d'où le levier.
+
+    CounterSeatMap:
+      type: object
+      required: [seating_mode, capacity, seats_available, seats]
+      properties:
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer }
+        seats_available: { type: integer }
+        seats:
+          type: array
+          items: { $ref: '#/components/schemas/CounterSeat' }
+
+    CounterSeat:
+      allOf:
+        - $ref: '#/components/schemas/Seat'
+        - type: object
+          properties:
+            held_until:
+              type: [string, 'null']
+              format: date-time
+              description: Renseigné pour une place au statut HELD.
+
+    AgencyStation:
+      type: object
+      required: [id, name, city_id, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        city: { type: [string, 'null'] }
+        city_id: { type: integer, format: int64 }
+        address: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+        is_active: { type: boolean }
+        moderated_at:
+          type: [string, 'null']
+          format: date-time
+          description: Modération a posteriori — la gare est publiée sans l'attendre.
+
+    AgencyStationInput:
+      type: object
+      required: [city_id, name]
+      properties:
+        city_id:
+          type: integer
+          format: int64
+          description: Issue du référentiel fermé curé par MOTOBOY.
+        name: { type: string, maxLength: 150 }
+        address: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+
+    AgencyVehicle:
+      type: object
+      required: [id, registration, type, seating_mode, capacity]
+      properties:
+        id: { type: integer, format: int64 }
+        registration: { type: string }
+        brand: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        type: { $ref: '#/components/schemas/VehicleType' }
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer }
+        seats_count: { type: [integer, 'null'] }
+        condition: { type: string }
+
+    AgencyVehicleInput:
+      type: object
+      required: [registration, type, seating_mode, capacity]
+      properties:
+        registration: { type: string, maxLength: 20 }
+        brand: { type: [string, 'null'] }
+        model: { type: [string, 'null'] }
+        type: { $ref: '#/components/schemas/VehicleType' }
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer, minimum: 1, maximum: 90 }
+        owner_phone:
+          type: [string, 'null']
+          description: |
+            Rattache le véhicule à un propriétaire. Son accès reste en
+            consultation seule, sans aucun circuit financier porté par la
+            plateforme.
+
+    AgencySeat:
+      type: object
+      required: [id, label, is_bookable]
+      properties:
+        id: { type: integer, format: int64 }
+        label: { type: string }
+        row_index: { type: integer }
+        column_index: { type: integer }
+        is_bookable: { type: boolean }
+
+    AgencyDriver:
+      type: object
+      required: [id, first_name, last_name, phone, license_number, status]
+      properties:
+        id: { type: integer, format: int64 }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+        license_number: { type: string }
+        license_expires_at: { type: [string, 'null'], format: date }
+        assigned_vehicle_id: { type: [integer, 'null'], format: int64 }
+        status: { type: string }
+
+    AgencyDriverInput:
+      type: object
+      required: [first_name, last_name, phone, license_number]
+      properties:
+        first_name: { type: string, maxLength: 100 }
+        last_name: { type: string, maxLength: 100 }
+        phone: { type: string, maxLength: 20 }
+        license_number: { type: string, maxLength: 50 }
+        license_expires_at: { type: [string, 'null'], format: date }
+        assigned_vehicle_id: { type: [integer, 'null'], format: int64 }
+
+    AgencyRoute:
+      type: object
+      required: [id, origin, destination, stops, schedules, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        origin: { $ref: '#/components/schemas/AgencyRouteEnd' }
+        destination: { $ref: '#/components/schemas/AgencyRouteEnd' }
+        reference_duration_minutes: { type: [integer, 'null'] }
+        stops:
+          type: array
+          description: Informatives — jamais réservables.
+          items:
+            type: object
+            required: [position]
+            properties:
+              city: { type: [string, 'null'] }
+              position: { type: integer }
+        schedules:
+          type: array
+          items: { $ref: '#/components/schemas/AgencySchedule' }
+        is_active: { type: boolean }
+
+    AgencyRouteEnd:
+      type: object
+      properties:
+        city: { type: [string, 'null'] }
+        station: { type: [string, 'null'] }
+
+    AgencyRouteInput:
+      type: object
+      required: [origin_station_id, destination_station_id]
+      properties:
+        origin_station_id: { type: integer, format: int64 }
+        destination_station_id: { type: integer, format: int64 }
+        reference_duration_minutes: { type: [integer, 'null'] }
+        stops:
+          type: array
+          maxItems: 12
+          items: { type: integer, format: int64 }
+
+    AgencySchedule:
+      type: object
+      required: [id, departure_time, days_of_week, price, valid_from, is_active]
+      properties:
+        id: { type: integer, format: int64 }
+        departure_time:
+          type: string
+          description: Heure locale de pendule, pas un instant.
+        days_of_week:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 7 }
+        default_vehicle_id: { type: [integer, 'null'], format: int64 }
+        default_driver_id: { type: [integer, 'null'], format: int64 }
+        price: { $ref: '#/components/schemas/Money' }
+        valid_from: { type: string, format: date }
+        valid_until: { type: [string, 'null'], format: date }
+        is_active: { type: boolean }
+
+    AgencyScheduleInput:
+      type: object
+      required: [departure_time, days_of_week, default_vehicle_id, price, valid_from]
+      properties:
+        departure_time: { type: string, examples: ['08:00'] }
+        days_of_week:
+          type: array
+          minItems: 1
+          maxItems: 7
+          items: { type: integer, minimum: 1, maximum: 7 }
+        default_vehicle_id: { type: integer, format: int64 }
+        default_driver_id: { type: [integer, 'null'], format: int64 }
+        price: { type: integer, minimum: 0 }
+        valid_from: { type: string, format: date }
+        valid_until: { type: [string, 'null'], format: date }
+
+    OtpPurpose:
+      type: string
+      enum: [REGISTRATION, LOGIN, PHONE_CHANGE]
+      description: |
+        Un OTP est lié à son intention : un code demandé pour se connecter ne
+        doit pas pouvoir valider une inscription.
+
+    Locale:
+      type: string
+      enum: [fr, en]
+      description: |
+        Le Cameroun a deux langues officielles, et les régions du Nord-Ouest
+        et du Sud-Ouest sont anglophones — Bamenda, Buea, Limbe sont des
+        destinations interurbaines réelles. Les deux langues sont donc
+        servies dès le lancement, pas à l'expansion.
+
+        Résolution : `users.locale` pour un compte, langue par défaut de
+        l'agence pour un passager de vente au guichet, qui n'a pas de compte.
+
+    ErrorCode:
+      type: string
+      description: |
+        Code typé, sur lequel les clients branchent. `message` est destiné à
+        l'affichage et peut changer sans préavis.
+      enum:
+        - VALIDATION_FAILED
+        - UNAUTHENTICATED
+        - FORBIDDEN
+        - NOT_FOUND
+        - RATE_LIMITED
+        - OTP_INVALID
+        - OTP_EXPIRED
+        - OTP_TOO_MANY_ATTEMPTS
+        - SEAT_ALREADY_HELD
+        - TRIP_FULL
+        - ONLINE_SALES_CLOSED
+        - TRIP_CANCELLED
+        - BOOKING_EXPIRED
+        - BOOKING_NOT_CANCELLABLE
+        - CANCELLATION_DEADLINE_PASSED
+        - PAYMENT_ALREADY_SUCCEEDED
+        - PAYMENT_FAILED
+        - TICKET_NOT_FOUND
+        - TICKET_ALREADY_VALIDATED
+        - TICKET_WRONG_TRIP
+        - TICKET_CANCELLED
+        - PAYOUT_NOT_APPROVABLE
+        - PAYOUT_NOT_SENDABLE
+        - PAYOUT_ACCOUNT_UNVERIFIED
+        - AGENCY_NOT_PENDING
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { $ref: '#/components/schemas/ErrorCode' }
+        message:
+          type: string
+          description: |
+            **Diagnostic — ne jamais afficher à l'utilisateur.**
+
+            Destiné aux journaux, à l'exploitation et au débogage. Sa langue
+            n'est pas garantie et son libellé peut changer sans préavis.
+
+            Le client rend le message affiché à partir de `code` et de
+            `details`, dans la langue de l'utilisateur. C'est ce qui permet à
+            la localisation des erreurs de rester entièrement côté client,
+            sans négociation `Accept-Language`.
+        details:
+          type: object
+          additionalProperties: true
+          description: |
+            Valeurs d'interpolation du message affiché — échéance dépassée,
+            sièges en conflit, etc.
+
+    ValidationErrorBody:
+      type: object
+      required: [code, message, errors]
+      properties:
+        code: { $ref: '#/components/schemas/ErrorCode' }
+        message:
+          type: string
+          description: Diagnostic — ne jamais afficher. Voir `Error.message`.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    PaginationMeta:
+      type: object
+      required: [page, per_page, total, last_page]
+      properties:
+        page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+
+    # ── Énumérations ──
+
+    BookingStatus:
+      type: string
+      enum:
+        - PENDING_PAYMENT
+        - CONFIRMED
+        - EXPIRED
+        - CANCELLED_BY_PASSENGER
+        - CANCELLED_BY_AGENCY
+        - USED
+        - NO_SHOW
+      description: |
+        Il n'existe pas d'état `FAILED` : l'échec appartient à la tentative
+        de paiement, pas à la réservation.
+
+    PaymentStatus:
+      type: string
+      enum: [PENDING, PROCESSING, SUCCEEDED, FAILED]
+
+    PaymentMethod:
+      type: string
+      enum: [MOBILE_MONEY, CARD, CASH]
+
+    RefundStatus:
+      type: string
+      enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+
+    RefundReason:
+      type: string
+      enum:
+        - PASSENGER_REQUEST
+        - AGENCY_TRIP_CANCELLED
+        - TRIP_MODIFIED
+        - LATE_PAYMENT
+        - DUPLICATE_PAYMENT
+        - ADMIN_ADJUSTMENT
+
+    TicketStatus:
+      type: string
+      enum: [VALID, USED, CANCELLED]
+
+    ValidationMethod:
+      type: string
+      enum: [SCAN, MANUAL]
+
+    SeatingMode:
+      type: string
+      enum: [SEATED, CAPACITY]
+
+    VehicleType:
+      type: string
+      enum: [BUS, CAR]
+
+    # ── Ressources ──
+
+    User:
+      type: object
+      required: [id, phone, first_name, last_name]
+      properties:
+        id: { type: integer, format: int64 }
+        phone: { type: string }
+        email: { type: [string, 'null'], format: email }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone_verified: { type: boolean }
+        locale: { $ref: '#/components/schemas/Locale' }
+
+    OtpChallenge:
+      type: object
+      required: [expires_at, attempts_remaining]
+      properties:
+        expires_at:
+          type: string
+          format: date-time
+          description: Validité de 10 minutes
+        attempts_remaining:
+          type: integer
+          description: 4 tentatives au maximum
+
+    PlaceSuggestion:
+      type: object
+      required: [type, city_id, label]
+      properties:
+        type:
+          type: string
+          enum: [CITY, STATION]
+        city_id:
+          type: integer
+          format: int64
+          description: Cible de la recherche, y compris lorsque le type est STATION
+        station_id: { type: [integer, 'null'], format: int64 }
+        label: { type: string }
+        secondary_label:
+          type: [string, 'null']
+          description: Ville de rattachement, lorsque la suggestion est une gare
+
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Unités entières de devise, le XAF n'ayant pas de subdivision
+        currency: { type: string, minLength: 3, maxLength: 3 }
+
+    AgencySummary:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        logo_url: { type: [string, 'null'] }
+
+    StationSummary:
+      type: object
+      required: [id, name, city]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        city: { type: string }
+        address: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+
+    CancellationPolicy:
+      type: object
+      description: |
+        Conditions **figées sur la réservation**. Affichées avant le
+        paiement ; un durcissement ultérieur des conditions de l'agence est
+        sans effet sur les réservations existantes.
+      required: [deadline_hours, fee_type, fee_value]
+      properties:
+        deadline_hours: { type: integer }
+        fee_type:
+          type: string
+          enum: [PERCENTAGE, FIXED]
+        fee_value: { type: integer, format: int64 }
+
+    TripSummary:
+      type: object
+      required:
+        [
+          reference,
+          agency,
+          departure_at,
+          origin_station,
+          destination_station,
+          price,
+          seats_available,
+          seating_mode,
+          vehicle_type,
+        ]
+      properties:
+        reference: { type: string }
+        agency: { $ref: '#/components/schemas/AgencySummary' }
+        departure_at: { type: string, format: date-time }
+        arrival_estimate_at: { type: [string, 'null'], format: date-time }
+        duration_minutes: { type: [integer, 'null'] }
+        origin_station: { $ref: '#/components/schemas/StationSummary' }
+        destination_station: { $ref: '#/components/schemas/StationSummary' }
+        price: { $ref: '#/components/schemas/Money' }
+        seats_available: { type: integer }
+        capacity: { type: integer }
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        vehicle_type: { $ref: '#/components/schemas/VehicleType' }
+        stops:
+          type: array
+          description: |
+            Escales **purement informatives**. La réservation est
+            point-à-point : une ville d'escale ne rend pas ce trajet
+            éligible à une recherche qui la viserait.
+          items:
+            type: object
+            required: [city, position]
+            properties:
+              city: { type: string }
+              position: { type: integer }
+        cancellation_policy: { $ref: '#/components/schemas/CancellationPolicy' }
+        online_sales_close_at: { type: string, format: date-time }
+
+    TripDetail:
+      allOf:
+        - $ref: '#/components/schemas/TripSummary'
+        - type: object
+          properties:
+            vehicle:
+              type: object
+              properties:
+                brand: { type: [string, 'null'] }
+                model: { type: [string, 'null'] }
+                type: { $ref: '#/components/schemas/VehicleType' }
+
+    Seat:
+      type: object
+      required: [id, label, status]
+      properties:
+        id: { type: integer, format: int64 }
+        label: { type: string }
+        row_index: { type: integer }
+        column_index: { type: integer }
+        status:
+          type: string
+          enum: [AVAILABLE, TAKEN, HELD, UNAVAILABLE]
+          description: |
+            `HELD` désigne une place tenue par un paiement en cours. Elle est
+            indisponible au même titre qu'une place vendue, sur tous les
+            canaux — vente au guichet comprise.
+
+    SeatMap:
+      type: object
+      required: [seating_mode, capacity, seats_available, seats]
+      properties:
+        seating_mode: { $ref: '#/components/schemas/SeatingMode' }
+        capacity: { type: integer }
+        seats_available: { type: integer }
+        seats:
+          type: array
+          description: Vide en mode CAPACITY
+          items: { $ref: '#/components/schemas/Seat' }
+
+    SearchSuggestions:
+      type: object
+      description: |
+        Repli affiché lorsque la recherche ne renvoie rien. Une couverture
+        encore faible au lancement rendra ce cas fréquent, et un passager
+        déçu deux fois ne revient pas.
+      required: [nearby_dates, routes_served]
+      properties:
+        nearby_dates:
+          type: array
+          items:
+            type: object
+            required: [date, trips_count, lowest_price]
+            properties:
+              date: { type: string, format: date }
+              trips_count: { type: integer }
+              lowest_price: { $ref: '#/components/schemas/Money' }
+        routes_served:
+          type: array
+          description: Axes desservis au départ de la même ville
+          items:
+            type: object
+            required: [destination_city_id, destination_city, trips_count]
+            properties:
+              destination_city_id: { type: integer, format: int64 }
+              destination_city: { type: string }
+              trips_count: { type: integer }
+
+    BookingPassenger:
+      type: object
+      required: [id, first_name, last_name, status]
+      properties:
+        id: { type: integer, format: int64 }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: [string, 'null'] }
+        seat_label: { type: [string, 'null'] }
+        status:
+          type: string
+          enum: [ACTIVE, CANCELLED]
+        ticket_reference: { type: [string, 'null'] }
+
+    Booking:
+      type: object
+      required: [reference, status, trip, passengers, seats_count, total, created_at]
+      properties:
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/BookingStatus' }
+        expires_at:
+          type: [string, 'null']
+          format: date-time
+          description: |
+            Échéance du hold. Renseignée tant que la réservation est en
+            `PENDING_PAYMENT`. Le client affiche un compte à rebours : le
+            passager doit savoir qu'il est chronométré.
+        trip: { $ref: '#/components/schemas/TripSummary' }
+        passengers:
+          type: array
+          items: { $ref: '#/components/schemas/BookingPassenger' }
+        seats_count: { type: integer }
+        total: { $ref: '#/components/schemas/Money' }
+        cancellation_policy: { $ref: '#/components/schemas/CancellationPolicy' }
+        contact_name: { type: [string, 'null'] }
+        contact_phone: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+        confirmed_at: { type: [string, 'null'], format: date-time }
+
+    Payment:
+      type: object
+      required: [reference, status, method, amount]
+      properties:
+        reference: { type: string }
+        booking_reference: { type: string }
+        status: { $ref: '#/components/schemas/PaymentStatus' }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        operator: { type: [string, 'null'] }
+        amount: { $ref: '#/components/schemas/Money' }
+        failure_reason: { type: [string, 'null'] }
+        paid_at: { type: [string, 'null'], format: date-time }
+        created_at: { type: string, format: date-time }
+
+    Refund:
+      type: object
+      required: [reference, status, reason, amount]
+      properties:
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/RefundStatus' }
+        reason: { $ref: '#/components/schemas/RefundReason' }
+        amount: { $ref: '#/components/schemas/Money' }
+        completed_at: { type: [string, 'null'], format: date-time }
+
+    AdminAgency:
+      type: object
+      required: [reference, name, status, phone]
+      properties:
+        reference: { type: string }
+        name: { type: string }
+        legal_name: { type: [string, 'null'] }
+        phone: { type: string }
+        email: { type: [string, 'null'] }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        approved_at: { type: [string, 'null'], format: date-time }
+        documents_count: { type: integer }
+        has_verified_payout_account:
+          type: boolean
+          description: |
+            Faux tant qu'aucun compte n'est vérifié — et tant que c'est le cas,
+            aucun reversement ne peut partir.
+
+    AdminAgencyDetail:
+      allOf:
+        - $ref: '#/components/schemas/AdminAgency'
+        - type: object
+          required: [documents, payout_accounts]
+          properties:
+            documents:
+              type: array
+              items: { $ref: '#/components/schemas/AgencyDocument' }
+            payout_accounts:
+              type: array
+              items: { $ref: '#/components/schemas/PayoutAccount' }
+            commercial_terms: { $ref: '#/components/schemas/CommercialTerms' }
+
+    AgencyDocument:
+      type: object
+      required: [id, type, status]
+      properties:
+        id: { type: integer, format: int64 }
+        type:
+          type: string
+          enum: [REGISTRATION, TRANSPORT_LICENCE, INSURANCE, ID_DOCUMENT, OTHER]
+        status: { type: string, enum: [PENDING, ACCEPTED, REJECTED] }
+        expires_at: { type: [string, 'null'], format: date }
+        uploaded_at: { type: [string, 'null'], format: date-time }
+
+    PayoutAccountInput:
+      type: object
+      required: [type, account_number, account_name]
+      properties:
+        type: { type: string, enum: [MOBILE_MONEY, BANK] }
+        operator:
+          type: [string, 'null']
+          enum: [MTN, ORANGE, null]
+          description: Requis pour un compte Mobile Money.
+        account_number: { type: string, maxLength: 50 }
+        account_name: { type: string, maxLength: 150 }
+
+    CommercialTerms:
+      type: object
+      required:
+        - commission_type
+        - commission_value
+        - fee_bearer
+        - payout_delay_hours
+        - payout_frequency
+        - cancellation_deadline_hours
+      properties:
+        commission_type: { type: string, enum: [PERCENTAGE, FIXED] }
+        commission_value:
+          type: integer
+          format: int64
+          description: En **points de base** si `PERCENTAGE` — 800 vaut 8 %.
+        fee_bearer:
+          type: string
+          enum: [PLATFORM, AGENCY]
+          description: |
+            Jamais le passager : le prix affiché divergerait du prix guichet, et
+            un comparateur qui n'affiche pas le vrai prix perd son objet.
+        payout_delay_hours: { type: integer, minimum: 0, maximum: 168 }
+        payout_frequency: { type: string, enum: [WEEKLY, MONTHLY] }
+        payout_day: { type: integer, minimum: 1, maximum: 28 }
+        payout_minimum_amount: { type: integer, format: int64, minimum: 0 }
+        counter_sale_commission_enabled: { type: boolean }
+        counter_sale_sms_enabled: { type: boolean }
+        cancellation_deadline_hours: { type: integer, minimum: 0, maximum: 48 }
+        cancellation_fee_type: { type: string, enum: [PERCENTAGE, FIXED] }
+        cancellation_fee_value: { type: integer, format: int64 }
+        hold_duration_minutes: { type: integer, minimum: 5, maximum: 30 }
+        online_sales_cutoff_minutes: { type: integer, minimum: 0, maximum: 240 }
+
+    CommercialTermsInput:
+      allOf:
+        - $ref: '#/components/schemas/CommercialTerms'
+      description: |
+        Tous les champs sont optionnels : seuls ceux fournis sont modifiés. Les
+        bornes sont imposées côté serveur.
+
+    CityRequest:
+      type: object
+      required: [id, requested_name, status]
+      properties:
+        id: { type: integer, format: int64 }
+        agency_id: { type: integer, format: int64 }
+        country_id: { type: integer, format: int64 }
+        requested_name: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        resolved_city_id: { type: [integer, 'null'], format: int64 }
+        reviewed_at: { type: [string, 'null'], format: date-time }
+
+    AuditEntry:
+      type: object
+      required: [action, auditable_type, auditable_id, created_at]
+      properties:
+        action: { type: string }
+        auditable_type: { type: string }
+        auditable_id: { type: integer, format: int64 }
+        user_id: { type: [integer, 'null'], format: int64 }
+        old_values: { type: [object, 'null'], additionalProperties: true }
+        new_values: { type: [object, 'null'], additionalProperties: true }
+        ip_address: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    AdminDashboard:
+      type: object
+      required: [users, agencies, trips, bookings, revenue, commissions]
+      properties:
+        users: { type: integer }
+        agencies:
+          type: object
+          required: [total, pending, approved]
+          properties:
+            total: { type: integer }
+            pending:
+              type: integer
+              description: Dossiers en attente de validation — la file de travail.
+            approved: { type: integer }
+        trips:
+          type: object
+          required: [upcoming, cancelled_30d]
+          properties:
+            upcoming: { type: integer }
+            cancelled_30d:
+              type: integer
+              description: |
+                Départs annulés portant des réservations confirmées. Une agence
+                qui annule un départ sur cinq détruit la confiance dans la
+                plateforme entière, pas seulement dans sa propre offre.
+        bookings:
+          type: object
+          required: [confirmed, cancelled]
+          properties:
+            confirmed: { type: integer }
+            cancelled: { type: integer }
+        tickets_validated: { type: integer }
+        vehicles_active: { type: integer }
+        revenue: { $ref: '#/components/schemas/Money' }
+        commissions: { $ref: '#/components/schemas/Money' }
+        refunds: { $ref: '#/components/schemas/Money' }
+        payouts_pending:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Net des reversements en attente de validation ou en vol.
+
+    Payout:
+      type: object
+      required:
+        [
+          reference,
+          period_start,
+          period_end,
+          status,
+          gross,
+          commission,
+          refunds,
+          adjustments,
+          net,
+        ]
+      properties:
+        reference: { type: string }
+        agency_id: { type: integer, format: int64 }
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        status: { $ref: '#/components/schemas/PayoutStatus' }
+        gross: { $ref: '#/components/schemas/Money' }
+        commission: { $ref: '#/components/schemas/Money' }
+        refunds: { $ref: '#/components/schemas/Money' }
+        adjustments:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: |
+            Écritures du compte courant sans réservation en face — corrections
+            manuelles, frais retenus. Elles n'apparaissent dans aucune ligne,
+            d'où leur total séparé.
+        net:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: |
+            Fait foi. C'est la somme du compte courant éligible, pas un total
+            recalculé depuis les lignes — celles-ci ne sont que le justificatif.
+        approved_at: { type: [string, 'null'], format: date-time }
+        paid_at: { type: [string, 'null'], format: date-time }
+        provider_reference: { type: [string, 'null'] }
+        failure_reason: { type: [string, 'null'] }
+
+    PayoutDetail:
+      allOf:
+        - $ref: '#/components/schemas/Payout'
+        - type: object
+          required: [lines, account]
+          properties:
+            account: { $ref: '#/components/schemas/PayoutAccount' }
+            lines:
+              type: array
+              items: { $ref: '#/components/schemas/PayoutLine' }
+
+    PayoutLine:
+      type: object
+      required: [booking_reference, gross, commission, refunds, net]
+      properties:
+        booking_reference: { type: string }
+        trip_reference: { type: [string, 'null'] }
+        departure_at: { type: [string, 'null'], format: date-time }
+        gross: { $ref: '#/components/schemas/Money' }
+        commission: { $ref: '#/components/schemas/Money' }
+        refunds: { $ref: '#/components/schemas/Money' }
+        net: { $ref: '#/components/schemas/Money' }
+
+    PayoutAccount:
+      type: object
+      required: [type, account_name, masked_number, verified]
+      properties:
+        type: { type: string, enum: [MOBILE_MONEY, BANK] }
+        operator: { type: [string, 'null'] }
+        account_name: { type: string }
+        masked_number:
+          type: string
+          description: |
+            Tronqué. Le numéro complet n'a pas à circuler dans une réponse
+            d'API : le changer est un vecteur de fraude classique, le lire est
+            la première étape.
+        verified: { type: boolean }
+
+    PayoutStatus:
+      type: string
+      enum: [DRAFT, PENDING_VALIDATION, APPROVED, PROCESSING, PAID, FAILED]
+
+    LedgerEntry:
+      type: object
+      required: [type, amount, occurred_at]
+      properties:
+        type: { $ref: '#/components/schemas/LedgerEntryType' }
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Signé — positif au crédit, négatif au débit.
+        description: { type: [string, 'null'] }
+        reference_type: { type: [string, 'null'] }
+        occurred_at:
+          type: string
+          format: date-time
+          description: Date d'effet, distincte de la date d'écriture.
+
+    LedgerEntryType:
+      type: string
+      enum:
+        - BOOKING_CREDIT
+        - COMMISSION_DEBIT
+        - REFUND_DEBIT
+        - COMMISSION_REVERSAL_CREDIT
+        - AGGREGATOR_FEE_DEBIT
+        - COUNTER_COMMISSION_DEBIT
+        - COUNTER_COMMISSION_REVERSAL
+        - ADJUSTMENT
+        - PAYOUT_DEBIT
+        - PAYOUT_REVERSAL_CREDIT
+
+    BookingCancellation:
+      type: object
+      required: [booking, refund, fee, refunded]
+      properties:
+        booking: { $ref: '#/components/schemas/Booking' }
+        refund:
+          oneOf:
+            - $ref: '#/components/schemas/Refund'
+            - type: 'null'
+          description: |
+            Nul quand il n'y a rien à rembourser par la plateforme : vente au
+            comptoir encaissée en espèces par l'agence, ou frais d'annulation
+            égaux au montant payé.
+        refunded: { $ref: '#/components/schemas/Money' }
+        fee:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: |
+            Frais d'annulation retenus. MOTOBOY y récupère d'abord ses frais
+            réels d'agrégateur, le solde revient à l'agence qui subit la perte
+            du siège. La commission, elle, est abandonnée : elle rémunère un
+            transport qui n'a pas eu lieu.
+        cancelled_passenger_ids:
+          type: array
+          items: { type: integer, format: int64 }
+
+    TripCancellation:
+      type: object
+      required: [trip, bookings_cancelled, passengers_cancelled, refunded]
+      properties:
+        trip: { $ref: '#/components/schemas/TripSummary' }
+        bookings_cancelled: { type: integer }
+        passengers_cancelled: { type: integer }
+        refunded:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Total remboursé, intégral et sans frais.
+
+    TripCancellationReason:
+      type: string
+      enum: [BREAKDOWN, INSUFFICIENT_PASSENGERS, ROAD_CLOSED, OTHER]
+      description: |
+        Obligatoire à la saisie. Sans motif, le suivi du taux d'annulation ne
+        distingue pas une panne isolée d'une agence qui surréserve.
+
+    CancellationQuote:
+      type: object
+      required: [refundable, fee, cancellable]
+      properties:
+        cancellable: { type: boolean }
+        reason_if_not:
+          type: [string, 'null']
+          description: Code d'erreur qui serait renvoyé, si `cancellable` est faux
+        refundable: { $ref: '#/components/schemas/Money' }
+        fee: { $ref: '#/components/schemas/Money' }
+        deadline_at: { type: string, format: date-time }
+
+    Ticket:
+      type: object
+      required: [reference, status, passenger_name, trip, qr_payload]
+      properties:
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        booking_reference: { type: string }
+        passenger_name: { type: string }
+        seat_label: { type: [string, 'null'] }
+        trip: { $ref: '#/components/schemas/TripSummary' }
+        qr_payload:
+          type: string
+          description: |
+            Contenu à encoder. Le client **regénère le QR Code localement**
+            à partir de cette valeur, il ne le télécharge jamais comme
+            image. Le billet reste ainsi consultable sans réseau.
+        issued_at: { type: string, format: date-time }
+
+    BoardingPassenger:
+      type: object
+      required: [ticket_reference, passenger_name, status]
+      properties:
+        ticket_reference: { type: string }
+        booking_reference: { type: string }
+        passenger_name: { type: string }
+        seat_label: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/TicketStatus' }
+        group_size:
+          type: integer
+          description: Nombre de billets de la même réservation
+        group_validated:
+          type: integer
+          description: |
+            Billets déjà validés dans cette réservation. Permet d'afficher
+            « 2/3 validés » pour que l'agent sache qui manque encore.
+        validated_at: { type: [string, 'null'], format: date-time }
+
+    BoardingList:
+      type: object
+      required: [trip, generated_at, passengers]
+      properties:
+        trip: { $ref: '#/components/schemas/TripSummary' }
+        generated_at:
+          type: string
+          format: date-time
+          description: Permet à l'agent de juger la fraîcheur de sa copie locale
+        passengers:
+          type: array
+          items: { $ref: '#/components/schemas/BoardingPassenger' }
+
+    ValidationResult:
+      type: object
+      required: [client_id, ticket_reference, status]
+      properties:
+        client_id:
+          type: string
+          description: Repris de la requête, pour corréler et purger la file locale
+        ticket_reference: { type: string }
+        status:
+          type: string
+          enum: [ACCEPTED, DUPLICATE, REJECTED]
+        code:
+          oneOf:
+            - $ref: '#/components/schemas/ErrorCode'
+            - type: 'null'
+        first_validated_at:
+          type: [string, 'null']
+          format: date-time
+          description: Renseigné lorsque le statut est DUPLICATE
