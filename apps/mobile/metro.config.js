@@ -26,11 +26,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-// Les packages du workspace exportent leur source TypeScript directement — pas
-// d'étape de build à orchestrer, ce qui est aussi la raison pour laquelle
-// Turborepo n'a pas été retenu au départ. Metro les transpile comme le reste.
-config.resolver.disableHierarchicalLookup = true
-
 /*
  * Résolution des imports `.js` écrits dans du TypeScript.
  *
