@@ -686,6 +686,355 @@ paths:
 
   # ─────────────────────────── Administration ───────────────────────────
 
+  /v1/admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Chiffres de la plateforme
+      description: |
+        Les compteurs de supervision. Calculés à la demande : pré-agréger avant
+        d'avoir du volume produirait un cache à invalider pour rien, et une
+        divergence de plus à déboguer.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminDashboard' }
+
+  /v1/admin/agencies:
+    get:
+      tags: [Admin]
+      summary: Agences
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminAgency' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/admin/agencies/{reference}:
+    get:
+      tags: [Admin]
+      summary: Dossier d'une agence
+      description: Documents, coordonnées de reversement et conditions commerciales.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgencyDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/agencies/{reference}/approve:
+    post:
+      tags: [Admin]
+      summary: Valider une agence
+      description: |
+        L'agence peut alors publier son offre. Journalisé — c'est l'une des
+        opérations que §28 impose de tracer.
+
+        La validation **ne vérifie pas les coordonnées de reversement** : ce sont
+        deux gestes distincts, et les confondre ferait approuver un compte
+        bancaire en approuvant une raison sociale.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Validée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgency' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Codes possibles — `AGENCY_NOT_PENDING`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/admin/agencies/{reference}/reject:
+    post:
+      tags: [Admin]
+      summary: Refuser une agence
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  description: |
+                    Obligatoire. Un refus sans motif laisse l'agence sans
+                    recours et fait revenir le dossier à l'identique.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Refusée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAgency' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/agencies/{reference}/commercial-terms:
+    patch:
+      tags: [Admin]
+      summary: Modifier les conditions commerciales
+      description: |
+        **Réservé au super administrateur.** Ce sont des termes négociés, pas un
+        réglage en libre-service.
+
+        Les bornes de B4 sont imposées côté serveur. Trois d'entre elles sont
+        volontairement fermées : reverser avant le départ est exclu, le passager
+        ne peut jamais porter les frais d'agrégateur, et les frais d'annulation
+        ne peuvent pas dépasser la moitié du montant payé.
+
+        Modifier ces conditions **ne réécrit aucune réservation existante** :
+        elles y sont figées à la création.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommercialTermsInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Modifiées
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CommercialTerms' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/admin/agencies/{reference}/ledger-adjustments:
+    post:
+      tags: [Admin]
+      summary: Ajuster le compte courant
+      description: |
+        Écriture manuelle, **motif obligatoire**, journalisée. C'est ce qui
+        permet de rattraper les cas que les premiers mois produiront ; sans
+        elle, un compte courant faux ne se corrige que par requête SQL.
+
+        Le montant est **signé** : positif au crédit, négatif au débit. Aucune
+        écriture n'est jamais modifiée ni supprimée — une erreur se corrige par
+        une écriture inverse.
+      parameters:
+        - $ref: '#/components/parameters/Reference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, description]
+              properties:
+                amount: { type: integer, format: int64 }
+                description: { type: string, minLength: 3, maxLength: 255 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Écriture passée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LedgerEntry' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/admin/payout-accounts/{id}/verify:
+    post:
+      tags: [Admin]
+      summary: Vérifier des coordonnées de reversement
+      description: |
+        **Le geste qui autorise l'argent à partir.** Une erreur de saisie envoie
+        les fonds à un inconnu, sans recours : aucun décaissement n'est possible
+        vers un compte non vérifié.
+
+        Vérifier de nouvelles coordonnées **désactive les précédentes** : une
+        agence n'a qu'un compte actif, et en laisser deux rendrait le choix
+        implicite au moment du versement.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Vérifiées
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutAccount' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/city-requests:
+    get:
+      tags: [Admin]
+      summary: Demandes d'ajout de ville
+      description: |
+        Sans ce circuit, une agence desservant une ville absente du référentiel
+        est bloquée sans recours et abandonne.
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CityRequest' }
+
+  /v1/admin/city-requests/{id}/resolve:
+    post:
+      tags: [Admin]
+      summary: Traiter une demande de ville
+      description: |
+        Approuver crée la ville dans le référentiel fermé, ou rattache la demande
+        à une ville existante quand il s'agissait d'une variante d'orthographe —
+        auquel cas un alias est ajouté pour que l'autocomplétion la trouve la
+        prochaine fois.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [APPROVE, REJECT] }
+                city_id:
+                  type: [integer, 'null']
+                  format: int64
+                  description: |
+                    Rattache à une ville existante au lieu d'en créer une. Un
+                    alias est alors enregistré.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Traitée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CityRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/stations:
+    get:
+      tags: [Admin]
+      summary: Gares à modérer
+      description: |
+        Modération **a posteriori** : la gare est publiée sans attendre. Une
+        validation préalable bloquerait une agence motivée plusieurs jours, et
+        elle renoncerait.
+      parameters:
+        - name: moderated
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyStation' }
+
+  /v1/admin/stations/{id}/moderate:
+    post:
+      tags: [Admin]
+      summary: Modérer une gare
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [KEEP, DEACTIVATE] }
+                reason: { type: [string, 'null'], maxLength: 255 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Modérée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStation' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Journal d'audit
+      description: |
+        **Réservé au super administrateur** (I4). Qui a créé ce trajet, modifié
+        ce prix, annulé cette réservation, remboursé, approuvé ce reversement,
+        changé ces coordonnées.
+
+        Les entrées sont **immuables** : aucune écriture ni suppression n'est
+        exposée, ici ou ailleurs.
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: auditable_type
+          in: query
+          schema: { type: string }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditEntry' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
   /v1/admin/payouts:
     get:
       tags: [Admin]
@@ -1429,6 +1778,133 @@ paths:
                   created: { type: integer }
                   horizon_days: { type: integer }
 
+  /v1/agencies/register:
+    post:
+      tags: [Agencies]
+      summary: Inscrire une agence
+      description: |
+        Crée l'agence en `PENDING` et le compte de son dirigeant, puis envoie un
+        code de vérification comme pour un passager.
+
+        **L'agence ne publie rien tant qu'elle n'est pas validée.** Elle doit
+        d'abord fournir ses documents, et l'administration saisir et **vérifier**
+        ses coordonnées de reversement — une erreur de saisie enverrait l'argent
+        à un inconnu, sans recours.
+      security: []
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Inscription enregistrée, code envoyé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpChallenge' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [name, phone, manager_first_name, manager_last_name, manager_phone]
+              properties:
+                name: { type: string, maxLength: 150 }
+                legal_name: { type: [string, 'null'], maxLength: 200 }
+                phone: { type: string, maxLength: 20 }
+                email: { type: [string, 'null'], format: email }
+                manager_first_name: { type: string, maxLength: 100 }
+                manager_last_name: { type: string, maxLength: 100 }
+                manager_phone:
+                  type: string
+                  maxLength: 20
+                  description: Reçoit le code de vérification.
+                locale: { $ref: '#/components/schemas/Locale' }
+
+  /v1/agency/payout-accounts:
+    get:
+      tags: [Agency]
+      summary: Ses coordonnées de reversement
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/PayoutAccount' }
+    post:
+      tags: [Agency]
+      summary: Déclarer ou changer ses coordonnées
+      description: |
+        **Le changement n'est jamais appliqué en libre-service.** Les nouvelles
+        coordonnées naissent non vérifiées et n'encaissent rien tant qu'un
+        administrateur ne les a pas vérifiées ; les précédentes restent actives
+        jusque-là.
+
+        Compromission du compte agence, modification du numéro, attente du jour
+        de paie : c'est un vecteur de fraude classique, et c'est pourquoi
+        l'opération est journalisée et notifiée aux contacts connus de l'agence.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PayoutAccountInput' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Coordonnées enregistrées, en attente de vérification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutAccount' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/documents:
+    get:
+      tags: [Agency]
+      summary: Ses documents
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyDocument' }
+    post:
+      tags: [Agency]
+      summary: Déposer un document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, file]
+              properties:
+                type:
+                  type: string
+                  enum: [REGISTRATION, TRANSPORT_LICENCE, INSURANCE, ID_DOCUMENT, OTHER]
+                file: { type: string, format: binary }
+                expires_at: { type: [string, 'null'], format: date }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Document déposé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyDocument' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   /v1/agency/payouts:
     get:
       tags: [Agency]
@@ -2060,6 +2536,7 @@ components:
         - PAYOUT_NOT_APPROVABLE
         - PAYOUT_NOT_SENDABLE
         - PAYOUT_ACCOUNT_UNVERIFIED
+        - AGENCY_NOT_PENDING
 
     Error:
       type: object
@@ -2420,6 +2897,168 @@ components:
         reason: { $ref: '#/components/schemas/RefundReason' }
         amount: { $ref: '#/components/schemas/Money' }
         completed_at: { type: [string, 'null'], format: date-time }
+
+    AdminAgency:
+      type: object
+      required: [reference, name, status, phone]
+      properties:
+        reference: { type: string }
+        name: { type: string }
+        legal_name: { type: [string, 'null'] }
+        phone: { type: string }
+        email: { type: [string, 'null'] }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        approved_at: { type: [string, 'null'], format: date-time }
+        documents_count: { type: integer }
+        has_verified_payout_account:
+          type: boolean
+          description: |
+            Faux tant qu'aucun compte n'est vérifié — et tant que c'est le cas,
+            aucun reversement ne peut partir.
+
+    AdminAgencyDetail:
+      allOf:
+        - $ref: '#/components/schemas/AdminAgency'
+        - type: object
+          required: [documents, payout_accounts]
+          properties:
+            documents:
+              type: array
+              items: { $ref: '#/components/schemas/AgencyDocument' }
+            payout_accounts:
+              type: array
+              items: { $ref: '#/components/schemas/PayoutAccount' }
+            commercial_terms: { $ref: '#/components/schemas/CommercialTerms' }
+
+    AgencyDocument:
+      type: object
+      required: [id, type, status]
+      properties:
+        id: { type: integer, format: int64 }
+        type:
+          type: string
+          enum: [REGISTRATION, TRANSPORT_LICENCE, INSURANCE, ID_DOCUMENT, OTHER]
+        status: { type: string, enum: [PENDING, ACCEPTED, REJECTED] }
+        expires_at: { type: [string, 'null'], format: date }
+        uploaded_at: { type: [string, 'null'], format: date-time }
+
+    PayoutAccountInput:
+      type: object
+      required: [type, account_number, account_name]
+      properties:
+        type: { type: string, enum: [MOBILE_MONEY, BANK] }
+        operator:
+          type: [string, 'null']
+          enum: [MTN, ORANGE, null]
+          description: Requis pour un compte Mobile Money.
+        account_number: { type: string, maxLength: 50 }
+        account_name: { type: string, maxLength: 150 }
+
+    CommercialTerms:
+      type: object
+      required:
+        - commission_type
+        - commission_value
+        - fee_bearer
+        - payout_delay_hours
+        - payout_frequency
+        - cancellation_deadline_hours
+      properties:
+        commission_type: { type: string, enum: [PERCENTAGE, FIXED] }
+        commission_value:
+          type: integer
+          format: int64
+          description: En **points de base** si `PERCENTAGE` — 800 vaut 8 %.
+        fee_bearer:
+          type: string
+          enum: [PLATFORM, AGENCY]
+          description: |
+            Jamais le passager : le prix affiché divergerait du prix guichet, et
+            un comparateur qui n'affiche pas le vrai prix perd son objet.
+        payout_delay_hours: { type: integer, minimum: 0, maximum: 168 }
+        payout_frequency: { type: string, enum: [WEEKLY, MONTHLY] }
+        payout_day: { type: integer, minimum: 1, maximum: 28 }
+        payout_minimum_amount: { type: integer, format: int64, minimum: 0 }
+        counter_sale_commission_enabled: { type: boolean }
+        counter_sale_sms_enabled: { type: boolean }
+        cancellation_deadline_hours: { type: integer, minimum: 0, maximum: 48 }
+        cancellation_fee_type: { type: string, enum: [PERCENTAGE, FIXED] }
+        cancellation_fee_value: { type: integer, format: int64 }
+        hold_duration_minutes: { type: integer, minimum: 5, maximum: 30 }
+        online_sales_cutoff_minutes: { type: integer, minimum: 0, maximum: 240 }
+
+    CommercialTermsInput:
+      allOf:
+        - $ref: '#/components/schemas/CommercialTerms'
+      description: |
+        Tous les champs sont optionnels : seuls ceux fournis sont modifiés. Les
+        bornes sont imposées côté serveur.
+
+    CityRequest:
+      type: object
+      required: [id, requested_name, status]
+      properties:
+        id: { type: integer, format: int64 }
+        agency_id: { type: integer, format: int64 }
+        country_id: { type: integer, format: int64 }
+        requested_name: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        resolved_city_id: { type: [integer, 'null'], format: int64 }
+        reviewed_at: { type: [string, 'null'], format: date-time }
+
+    AuditEntry:
+      type: object
+      required: [action, auditable_type, auditable_id, created_at]
+      properties:
+        action: { type: string }
+        auditable_type: { type: string }
+        auditable_id: { type: integer, format: int64 }
+        user_id: { type: [integer, 'null'], format: int64 }
+        old_values: { type: [object, 'null'], additionalProperties: true }
+        new_values: { type: [object, 'null'], additionalProperties: true }
+        ip_address: { type: [string, 'null'] }
+        created_at: { type: string, format: date-time }
+
+    AdminDashboard:
+      type: object
+      required: [users, agencies, trips, bookings, revenue, commissions]
+      properties:
+        users: { type: integer }
+        agencies:
+          type: object
+          required: [total, pending, approved]
+          properties:
+            total: { type: integer }
+            pending:
+              type: integer
+              description: Dossiers en attente de validation — la file de travail.
+            approved: { type: integer }
+        trips:
+          type: object
+          required: [upcoming, cancelled_30d]
+          properties:
+            upcoming: { type: integer }
+            cancelled_30d:
+              type: integer
+              description: |
+                Départs annulés portant des réservations confirmées. Une agence
+                qui annule un départ sur cinq détruit la confiance dans la
+                plateforme entière, pas seulement dans sa propre offre.
+        bookings:
+          type: object
+          required: [confirmed, cancelled]
+          properties:
+            confirmed: { type: integer }
+            cancelled: { type: integer }
+        tickets_validated: { type: integer }
+        vehicles_active: { type: integer }
+        revenue: { $ref: '#/components/schemas/Money' }
+        commissions: { $ref: '#/components/schemas/Money' }
+        refunds: { $ref: '#/components/schemas/Money' }
+        payouts_pending:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Net des reversements en attente de validation ou en vol.
 
     Payout:
       type: object

@@ -50,6 +50,7 @@ enum ErrorCode: string
     case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
     case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';
     case PayoutAccountUnverified = 'PAYOUT_ACCOUNT_UNVERIFIED';
+    case AgencyNotPending = 'AGENCY_NOT_PENDING';
 
     /** Statut HTTP associé, pour que chaque code ait une réponse cohérente. */
     public function status(): int

@@ -19,4 +19,5 @@ return [
     'otp' => 'MOTOBOY : votre code est :code. Il expire dans :minutes minutes. Ne le communiquez a personne.',
     'counter_ticket' => 'MOTOBOY : votre reservation :reference est confirmee (:count billet(s)). Presentez ce code a l\'embarquement.',
     'trip_cancelled' => 'MOTOBOY : depart du :date annule. Reservation :reference remboursee integralement. Alternatives dans l\'application.',
+    'payout_account_changed' => 'MOTOBOY : une demande de changement de vos coordonnees de reversement a ete enregistree. Si ce n est pas vous, contactez-nous immediatement.',
 ];

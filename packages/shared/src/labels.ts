@@ -156,6 +156,7 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     PAYOUT_NOT_APPROVABLE: "Ce reversement n'est plus en attente de validation.",
     PAYOUT_NOT_SENDABLE: "Ce reversement doit être approuvé avant d'être envoyé.",
     PAYOUT_ACCOUNT_UNVERIFIED: 'Coordonnées de reversement non vérifiées.',
+    AGENCY_NOT_PENDING: "Cette agence n'est pas en attente de validation.",
   },
   en: {
     VALIDATION_FAILED: 'Some of the details are incorrect.',
@@ -182,6 +183,7 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     PAYOUT_NOT_APPROVABLE: 'This payout is no longer awaiting approval.',
     PAYOUT_NOT_SENDABLE: 'This payout must be approved before it can be sent.',
     PAYOUT_ACCOUNT_UNVERIFIED: 'Payout details have not been verified.',
+    AGENCY_NOT_PENDING: 'This agency is not awaiting approval.',
   },
 }
 

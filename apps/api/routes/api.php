@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Modules\Administration\Http\Controllers\AdminAgencyController;
+use App\Modules\Administration\Http\Controllers\AdminDashboardController;
+use App\Modules\Administration\Http\Controllers\AdminReferenceController;
+use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
 use App\Modules\Agencies\Http\Controllers\CancellationController;
 use App\Modules\Agencies\Http\Controllers\CounterSaleController;
 use App\Modules\Agencies\Http\Controllers\FleetController;
@@ -54,6 +58,14 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/login', [AuthController::class, 'login']);
         Route::post('auth/otp/resend', [AuthController::class, 'resend']);
         Route::post('auth/otp/verify', [AuthController::class, 'verify']);
+
+        /*
+         * Inscription d'une agence (§23).
+         *
+         * Même limitation de débit que l'inscription passager : elle envoie un
+         * SMS payant, et c'est le seul canal de vérification.
+         */
+        Route::post('agencies/register', [AgencyAccountController::class, 'register']);
     });
 
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -153,6 +165,18 @@ Route::prefix('v1')->group(function (): void {
             Route::get('payouts/{reference}', [AgencyPayoutController::class, 'show']);
             Route::get('payouts/{reference}/statement', [AgencyPayoutController::class, 'statement']);
             Route::get('ledger', [AgencyPayoutController::class, 'ledger']);
+
+            /*
+             * Dossier de l'agence (§23, B4).
+             *
+             * Les coordonnées de reversement se **déclarent** ici mais ne
+             * s'appliquent pas : elles naissent non vérifiées et n'encaissent
+             * rien tant que l'administration ne les a pas vérifiées.
+             */
+            Route::get('payout-accounts', [AgencyAccountController::class, 'payoutAccounts']);
+            Route::post('payout-accounts', [AgencyAccountController::class, 'submitPayoutAccount']);
+            Route::get('documents', [AgencyAccountController::class, 'documents']);
+            Route::post('documents', [AgencyAccountController::class, 'uploadDocument']);
         });
 
         /*
@@ -167,6 +191,30 @@ Route::prefix('v1')->group(function (): void {
             Route::post('payouts/build', [AdminPayoutController::class, 'build']);
             Route::post('payouts/{reference}/approve', [AdminPayoutController::class, 'approve']);
             Route::post('payouts/{reference}/send', [AdminPayoutController::class, 'send']);
+
+            Route::get('dashboard', AdminDashboardController::class);
+
+            /*
+             * Validation des agences (§23).
+             *
+             * Valider une agence et vérifier ses coordonnées de reversement sont
+             * **deux gestes distincts** : l'un dit « cette entreprise existe »,
+             * l'autre « cet argent peut partir là ».
+             */
+            Route::get('agencies', [AdminAgencyController::class, 'index']);
+            Route::get('agencies/{reference}', [AdminAgencyController::class, 'show']);
+            Route::post('agencies/{reference}/approve', [AdminAgencyController::class, 'approve']);
+            Route::post('agencies/{reference}/reject', [AdminAgencyController::class, 'reject']);
+            Route::patch('agencies/{reference}/commercial-terms', [AdminAgencyController::class, 'updateTerms']);
+            Route::post('agencies/{reference}/ledger-adjustments', [AdminAgencyController::class, 'adjustLedger']);
+            Route::post('payout-accounts/{id}/verify', [AdminAgencyController::class, 'verifyAccount']);
+
+            // Référentiel géographique (B1) et journal d'audit (§28).
+            Route::get('city-requests', [AdminReferenceController::class, 'cityRequests']);
+            Route::post('city-requests/{id}/resolve', [AdminReferenceController::class, 'resolveCityRequest']);
+            Route::get('stations', [AdminReferenceController::class, 'stations']);
+            Route::post('stations/{id}/moderate', [AdminReferenceController::class, 'moderateStation']);
+            Route::get('audit-logs', [AdminReferenceController::class, 'auditLogs']);
         });
     });
 

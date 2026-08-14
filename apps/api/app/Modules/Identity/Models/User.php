@@ -62,14 +62,22 @@ final class User extends Authenticatable
      */
     public function hasRole(string $role, ?int $agencyId = null): bool
     {
-        return $this->roles()
-            ->where('roles.name', $role)
-            ->when(
-                $agencyId !== null,
-                fn ($query) => $query->wherePivot('agency_id', $agencyId),
-                fn ($query) => $query->wherePivotNull('agency_id'),
-            )
-            ->exists();
+        /*
+         * `wherePivot` est appelé **sur la relation**, jamais depuis un `when`.
+         *
+         * Dans la closure d'un `when`, l'argument reçu est le Builder et non la
+         * relation : `wherePivot` n'y existe pas, le `__call` la transforme en
+         * condition dynamique sur une colonne « pivot », et PostgreSQL renvoie
+         * « column "pivot" does not exist » — au mieux. C'est ce que faisait la
+         * version précédente.
+         */
+        $roles = $this->roles()->where('roles.name', $role);
+
+        $roles = $agencyId === null
+            ? $roles->wherePivotNull('agency_id')
+            : $roles->wherePivot('agency_id', $agencyId);
+
+        return $roles->exists();
     }
 
     /**

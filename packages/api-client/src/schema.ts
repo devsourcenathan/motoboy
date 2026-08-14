@@ -933,6 +933,662 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Chiffres de la plateforme
+         * @description Les compteurs de supervision. Calculés à la demande : pré-agréger avant
+         *     d'avoir du volume produirait un cache à invalider pour rien, et une
+         *     divergence de plus à déboguer.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminDashboard"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agences */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+                    page?: components["parameters"]["Page"];
+                    per_page?: components["parameters"]["PerPage"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminAgency"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agencies/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dossier d'une agence
+         * @description Documents, coordonnées de reversement et conditions commerciales.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAgencyDetail"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agencies/{reference}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valider une agence
+         * @description L'agence peut alors publier son offre. Journalisé — c'est l'une des
+         *     opérations que §28 impose de tracer.
+         *
+         *     La validation **ne vérifie pas les coordonnées de reversement** : ce sont
+         *     deux gestes distincts, et les confondre ferait approuver un compte
+         *     bancaire en approuvant une raison sociale.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Validée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAgency"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                /** @description Codes possibles — `AGENCY_NOT_PENDING`. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agencies/{reference}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuser une agence */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Obligatoire. Un refus sans motif laisse l'agence sans
+                         *     recours et fait revenir le dossier à l'identique.
+                         */
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Refusée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAgency"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/agencies/{reference}/commercial-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Modifier les conditions commerciales
+         * @description **Réservé au super administrateur.** Ce sont des termes négociés, pas un
+         *     réglage en libre-service.
+         *
+         *     Les bornes de B4 sont imposées côté serveur. Trois d'entre elles sont
+         *     volontairement fermées : reverser avant le départ est exclu, le passager
+         *     ne peut jamais porter les frais d'agrégateur, et les frais d'annulation
+         *     ne peuvent pas dépasser la moitié du montant payé.
+         *
+         *     Modifier ces conditions **ne réécrit aucune réservation existante** :
+         *     elles y sont figées à la création.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CommercialTermsInput"];
+                };
+            };
+            responses: {
+                /** @description Modifiées */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CommercialTerms"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/agencies/{reference}/ledger-adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ajuster le compte courant
+         * @description Écriture manuelle, **motif obligatoire**, journalisée. C'est ce qui
+         *     permet de rattraper les cas que les premiers mois produiront ; sans
+         *     elle, un compte courant faux ne se corrige que par requête SQL.
+         *
+         *     Le montant est **signé** : positif au crédit, négatif au débit. Aucune
+         *     écriture n'est jamais modifiée ni supprimée — une erreur se corrige par
+         *     une écriture inverse.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Référence publique, lisible et non devinable */
+                    reference: components["parameters"]["Reference"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: int64 */
+                        amount: number;
+                        description: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Écriture passée */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LedgerEntry"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payout-accounts/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Vérifier des coordonnées de reversement
+         * @description **Le geste qui autorise l'argent à partir.** Une erreur de saisie envoie
+         *     les fonds à un inconnu, sans recours : aucun décaissement n'est possible
+         *     vers un compte non vérifié.
+         *
+         *     Vérifier de nouvelles coordonnées **désactive les précédentes** : une
+         *     agence n'a qu'un compte actif, et en laisser deux rendrait le choix
+         *     implicite au moment du versement.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Vérifiées */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutAccount"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/city-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Demandes d'ajout de ville
+         * @description Sans ce circuit, une agence desservant une ville absente du référentiel
+         *     est bloquée sans recours et abandonne.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "PENDING" | "APPROVED" | "REJECTED";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["CityRequest"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/city-requests/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Traiter une demande de ville
+         * @description Approuver crée la ville dans le référentiel fermé, ou rattache la demande
+         *     à une ville existante quand il s'agissait d'une variante d'orthographe —
+         *     auquel cas un alias est ajouté pour que l'autocomplétion la trouve la
+         *     prochaine fois.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "APPROVE" | "REJECT";
+                        /**
+                         * Format: int64
+                         * @description Rattache à une ville existante au lieu d'en créer une. Un
+                         *     alias est alors enregistré.
+                         */
+                        city_id?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Traitée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CityRequest"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gares à modérer
+         * @description Modération **a posteriori** : la gare est publiée sans attendre. Une
+         *     validation préalable bloquerait une agence motivée plusieurs jours, et
+         *     elle renoncerait.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    moderated?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyStation"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stations/{id}/moderate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Modérer une gare */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        decision: "KEEP" | "DEACTIVATE";
+                        reason?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Modérée */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyStation"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Journal d'audit
+         * @description **Réservé au super administrateur** (I4). Qui a créé ce trajet, modifié
+         *     ce prix, annulé cette réservation, remboursé, approuvé ce reversement,
+         *     changé ces coordonnées.
+         *
+         *     Les entrées sont **immuables** : aucune écriture ni suppression n'est
+         *     exposée, ici ou ailleurs.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    action?: string;
+                    auditable_type?: string;
+                    page?: components["parameters"]["Page"];
+                    per_page?: components["parameters"]["PerPage"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AuditEntry"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/payouts": {
         parameters: {
             query?: never;
@@ -2174,6 +2830,215 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agencies/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inscrire une agence
+         * @description Crée l'agence en `PENDING` et le compte de son dirigeant, puis envoie un
+         *     code de vérification comme pour un passager.
+         *
+         *     **L'agence ne publie rien tant qu'elle n'est pas validée.** Elle doit
+         *     d'abord fournir ses documents, et l'administration saisir et **vérifier**
+         *     ses coordonnées de reversement — une erreur de saisie enverrait l'argent
+         *     à un inconnu, sans recours.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        legal_name?: string | null;
+                        phone: string;
+                        /** Format: email */
+                        email?: string | null;
+                        manager_first_name: string;
+                        manager_last_name: string;
+                        /** @description Reçoit le code de vérification. */
+                        manager_phone: string;
+                        locale?: components["schemas"]["Locale"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Inscription enregistrée, code envoyé */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OtpChallenge"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/payout-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses coordonnées de reversement */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["PayoutAccount"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Déclarer ou changer ses coordonnées
+         * @description **Le changement n'est jamais appliqué en libre-service.** Les nouvelles
+         *     coordonnées naissent non vérifiées et n'encaissent rien tant qu'un
+         *     administrateur ne les a pas vérifiées ; les précédentes restent actives
+         *     jusque-là.
+         *
+         *     Compromission du compte agence, modification du numéro, attente du jour
+         *     de paie : c'est un vecteur de fraude classique, et c'est pourquoi
+         *     l'opération est journalisée et notifiée aux contacts connus de l'agence.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PayoutAccountInput"];
+                };
+            };
+            responses: {
+                /** @description Coordonnées enregistrées, en attente de vérification */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutAccount"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses documents */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyDocument"][];
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /** Déposer un document */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @enum {string} */
+                        type: "REGISTRATION" | "TRANSPORT_LICENCE" | "INSURANCE" | "ID_DOCUMENT" | "OTHER";
+                        /** Format: binary */
+                        file: string;
+                        /** Format: date */
+                        expires_at?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Document déposé */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyDocument"];
+                    };
+                };
+                422: components["responses"]["ValidationError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/payouts": {
         parameters: {
             query?: never;
@@ -2869,7 +3734,7 @@ export interface components {
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
         Error: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -3126,6 +3991,147 @@ export interface components {
             amount: components["schemas"]["Money"];
             /** Format: date-time */
             completed_at?: string | null;
+        };
+        AdminAgency: {
+            reference: string;
+            name: string;
+            legal_name?: string | null;
+            phone: string;
+            email?: string | null;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+            /** Format: date-time */
+            approved_at?: string | null;
+            documents_count?: number;
+            /**
+             * @description Faux tant qu'aucun compte n'est vérifié — et tant que c'est le cas,
+             *     aucun reversement ne peut partir.
+             */
+            has_verified_payout_account?: boolean;
+        };
+        AdminAgencyDetail: components["schemas"]["AdminAgency"] & {
+            documents: components["schemas"]["AgencyDocument"][];
+            payout_accounts: components["schemas"]["PayoutAccount"][];
+            commercial_terms?: components["schemas"]["CommercialTerms"];
+        };
+        AgencyDocument: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            type: "REGISTRATION" | "TRANSPORT_LICENCE" | "INSURANCE" | "ID_DOCUMENT" | "OTHER";
+            /** @enum {string} */
+            status: "PENDING" | "ACCEPTED" | "REJECTED";
+            /** Format: date */
+            expires_at?: string | null;
+            /** Format: date-time */
+            uploaded_at?: string | null;
+        };
+        PayoutAccountInput: {
+            /** @enum {string} */
+            type: "MOBILE_MONEY" | "BANK";
+            /**
+             * @description Requis pour un compte Mobile Money.
+             * @enum {string|null}
+             */
+            operator?: "MTN" | "ORANGE" | null;
+            account_number: string;
+            account_name: string;
+        };
+        CommercialTerms: {
+            /** @enum {string} */
+            commission_type: "PERCENTAGE" | "FIXED";
+            /**
+             * Format: int64
+             * @description En **points de base** si `PERCENTAGE` — 800 vaut 8 %.
+             */
+            commission_value: number;
+            /**
+             * @description Jamais le passager : le prix affiché divergerait du prix guichet, et
+             *     un comparateur qui n'affiche pas le vrai prix perd son objet.
+             * @enum {string}
+             */
+            fee_bearer: "PLATFORM" | "AGENCY";
+            payout_delay_hours: number;
+            /** @enum {string} */
+            payout_frequency: "WEEKLY" | "MONTHLY";
+            payout_day?: number;
+            /** Format: int64 */
+            payout_minimum_amount?: number;
+            counter_sale_commission_enabled?: boolean;
+            counter_sale_sms_enabled?: boolean;
+            cancellation_deadline_hours: number;
+            /** @enum {string} */
+            cancellation_fee_type?: "PERCENTAGE" | "FIXED";
+            /** Format: int64 */
+            cancellation_fee_value?: number;
+            hold_duration_minutes?: number;
+            online_sales_cutoff_minutes?: number;
+        };
+        /**
+         * @description Tous les champs sont optionnels : seuls ceux fournis sont modifiés. Les
+         *     bornes sont imposées côté serveur.
+         */
+        CommercialTermsInput: components["schemas"]["CommercialTerms"];
+        CityRequest: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            agency_id?: number;
+            /** Format: int64 */
+            country_id?: number;
+            requested_name: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            /** Format: int64 */
+            resolved_city_id?: number | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+        };
+        AuditEntry: {
+            action: string;
+            auditable_type: string;
+            /** Format: int64 */
+            auditable_id: number;
+            /** Format: int64 */
+            user_id?: number | null;
+            old_values?: {
+                [key: string]: unknown;
+            } | null;
+            new_values?: {
+                [key: string]: unknown;
+            } | null;
+            ip_address?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminDashboard: {
+            users: number;
+            agencies: {
+                total: number;
+                /** @description Dossiers en attente de validation — la file de travail. */
+                pending: number;
+                approved: number;
+            };
+            trips: {
+                upcoming: number;
+                /**
+                 * @description Départs annulés portant des réservations confirmées. Une agence
+                 *     qui annule un départ sur cinq détruit la confiance dans la
+                 *     plateforme entière, pas seulement dans sa propre offre.
+                 */
+                cancelled_30d: number;
+            };
+            bookings: {
+                confirmed: number;
+                cancelled: number;
+            };
+            tickets_validated?: number;
+            vehicles_active?: number;
+            revenue: components["schemas"]["Money"];
+            commissions: components["schemas"]["Money"];
+            refunds?: components["schemas"]["Money"];
+            /** @description Net des reversements en attente de validation ou en vol. */
+            payouts_pending?: components["schemas"]["Money"];
         };
         Payout: {
             reference: string;

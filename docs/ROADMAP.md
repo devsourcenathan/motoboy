@@ -21,7 +21,7 @@ dans `apps/api`.
 |---|---|---|
 | Décisions produit | 6 points bloquants et 10 points importants tranchés | [BRIEF.md](BRIEF.md) |
 | Modèle de données | 33 tables, garde-fous de concurrence éprouvés | [SCHEMA.md](SCHEMA.md) · 22 migrations |
-| Contrat d'API | passager, embarquement, back-office, guichet, annulation, reversements — 45 chemins, 50 opérations | couverture vérifiée par test, liste d'attente vide |
+| Contrat d'API | tous les espaces — 61 chemins, 68 opérations | couverture vérifiée par test, liste d'attente vide |
 | Monorepo | pnpm, Laravel hors workspace, chaîne de génération éprouvée | `pnpm verify` |
 | Standard de code | outillé : Pint, Larastan 8, Prettier, oxlint, CI | [CODING-STANDARD.md](CODING-STANDARD.md) |
 | Référentiel | 26 villes, alias, rôles et permissions, idempotent | `php artisan db:seed` |
@@ -35,14 +35,14 @@ dans `apps/api`.
 | **Back-office — inventaire** | gares, véhicules, chauffeurs, itinéraires, horaires, génération | idem |
 | **Vente au guichet** | appel unique, encaissement espèces, billets immédiats, rejeu sûr | idem |
 | **Annulation et remboursement** | partielle ou totale, départ annulé, répartition des frais, rejeu | idem |
-| **Reversements** | solde du compte courant, validation humaine, décaissement, réconciliation | 146 tests, 515 assertions |
+| **Reversements** | solde du compte courant, validation humaine, décaissement, réconciliation | idem |
+| **Administration** | inscription et validation d'agence, coordonnées vérifiées, audit, référentiel, tableau de bord | 165 tests, 591 assertions |
 
-**Ce qui n'existe pas encore** : les écrans de suivi de l'agence, la PWA, et
-l'administration au-delà du circuit de reversement. **Le circuit financier est
-complet côté API** — le passager paie, l'agence est créditée, remboursée le cas
-échéant, et reversée. Le parcours de [§35](BRIEF.md) l'est aussi, une agence peut
-alimenter l'inventaire, et elle peut vendre au comptoir sans que la disponibilité
-affichée cesse d'être vraie.
+**Ce qui n'existe pas encore** : les interfaces. **Toute la chaîne est en place
+côté API** — une agence s'inscrit, est validée, alimente son inventaire, vend en
+ligne et au comptoir, embarque, annule, et est reversée sur des coordonnées
+vérifiées. Restent les écrans web et mobile, la PWA d'embarquement, et les
+listes de consultation de l'administration.
 
 ---
 
@@ -368,6 +368,57 @@ les routes enregistrées aux chemins spécifiés, dans les deux sens. Il a été
 introduit après avoir constaté la dérive : treize routes servies sans figurer au
 contrat, quatre chemins spécifiés sans exister. C'est ce qui rend le mot
 « normative » vrai plutôt qu'aspirationnel.
+
+---
+
+## 4 bis. Administration — ✅ côté API
+
+`RegisterAgency`, `ReviewAgency`, `ManagePayoutAccount`, `UpdateCommercialTerms`,
+`AdjustLedger`, `ResolveCityRequest`, `RecordAudit`, plus le port de stockage et
+le tableau de bord.
+
+**Le maillon manquant du circuit financier est posé.** Une agence déclare ses
+coordonnées de reversement, mais elles naissent **non vérifiées** et
+n'encaissent rien : c'est un administrateur qui les vérifie, l'opération est
+journalisée avec ancienne et nouvelle valeur, et l'agence est prévenue **sur le
+contact qu'elle avait avant la demande** — notifier le nouveau numéro
+n'avertirait que l'auteur du changement, c'est-à-dire l'attaquant dans le seul
+scénario qui compte ([B4](BRIEF.md)).
+
+Valider une agence et vérifier ses coordonnées restent **deux gestes distincts** :
+l'un dit « cette entreprise existe », l'autre « cet argent peut partir là ».
+
+Trois choses que l'écriture a révélées :
+
+- **L'`AuditLog` était spécifié et rien n'écrivait dedans.** La table et le
+  modèle existaient depuis le début du schéma ; aucune ligne n'y était jamais
+  passée, alors que [§28](BRIEF.md) l'exige et que B4 en fait une obligation sur
+  les coordonnées de reversement. L'enregistreur est appelé **explicitement**
+  depuis les Actions sensibles, pas posé en observateur Eloquent : un
+  observateur voit qu'une ligne a changé, pas qui l'a changée ni depuis où, et
+  noierait les gestes humains sous les écritures des jobs.
+- **`User::hasRole()` était cassé dès qu'on lui passait une agence.** Le
+  `wherePivot` était appelé depuis la closure d'un `when`, où l'argument reçu
+  est le Builder et non la relation : le `__call` le transformait en condition
+  sur une colonne « pivot » inexistante. La méthode n'avait jamais été appelée
+  avec ce second argument — le premier test à le faire l'a fait tomber.
+- **Les bornes de [B4](BRIEF.md) n'étaient vérifiées nulle part.** Délai
+  d'éligibilité 0–168 h, frais d'annulation plafonnés à 50 %, porteur des frais
+  jamais le passager : elles étaient écrites dans le brief et rien ne les
+  imposait. Elles le sont maintenant côté serveur.
+
+Le **port de stockage** arrive avec ce lot, parce que les documents d'agence en
+avaient besoin. Le disque local sert le développement, Cloudflare R2 la
+production — compatible S3, donc le même adaptateur couvre les deux et le
+changement tient dans une ligne de configuration. Le nom d'origine d'un fichier
+n'est jamais repris : il vient de l'utilisateur, et deux agences déposant
+« licence.pdf » s'écraseraient.
+
+**Ce qui reste de [§23](BRIEF.md)** : les listes de consultation — utilisateurs,
+véhicules, chauffeurs, propriétaires, trajets, réservations, billets,
+transactions, commissions. Ce sont des écrans sans décision, qui se construisent
+mieux une fois qu'on sait ce qu'on y cherche ; ils appartiennent au même chantier
+que les interfaces.
 
 ---
 

@@ -30,6 +30,14 @@ return [
     |
     */
 
+    /*
+     * Disque des documents d'agence.
+     *
+     * `local` en développement, R2 en production — compatible S3, donc le même
+     * pilote couvre les deux et le changement tient dans cette ligne (§29).
+     */
+    'documents_disk' => env('DOCUMENTS_DISK', 'documents'),
+
     'disks' => [
 
         'local' => [
@@ -47,6 +55,17 @@ return [
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
+        ],
+
+        /*
+         * Documents d'agence — jamais publics : registre de commerce, pièce
+         * d'identité d'un dirigeant. La consultation passe par une URL signée à
+         * durée limitée, ou par l'endpoint authentifié.
+         */
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'throw' => false,
         ],
 
         's3' => [
