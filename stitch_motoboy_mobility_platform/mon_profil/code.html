@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Profil</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-tertiary": "#ffffff", secondary: "#745b00", "on-secondary": "#ffffff", "on-secondary-fixed": "#241a00", error: "#ba1a1a", outline: "#777585", "on-surface-variant": "#464554", "surface-container-high": "#eae6f2", background: "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-background": "#1b1b22", "secondary-fixed": "#ffe089", "on-secondary-fixed-variant": "#574400", "inverse-primary": "#bfc2ff", "secondary-fixed-dim": "#efc11f", "on-tertiary-fixed-variant": "#852313", "on-tertiary-fixed": "#3f0300", "tertiary-container": "#610700", "on-surface": "#1b1b22", "surface-container-highest": "#e4e1ec", "on-error-container": "#93000a", "on-secondary-container": "#705900", "on-primary-container": "#838aff", "surface-tint": "#464dd3", "tertiary-fixed-dim": "#ffb4a6", "secondary-container": "#fecf30", tertiary: "#3b0300", "error-container": "#ffdad6", "surface-variant": "#e4e1ec", "primary-container": "#0400a4", "on-tertiary-container": "#ee6f58", "inverse-surface": "#303038", "surface-container-low": "#f5f2fd", "surface-container": "#f0ecf7", "primary-fixed": "#e0e0ff", "surface-dim": "#dcd8e3", surface: "#fcf8ff", "surface-container-lowest": "#ffffff", primary: "#010067", "tertiary-fixed": "#ffdad4", "surface-bright": "#fcf8ff", "inverse-on-surface": "#f3effa", "on-primary-fixed-variant": "#2b30bb", "on-primary-fixed": "#02006e", "outline-variant": "#c7c4d6", "on-primary": "#ffffff", "on-error": "#ffffff"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", "container-margin": "16px", base: "8px", sm: "12px", gutter: "12px", lg: "24px", xs: "4px", xl: "32px"}, fontFamily: {"body-md": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "display-lg": ["Inter"], "headline-sm": ["Inter"], "display-lg-mobile": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            /* Mobile-first bottom padding for nav */
+            padding-bottom: 80px; 
+            padding-top: 64px;
+        }
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 0;
+            }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-container-margin h-16 bg-surface shadow-sm fixed top-0 z-50">
+<button class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full flex items-center justify-center opacity-70 transition-all">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary">MOTOBOY</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</header>
+<main class="px-container-margin py-lg max-w-3xl mx-auto space-y-lg">
+<!-- Profile Header / Glassmorphism Card -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant p-lg flex flex-col sm:flex-row items-center gap-md relative overflow-hidden">
+<!-- Decorative gradient blob -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary-container rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-container shrink-0 relative shadow-sm">
+<img alt="Profile Picture" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional driver, looking confident and reliable. The lighting is natural and bright, typical of a sunny day in a vibrant city. The style is modern, high-quality photography suitable for a trustworthy mobility app profile picture. The color palette emphasizes clean whites, warm skin tones, and subtle blue accents in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6VkgMuIqUyWwMQqcXX5Z_ZhokMbbQxEBPJPsZ-yciaVRZuvazsHWyLkI_1fPKlgsJhZzBvEI0weiTUaliEreJUY-nBusYF8wC-1BO_5Z8qUVeNcHODkqGp0g4Epe2GhDQTJcFJBfLrSXkf1apQeuvwI8n9-3Q-NIpmqgcCyYgBTKcuIwATTr55m8ZMnuqQSR5MfDLSBaS-3V6R2-CBdOeaZF4KmW3zN0z_g6i_T9ySe8wILjPckVJ"/>
+</div>
+<div class="text-center sm:text-left z-10">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Jean Dupont</h2>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center justify-center sm:justify-start gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="phone">phone</span>
+                    +237 6 00 00 00 00
+                </p>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center justify-center sm:justify-start gap-xs mt-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="mail">mail</span>
+                    jean.dupont@email.cm
+                </p>
+</div>
+<button class="mt-sm sm:mt-0 sm:ml-auto bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface p-sm flex items-center gap-base active:scale-95 rounded-full">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+<span class="font-label-bold text-label-bold">Modifier</span>
+</button>
+</section>
+<!-- Bento Grid for Quick Settings -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+<!-- Language Preference -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant p-md flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+<div class="flex justify-between items-start mb-md">
+<div class="bg-tertiary-container text-on-tertiary-container p-2 rounded-lg inline-flex">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</div>
+<span class="bg-primary-container text-on-primary-container font-label-bold text-label-bold px-2 py-1 rounded-full">Français</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Langue</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Français (Cameroun)</p>
+</div>
+</div>
+<!-- Stats/Summary (Bonus info for a richer profile) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant p-md flex flex-col justify-between hover:shadow-lg transition-shadow duration-300 relative overflow-hidden group">
+<div class="absolute right-0 bottom-0 opacity-5 group-hover:opacity-10 transition-opacity transform translate-x-4 translate-y-4">
+<span class="material-symbols-outlined text-[120px]" data-icon="two_wheeler">two_wheeler</span>
+</div>
+<div class="flex justify-between items-start mb-md relative z-10">
+<div class="bg-secondary-container text-on-secondary-container p-2 rounded-lg inline-flex">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+</div>
+</div>
+<div class="relative z-10">
+<h3 class="font-display-md text-display-md text-on-surface mb-1">42</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Trajets effectués</p>
+</div>
+</div>
+</section>
+<!-- Navigation List -->
+<section class="bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant overflow-hidden">
+<ul class="divide-y divide-surface-variant">
+<li class="">
+<a class="flex items-center p-md hover:bg-surface-container-low transition-colors group" href="#">
+<div class="bg-surface-container text-on-surface-variant p-2 rounded-full mr-sm group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg text-body-lg text-on-surface font-semibold">Historique des voyages</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Consultez vos trajets passés et reçus</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center p-md hover:bg-surface-container-low transition-colors group" href="#">
+<div class="bg-surface-container text-on-surface-variant p-2 rounded-full mr-sm group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg text-body-lg text-on-surface font-semibold">Paramètres de notification</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Gérez vos alertes et messages</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center p-md hover:bg-surface-container-low transition-colors group" href="#">
+<div class="bg-surface-container text-on-surface-variant p-2 rounded-full mr-sm group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" data-icon="help_center">help_center</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg text-body-lg text-on-surface font-semibold">Aide &amp; Support</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">FAQ, contactez notre équipe</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</a>
+</li>
+</ul>
+</section>
+<!-- Logout Button -->
+<section class="mt-lg pt-sm border-t border-surface-variant/50">
+<button class="w-full flex items-center justify-center gap-sm p-sm rounded-lg text-error hover:bg-error-container transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-headline-sm text-headline-sm">Déconnexion</span>
+</button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full flex justify-around items-center px-4 py-2 border-t-0 shadow-lg bg-surface-container-lowest z-50">
+<!-- Accueil (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-bold text-label-bold">Accueil</span>
+</a>
+<!-- Mes Billets (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-label-bold text-label-bold">Mes Billets</span>
+</a>
+<!-- Profil (Active) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform duration-150 shadow-sm relative" href="#">
+<!-- Active Dot indicator -->
+<div class="absolute -top-1 w-1.5 h-1.5 bg-primary rounded-full"></div>
+<span class="material-symbols-outlined mb-1" data-icon="person" data-weight="fill" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</nav>
+<!-- Desktop SideNav (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col w-64 h-screen fixed left-0 top-16 bg-surface-container-lowest border-r border-surface-variant p-md gap-sm z-40">
+<a class="flex items-center gap-sm p-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body-lg text-body-lg font-semibold">Accueil</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-body-lg text-body-lg font-semibold">Mes Billets</span>
+</a>
+<a class="flex items-center gap-sm p-sm rounded-lg bg-primary-container text-on-primary-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person" data-weight="fill" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-body-lg text-body-lg font-semibold">Profil</span>
+</a>
+</aside>
+<!-- Adjust main content layout for desktop sidebar -->
+<style>
+        @media (min-width: 768px) {
+            main {
+                margin-left: 16rem; /* 64 * 0.25rem */
+                max-width: calc(100% - 16rem - 2rem);
+            }
+        }
+    </style>
+</body></html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mes Billets - MOTOBOY</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-tertiary": "#ffffff", secondary: "#745b00", "on-secondary": "#ffffff", "on-secondary-fixed": "#241a00", error: "#ba1a1a", outline: "#777585", "on-surface-variant": "#464554", "surface-container-high": "#eae6f2", background: "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-background": "#1b1b22", "secondary-fixed": "#ffe089", "on-secondary-fixed-variant": "#574400", "inverse-primary": "#bfc2ff", "secondary-fixed-dim": "#efc11f", "on-tertiary-fixed-variant": "#852313", "on-tertiary-fixed": "#3f0300", "tertiary-container": "#610700", "on-surface": "#1b1b22", "surface-container-highest": "#e4e1ec", "on-error-container": "#93000a", "on-secondary-container": "#705900", "on-primary-container": "#838aff", "surface-tint": "#464dd3", "tertiary-fixed-dim": "#ffb4a6", "secondary-container": "#fecf30", tertiary: "#3b0300", "error-container": "#ffdad6", "surface-variant": "#e4e1ec", "primary-container": "#0400a4", "on-tertiary-container": "#ee6f58", "inverse-surface": "#303038", "surface-container-low": "#f5f2fd", "surface-container": "#f0ecf7", "primary-fixed": "#e0e0ff", "surface-dim": "#dcd8e3", surface: "#fcf8ff", "surface-container-lowest": "#ffffff", primary: "#010067", "tertiary-fixed": "#ffdad4", "surface-bright": "#fcf8ff", "inverse-on-surface": "#f3effa", "on-primary-fixed-variant": "#2b30bb", "on-primary-fixed": "#02006e", "outline-variant": "#c7c4d6", "on-primary": "#ffffff", "on-error": "#ffffff"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", "container-margin": "16px", base: "8px", sm: "12px", gutter: "12px", lg: "24px", xs: "4px", xl: "32px"}, fontFamily: {"body-md": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "display-lg": ["Inter"], "headline-sm": ["Inter"], "display-lg-mobile": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+        /* Custom Elevation Layer 1 for Cards */
+        .elevation-1 {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        /* Press effect */
+        .pressable:active {
+            box-shadow: none;
+            transform: translateY(1px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md pb-20">
+<!-- TopAppBar Component (from JSON) -->
+<header class="fixed top-0 z-40 bg-surface flex justify-between items-center w-full px-container-margin h-16 shadow-sm">
+<button class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary tracking-tight">MOTOBOY</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-20 px-container-margin space-y-lg w-full max-w-lg mx-auto">
+<header class="mb-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Mes Billets</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Gérez vos trajets et accédez à vos QR Codes.</p>
+</header>
+<!-- Active Tickets Section -->
+<section class="space-y-sm">
+<h3 class="font-label-bold text-label-bold text-secondary uppercase tracking-wider">Trajets à venir</h3>
+<!-- Ticket Card 1 (Active) -->
+<article class="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm elevation-1 flex flex-col gap-sm relative overflow-hidden">
+<!-- Destination Visual Banner -->
+<div class="w-full h-24 rounded-lg bg-cover bg-center mb-xs" data-alt="A modern, high-contrast digital illustration of a scenic highway connecting two vibrant African cities at sunset. The scene features lush green hills, a sleek paved road, and a warm golden hour light that creates a dynamic, energetic mood. The style is clean, corporate-modern, utilizing deep marine blues and vibrant dynamic yellows to match the MOTOBOY brand identity, conveying a sense of safe and reliable travel." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0M4U9zyztSsgkEaUKcE13_jwBTPdEUPAz2dLL_GoLLL2jH8KK7N1EQkl0-JUpNm327YCgDq4pXf66u9ESSdePN671axLDqxW_Scv91fPBk130mvH_Y-E_7aszeRcc2-20VCOP_GeCwlx86x-ZnSAMVrFU6E4xydHSXsZURZ9iU2pM5r6_6-JGAOhPN_5DTi7F6hMdBHse3EUegay8wwJV9GzE770-itb-2p7dbNCJaO_c0fmz5Rgz')">
+<div class="w-full h-full bg-gradient-to-t from-black/60 to-transparent rounded-lg flex items-end p-base">
+<span class="font-label-bold text-label-bold text-on-primary bg-secondary/80 px-2 py-0.5 rounded backdrop-blur-sm">Buca Voyages</span>
+</div>
+</div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-base">
+<div class="flex flex-col items-center">
+<div class="w-3 h-3 rounded-full bg-secondary"></div>
+<div class="w-0.5 h-6 bg-surface-variant"></div>
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+</div>
+<div class="flex flex-col justify-between h-full py-0.5 space-y-2">
+<div class="font-headline-sm text-headline-sm text-on-surface leading-none">Douala</div>
+<div class="font-headline-sm text-headline-sm text-on-surface leading-none">Yaoundé</div>
+</div>
+</div>
+<!-- Status Chip -->
+<div class="bg-secondary-container text-on-secondary-container font-label-bold text-label-bold px-3 py-1 rounded-full flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Confirmé
+                    </div>
+</div>
+<div class="bg-surface rounded-lg p-base flex justify-between items-center border border-surface-variant">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="font-body-md text-body-md font-medium">15 Nov 2023</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-body-md text-body-md font-medium">08:00 AM</span>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full mt-xs bg-primary-container text-on-primary-container font-label-bold text-label-bold py-sm rounded-full flex justify-center items-center gap-xs transition-colors hover:bg-[#ffe033] pressable">
+<span class="material-symbols-outlined">qr_code_2</span>
+                    Voir le QR Code
+                </button>
+</article>
+</section>
+<!-- Past Tickets Section -->
+<section class="space-y-sm mt-lg opacity-80">
+<h3 class="font-label-bold text-label-bold text-secondary uppercase tracking-wider">Historique</h3>
+<!-- Ticket Card 2 (Past) -->
+<article class="bg-surface-container-lowest border border-surface-variant rounded-xl p-sm elevation-1 flex flex-col gap-sm">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-bold text-label-bold text-on-surface-variant">Général Express</span>
+<!-- Status Chip -->
+<div class="bg-surface-variant text-on-surface-variant font-label-bold text-label-bold px-3 py-1 rounded-full flex items-center gap-xs">
+                        Terminé
+                    </div>
+</div>
+<div class="flex items-center gap-base">
+<div class="flex flex-col items-center">
+<div class="w-2.5 h-2.5 rounded-full bg-outline"></div>
+<div class="w-0.5 h-6 bg-surface-variant"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-outline"></div>
+</div>
+<div class="flex flex-col justify-between h-full py-0.5 space-y-2">
+<div class="font-body-lg text-body-lg text-on-surface leading-none">Yaoundé</div>
+<div class="font-body-lg text-body-lg text-on-surface leading-none">Bafoussam</div>
+</div>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant mt-xs">
+<span class="font-body-md text-body-md">02 Nov 2023</span>
+<span class="font-body-md text-body-md">14:30</span>
+</div>
+<!-- Secondary Action Button (Ghost) -->
+<button class="w-full mt-xs border border-secondary text-secondary font-label-bold text-label-bold py-sm rounded-full flex justify-center items-center gap-xs transition-colors hover:bg-surface pressable">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                    Détails du trajet
+                </button>
+</article>
+</section>
+</main>
+<!-- BottomNavBar Component (from JSON) -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center px-4 py-2 bg-surface-container-lowest shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-50 border-t-0 md:hidden">
+<!-- Inactive Tab 0 -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-bold text-label-bold">Accueil</span>
+</a>
+<!-- Active Tab 1 (Mes Billets) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform duration-150 relative" href="#">
+<!-- Active indicator dot (as per guidelines) -->
+<div class="absolute -top-1 w-1.5 h-1.5 bg-primary-container rounded-full"></div>
+<span class="material-symbols-outlined mb-1" data-icon="confirmation_number" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-label-bold text-label-bold">Mes Billets</span>
+</a>
+<!-- Inactive Tab 2 -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</nav>
+</body></html>

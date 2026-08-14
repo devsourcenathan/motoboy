@@ -1,19 +1,38 @@
 {
   "name": "@motoboy/mobile",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "dependencies": {
     "@motoboy/api-client": "workspace:*",
     "@motoboy/shared": "workspace:*",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
+    "@tanstack/query-async-storage-persister": "^5.101.4",
+    "@tanstack/react-query": "^5.101.4",
+    "@tanstack/react-query-persist-client": "^5.101.4",
     "expo": "~57.0.12",
+    "expo-constants": "^57.0.10",
+    "expo-linking": "^57.0.5",
     "expo-localization": "^57.0.1",
+    "expo-router": "^57.0.12",
+    "expo-secure-store": "^57.0.1",
     "expo-status-bar": "~57.0.1",
+    "i18next": "^26.3.6",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-i18next": "^17.0.11",
+    "react-native": "0.86.2",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.26.2",
+    "react-native-svg": "15.15.4"
   },
   "devDependencies": {
     "@motoboy/tsconfig": "workspace:*",
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "29.5.14",
     "@types/react": "~19.2.2",
+    "jest": "~29.7.0",
+    "jest-expo": "~57.0.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -21,7 +40,19 @@
     "typecheck": "tsc --noEmit",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!(.pnpm|(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|standard-navigation|@sentry/react-native|native-base|react-native-svg|@motoboy/.*))"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "resolver": "<rootDir>/jest.resolver.js"
+  }
 }

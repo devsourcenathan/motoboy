@@ -19,7 +19,9 @@ services:
     plan: starter
     region: frankfurt
     dockerfilePath: ./apps/api/Dockerfile
-    dockerContext: ./apps/api
+    # Racine du dépôt : `docs/openapi.yaml` est normatif et l'API le sert.
+    # En recopier un exemplaire sous `apps/api` le ferait diverger.
+    dockerContext: .
     healthCheckPath: /up
     autoDeploy: true
 

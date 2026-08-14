@@ -17,3 +17,16 @@ export * from './money.js'
 export * from './datetime.js'
 export * from './labels.js'
 export * from './tokens.js'
+
+/*
+ * Les catalogues de traduction ne sont **pas** réexportés ici.
+ *
+ * Ils vivent dans `src/i18n/` et s'importent par point d'entrée dédié —
+ * `@motoboy/shared/i18n/passenger`, `@motoboy/shared/i18n/common`. Les faire
+ * passer par cet index les ferait entrer dans **tous** les bundles : Metro ne
+ * secoue pas l'arbre, et le mobile embarquerait les textes du back-office
+ * d'agence.
+ *
+ * Ils restent dans ce package malgré tout : un traducteur ne doit pas les
+ * chercher à deux endroits, et le ton du produit se tient d'un seul.
+ */

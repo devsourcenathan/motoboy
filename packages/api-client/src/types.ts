@@ -20,7 +20,12 @@ type S = components['schemas']
 export type Locale = S['Locale']
 
 export type ErrorCode = S['ErrorCode']
-export type ApiError = S['Error']
+/**
+ * La **forme JSON** d'une réponse d'erreur. À ne pas confondre avec la classe
+ * `ApiError`, qui est ce que l'on attrape : l'une est ce qui circule sur le
+ * réseau, l'autre ce que le code manipule.
+ */
+export type ApiErrorBody = S['Error']
 export type ValidationErrorBody = S['ValidationErrorBody']
 export type PaginationMeta = S['PaginationMeta']
 
@@ -35,6 +40,9 @@ export type SeatingMode = S['SeatingMode']
 export type VehicleType = S['VehicleType']
 
 export type User = S['User']
+
+/** Défi OTP : validité de 10 minutes, 4 tentatives au maximum. */
+export type OtpChallenge = S['OtpChallenge']
 export type Money = S['Money']
 export type PlaceSuggestion = S['PlaceSuggestion']
 export type TripSummary = S['TripSummary']
@@ -45,6 +53,9 @@ export type SearchSuggestions = S['SearchSuggestions']
 export type Booking = S['Booking']
 export type BookingPassenger = S['BookingPassenger']
 export type CancellationPolicy = S['CancellationPolicy']
+
+/** Résultat d'une annulation. `refund` est nul quand rien ne transite par la plateforme. */
+export type BookingCancellation = S['BookingCancellation']
 export type CancellationQuote = S['CancellationQuote']
 export type Payment = S['Payment']
 export type Refund = S['Refund']
@@ -53,8 +64,14 @@ export type BoardingList = S['BoardingList']
 export type BoardingPassenger = S['BoardingPassenger']
 export type ValidationResult = S['ValidationResult']
 
-/** Affine une valeur vers `ApiError`. Pas d'I/O, donc utilisable partout. */
-export function isApiError(value: unknown): value is ApiError {
+/**
+ * Affine une valeur vers la **forme JSON** d'une erreur. Pas d'I/O, donc
+ * utilisable partout — y compris là où `fetch` n'existe pas.
+ *
+ * Pour attraper une erreur levée, c'est `instanceof ApiError` qu'il faut :
+ * cette fonction ne reconnaît qu'un corps de réponse.
+ */
+export function isApiErrorBody(value: unknown): value is ApiErrorBody {
   return (
     typeof value === 'object' &&
     value !== null &&

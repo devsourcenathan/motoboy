@@ -17,9 +17,17 @@ return [
     | the connection which will be utilized unless another connection
     | is explicitly specified when you execute a query / statement.
     |
+    | ⚠️ Le défaut est `pgsql`, pas `sqlite` comme le livre Laravel. Le schéma
+    | utilise des index uniques partiels, des contraintes CHECK et du jsonb :
+    | il ne se construit pas sur SQLite. Avec le défaut d'origine, un
+    | `DB_CONNECTION` oublié ne produisait pas une erreur de configuration mais
+    | onze migrations qui passent, puis une erreur de syntaxe sur la douzième —
+    | un diagnostic coûteux pour une variable manquante. Ici, l'oubli échoue
+    | sur la connexion, là où il se lit.
+    |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     /*
     |--------------------------------------------------------------------------

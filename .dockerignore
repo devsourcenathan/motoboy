@@ -1,0 +1,51 @@
+# Contexte de build de l'API.
+#
+# La racine sert de contexte pour une seule raison : `docs/openapi.yaml` est
+# **normatif** et doit être servi par l'API. L'y recopier sous `apps/api`
+# créerait un second exemplaire qui divergerait au premier oubli.
+#
+# Tout le reste du monorepo est donc exclu ici.
+
+node_modules
+**/node_modules
+apps/api/vendor
+
+apps/web
+apps/mobile
+packages
+scripts
+
+.git
+.github
+.vscode
+.idea
+
+**/.env
+**/.env.*
+!**/.env.example
+
+apps/api/tests
+apps/api/phpunit.xml
+apps/api/phpstan.neon
+apps/api/pint.json
+apps/api/.phpunit.result.cache
+
+apps/api/storage/logs/*
+apps/api/storage/framework/cache/data/*
+apps/api/storage/framework/sessions/*
+apps/api/storage/framework/views/*
+apps/api/storage/app/documents/*
+
+# ⚠️ Les caches construits sur la machine de développement.
+#
+# `packages.php` y liste les paquets **de développement** — Pail, Larastan.
+# Copié dans l'image, il fait référencer un fournisseur de services absent de
+# `--no-dev`, et le conteneur meurt au démarrage sur « Class not found » avant
+# même d'avoir touché la base.
+apps/api/bootstrap/cache/*.php
+
+# La documentation, sauf le contrat lui-même.
+docs/*.md
+
+*.md
+!apps/api/README.md

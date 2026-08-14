@@ -13,9 +13,10 @@
     "lint": "pnpm -r --parallel lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm format:check && pnpm check:shared && pnpm lint && pnpm typecheck",
+    "verify": "pnpm format:check && pnpm check:shared && pnpm lint && pnpm typecheck && pnpm test",
     "web": "pnpm --filter @motoboy/web dev",
-    "mobile": "pnpm --filter @motoboy/mobile start"
+    "mobile": "pnpm --filter @motoboy/mobile start",
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
     "prettier": "^3.9.6"

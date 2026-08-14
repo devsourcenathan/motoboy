@@ -41,6 +41,25 @@ Neon fournit une URL complète. Elle va dans `DB_URL`, telle quelle :
 postgresql://<user>:<password>@<endpoint>.eu-central-1.aws.neon.tech/<db>?sslmode=require
 ```
 
+### ⚠️ `DB_URL` seule — pas de `DB_HOST` ni de `DB_PORT` à côté
+
+**L'URL ne remplace que ce qu'elle contient.** Les composants absents retombent
+sur les variables discrètes. Or une URL Neon **n'indique pas de port** : un
+`DB_PORT` résiduel — celui d'un `.env` local recopié dans l'interface, par
+exemple `5433` — envoie donc la connexion sur le **mauvais port du bon
+serveur**.
+
+Le symptôme est un délai d'attente réseau qui ne nomme jamais la contradiction :
+
+```
+connection to server at "ep-....aws.neon.tech" (3.23.109.155), port 5433 failed:
+timeout expired
+```
+
+Le conteneur refuse désormais de démarrer sur cette combinaison, en la nommant.
+Dans l'environnement Render, **seule `DB_URL` doit exister** : supprimer
+`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` et `DB_PASSWORD`.
+
 ### Endpoint direct, pas le pooler
 
 Neon expose deux endpoints : le direct et le **pooler**, reconnaissable au
@@ -149,16 +168,100 @@ render exec motoboy-api -- php artisan db:seed --force
 ```
 
 7. Créer le premier super administrateur. Il n'y a pas d'endpoint pour cela, et
-   c'est délibéré : une route qui fabrique un super administrateur est une porte
-   ouverte tant qu'elle existe.
+   c'est délibéré : une route qui fabrique un super administrateur ne peut être
+   protégée que par un secret, qui finit dans un dépôt ou un historique de
+   commandes. Une commande console n'est atteignable que par quelqu'un qui a
+   déjà accès au serveur.
 
 ```bash
-render exec motoboy-api -- php artisan tinker
+php artisan motoboy:create-admin +237690000000 --super --first-name=Nathan --last-name=Tchinda
 ```
 
 ---
 
-## 6 bis. Quand le déploiement reste bloqué sur « no open ports detected »
+## 6 bis. Vérifier un déploiement
+
+### La documentation du contrat
+
+`https://<service>.onrender.com/docs` — l'interface Swagger, sur le contrat qui
+fait foi. Le fichier servi par `/openapi.yaml` est **le même** que celui dont le
+client TypeScript est généré et dont un test compare les chemins aux routes
+réellement servies : une documentation dérivée d'autre chose finirait par
+décrire un produit qui n'existe pas.
+
+Ouverte par défaut — le contrat n'est pas un secret, et le cacher n'empêche
+personne de découvrir les routes. `API_DOCS_ENABLED=false` la ferme.
+
+### En une commande
+
+```bash
+./scripts/smoke.sh https://motoboy-api.onrender.com
+```
+
+**Lecture seule** : rien n'est créé ni modifié, le script se lance sur la
+production sans y penser à deux fois. Il sort en échec au premier contrôle raté,
+donc il s'enchaîne dans une CI.
+
+Il vérifie que le service répond, que le contrat d'erreurs est tenu — dont le
+401 typé **sans en-tête `Accept`**, le cas qui renvoyait un 500 opaque —, que
+les espaces agence et administration sont fermés au public, et que le
+référentiel est peuplé.
+
+### Une base fraîche ne renvoie rien, et ce n'est pas une panne
+
+Le référentiel — pays, villes, rôles, permissions — n'est pas dans les
+migrations. Tant qu'il n'est pas seedé, l'autocomplétion renvoie une liste vide
+et la recherche ne trouve jamais rien. Le script le dit explicitement plutôt que
+de laisser conclure à un bug.
+
+```bash
+php artisan db:seed --force
+```
+
+Idempotent, et rejouable à chaque déploiement : ces seeders sont la source de
+vérité de la table rôles/permissions. Les données de démonstration sont ignorées
+hors développement — la garde est portée par l'environnement, pas par la
+discipline.
+
+### Se connecter réellement
+
+Aucun prestataire SMS n'est branché : `SMS_DRIVER=log` écrit le message dans les
+journaux du service. C'est là qu'on lit le code, et c'est ce qui permet
+d'exercer le parcours complet sans dépenser un SMS.
+
+```bash
+# 1. Créer le compte, une fois
+php artisan motoboy:create-admin +237690000000 --super
+
+# 2. Demander un code
+curl -X POST https://motoboy-api.onrender.com/api/v1/auth/login \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' \
+  -d '{"phone":"+237690000000"}'
+
+# 3. Lire le code dans les journaux Render, puis échanger contre un jeton
+curl -X POST https://motoboy-api.onrender.com/api/v1/auth/otp/verify \
+  -H 'Content-Type: application/json' -H 'Accept: application/json' \
+  -d '{"phone":"+237690000000","code":"123456","purpose":"LOGIN"}'
+
+# 4. L'espace administration répond
+curl https://motoboy-api.onrender.com/api/v1/admin/dashboard \
+  -H 'Accept: application/json' -H "Authorization: Bearer <jeton>"
+```
+
+### Le parcours qui écrit
+
+Inscrire une agence, la valider, saisir un véhicule et un horaire, générer les
+départs, réserver, payer, embarquer. Il laisse des traces qu'il faut décider
+d'assumer sur l'instance visée — d'où son absence du script.
+
+Un point à connaître : **le paiement n'aboutira pas.** Le pilote factice
+reproduit le trait qui compte — rien n'est encaissé de façon synchrone — et
+laisse la réservation en attente. C'est le comportement voulu, pas une panne,
+et il le restera tant que l'agrégateur n'est pas choisi.
+
+---
+
+## 6 ter. Quand le déploiement reste bloqué sur « no open ports detected »
 
 **Le port n'ouvre qu'après les migrations.** Tout ce qui échoue avant — clé
 absente, base injoignable, migration en erreur — se manifeste donc par une
@@ -169,9 +272,11 @@ de rendre la main.
 Ordre de lecture :
 
 1. `APP_KEY manquante.` — refus volontaire.
-2. `Connexion à la base et migrations…` sans rien après : c'est la base.
+2. `DB_URL est définie en même temps que DB_HOST ou DB_PORT.` — supprimer les
+   variables discrètes, voir §2.
+3. `Connexion à la base et migrations…` sans rien après : c'est la base.
    Vérifier `DB_URL`, et qu'elle pointe l'endpoint **direct** de Neon.
-3. `Migrations à jour.` puis `écoute sur le port N` : le démarrage est allé au
+4. `Migrations à jour.` puis `écoute sur le port N` : le démarrage est allé au
    bout, et le problème est ailleurs.
 
 **Un hôte qui absorbe les paquets sans les refuser met environ 85 secondes à

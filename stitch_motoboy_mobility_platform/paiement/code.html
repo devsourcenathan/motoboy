@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Paiement</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed-dim": "#ffb4a6", "secondary-fixed-dim": "#efc11f", "on-secondary": "#ffffff", "surface-bright": "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-secondary-fixed": "#241a00", "on-primary-fixed": "#02006e", "surface-container-highest": "#e4e1ec", "on-tertiary-fixed-variant": "#852313", error: "#ba1a1a", "outline-variant": "#c7c4d6", "inverse-primary": "#bfc2ff", secondary: "#745b00", "on-background": "#1b1b22", "surface-container-lowest": "#ffffff", "on-surface-variant": "#464554", surface: "#fcf8ff", "on-primary-fixed-variant": "#2b30bb", "surface-variant": "#e4e1ec", "surface-tint": "#464dd3", "on-primary-container": "#838aff", "tertiary-container": "#610700", "on-tertiary-container": "#ee6f58", "on-secondary-container": "#705900", "tertiary-fixed": "#ffdad4", "secondary-fixed": "#ffe089", "on-primary": "#ffffff", primary: "#010067", "surface-container-low": "#f5f2fd", "inverse-on-surface": "#f3effa", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", outline: "#777585", "surface-container-high": "#eae6f2", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#574400", "inverse-surface": "#303038", "on-tertiary": "#ffffff", "surface-container": "#f0ecf7", "on-error-container": "#93000a", background: "#fcf8ff", "primary-fixed": "#e0e0ff", "secondary-container": "#fecf30", tertiary: "#3b0300", "on-error": "#ffffff", "primary-container": "#0400a4", "surface-dim": "#dcd8e3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", base: "8px", lg: "24px", "container-margin": "16px", sm: "12px", xs: "4px", xl: "32px", gutter: "12px"}, fontFamily: {"display-lg": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Inter"], "body-lg": ["Inter"], "display-md": ["Inter"], "headline-sm": ["Inter"], "label-bold": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+<!-- TopAppBar (Transactional - Hidden logic applied but required by brand anchors as a header) -->
+<header class="bg-surface dark:bg-inverse-surface flex justify-between items-center w-full px-container-margin h-16 shadow-sm docked full-width top-0 z-50">
+<button aria-label="Retour" class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary font-extrabold tracking-tight">MOTOBOY</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="flex-1 flex flex-col items-center px-container-margin py-lg max-w-md mx-auto w-full mb-xl">
+<!-- Timer Banner -->
+<div class="w-full bg-error-container text-on-error-container rounded-lg p-sm mb-lg flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error" data-icon="timer">timer</span>
+<span class="font-label-bold text-label-bold">Temps restant pour réserver</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-error font-bold animate-pulse" id="countdown">00:00</span>
+</div>
+<!-- Order Summary Card -->
+<section class="w-full bg-surface-container-lowest rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.05)] border border-surface-variant p-md mb-lg">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Récapitulatif de la commande</h2>
+<div class="space-y-sm">
+<div class="flex justify-between items-center py-2 border-b border-surface-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Agence</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Général Express Voyages</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Trajet</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Douala <span class="material-symbols-outlined text-[16px] align-middle" data-icon="arrow_right_alt">arrow_right_alt</span> Yaoundé</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-variant">
+<span class="font-body-md text-body-md text-on-surface-variant">Places</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">1 (Classique)</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Total</span>
+<span class="font-display-md text-display-md text-primary font-bold">3 500 FCFA</span>
+</div>
+</div>
+</section>
+<!-- Payment Methods -->
+<section class="w-full mb-xl">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Moyen de paiement</h2>
+<div class="grid grid-cols-1 gap-md">
+<!-- Mobile Money Option (Active) -->
+<label class="relative flex flex-col bg-surface-container-lowest rounded-xl border-2 border-primary p-md shadow-sm cursor-pointer transition-all">
+<div class="flex items-center justify-between w-full mb-sm">
+<div class="flex items-center gap-sm">
+<input checked="" class="form-radio h-5 w-5 text-primary border-outline-variant focus:ring-primary" name="payment_method" type="radio" value="momo"/>
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">Mobile Money</span>
+</div>
+<div class="flex gap-2">
+<!-- Placeholder images for operator logos -->
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small, vibrant square logo representing a telecommunications company. The logo uses a bright yellow background with sleek, modern corporate typography in a bold dark color. The style is flat, clean, and recognizable as a corporate brand mark in a digital UI. High resolution, crisp edges." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSbYI9-iD3zWLy57-3ni6arVtHTRQos-c8NkrtkfTQIGPeWIL0_9cwXA2gXoAnMBdz8Ze_QvrwhrVH9_4ftgrN3-JRKgNe_3Q6BH9z-qRYR_OYDjVdzqzhpyKFSnU_w5uPd3t2Hr6fLhro3G22XINqSF8BW59xVFiVjuGfQZ6CSipjOAWv2viDEazxJRlykf3vdXELoXIeuEyksqIwAkcvsfkRkM60Y9ePiPTGQfZZC2uDT9Tiez40"/>
+</div>
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small, vibrant square logo for a mobile network operator. The design features a solid, vibrant orange background with a simple, modern white icon or text element in the center. The visual style is minimalist, flat design suitable for a digital payment interface. High contrast, sharp details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMKTlppWsrMaIVk3NTLIR6J2P66Lz-qG6UxCJBnjMeyr3i15KZ_BQ_wN_N7hlqnyH0OfLuX9fTDIpFdM7Npea0dacNEALU-S4kQlZt6oDz_JHWOXUOA9inynK-LkDtuzfWDTAPobW8HuEBCTx3MRbuHXnX8xDxodqlM_rJWXQAv2rmgHQi9YBobTOiIQg1YQ28nBmugAjyzahL63E9NLEZRnPsRO3qzUNNr963ady7kvJFN_1Y2KiZ"/>
+</div>
+</div>
+</div>
+<!-- Expanded Mobile Money Form -->
+<div class="mt-sm pl-7 w-full animate-[fadeIn_0.2s_ease-out]">
+<div class="mb-3">
+<label class="block font-label-bold text-label-bold text-on-surface-variant mb-xs" for="phone">Numéro de téléphone</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 font-body-md text-body-md text-on-surface-variant">+237</span>
+<input class="form-input block w-full pl-12 rounded-lg border-outline-variant bg-surface-container-lowest text-on-surface focus:border-secondary focus:ring-secondary font-body-md transition-colors h-12" id="phone" name="phone" placeholder="6XX XX XX XX" required="" type="tel"/>
+</div>
+</div>
+<div class="flex items-start gap-2 bg-surface-container-low p-sm rounded-lg border border-surface-variant">
+<span class="material-symbols-outlined text-tertiary text-lg mt-0.5" data-icon="info">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Vous recevrez une notification sur votre téléphone pour confirmer le paiement de <strong class="text-on-surface">3 500 FCFA</strong>.</p>
+</div>
+</div>
+</label>
+<!-- Bank Card Option (Inactive) -->
+<label class="relative flex items-center justify-between bg-surface-container-lowest rounded-xl border border-surface-variant p-md shadow-[0_2px_4px_rgba(0,0,0,0.05)] cursor-pointer hover:bg-surface-container-lowest/80 transition-all">
+<div class="flex items-center gap-sm">
+<input class="form-radio h-5 w-5 text-primary border-outline-variant focus:ring-primary" name="payment_method" type="radio" value="card"/>
+<span class="font-body-lg text-body-lg font-semibold text-on-surface">Carte Bancaire</span>
+</div>
+<span class="material-symbols-outlined text-secondary" data-icon="credit_card">credit_card</span>
+</label>
+</div>
+</section>
+<div class="w-full mt-xl bg-surface-container-lowest border border-surface-variant p-md rounded-xl shadow-sm">
+<div class="flex gap-md items-center">
+<div class="flex-1 flex flex-col">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Total à payer</span>
+<span class="font-display-md text-display-md text-on-surface font-bold">3 500 FCFA</span>
+</div>
+<button class="bg-primary-container text-on-primary-container hover:bg-[#ffe07c] font-headline-sm text-headline-sm px-lg py-sm h-14 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 active:shadow-none flex-1 font-bold">
+      Payer maintenant
+      <span class="material-symbols-outlined" data-icon="lock">lock</span>
+</button>
+</div>
+</div></main>
+<!-- Sticky Bottom Action -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-surface-variant px-container-margin pb-safe pt-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<div class="max-w-md mx-auto flex justify-around items-center h-16">
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-bold text-label-bold">Accueil</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-primary" href="#">
+<div class="bg-primary-container p-2 rounded-xl">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+</div>
+<span class="font-label-bold text-label-bold">Réservations</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-bold text-label-bold">Profil</span>
+</a>
+</div>
+</nav>
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+<script>
+        // Simple countdown logic for the timer
+        function startTimer(duration, display) {
+            let timer = duration, minutes, seconds;
+            setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    timer = 0;
+                    display.classList.add('animate-pulse');
+                    // Handle timeout logic here
+                }
+            }, 1000);
+        }
+
+        window.onload = function () {
+            let tenMinutes = 60 * 9 + 59,
+                display = document.querySelector('#countdown');
+            startTimer(tenMinutes, display);
+        };
+    </script>
+</body></html>

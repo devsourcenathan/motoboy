@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "MOTOBOY",
+    "slug": "motoboy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "scheme": "motoboy",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

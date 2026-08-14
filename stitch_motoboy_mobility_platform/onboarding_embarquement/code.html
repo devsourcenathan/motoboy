@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOTOBOY - Onboarding 3</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-primary": "#ffffff", "on-secondary": "#ffffff", "inverse-on-surface": "#f3effa", tertiary: "#3b0300", "secondary-fixed": "#ffe089", "inverse-primary": "#bfc2ff", "secondary-container": "#fecf30", "surface-container-lowest": "#ffffff", "on-error": "#ffffff", "surface-container-highest": "#e4e1ec", "primary-fixed": "#e0e0ff", outline: "#777585", "on-secondary-container": "#705900", "on-tertiary": "#ffffff", secondary: "#745b00", "primary-fixed-dim": "#bfc2ff", "tertiary-fixed-dim": "#ffb4a6", "on-primary-fixed-variant": "#2b30bb", "on-error-container": "#93000a", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", "outline-variant": "#c7c4d6", "on-primary-container": "#838aff", "surface-dim": "#dcd8e3", "tertiary-container": "#610700", "on-tertiary-fixed-variant": "#852313", "primary-container": "#0400a4", surface: "#fcf8ff", error: "#ba1a1a", primary: "#010067", "inverse-surface": "#303038", "surface-tint": "#464dd3", "surface-bright": "#fcf8ff", "secondary-fixed-dim": "#efc11f", "surface-variant": "#e4e1ec", "on-background": "#1b1b22", "error-container": "#ffdad6", background: "#fcf8ff", "surface-container-high": "#eae6f2", "surface-container-low": "#f5f2fd", "on-tertiary-container": "#ee6f58", "on-surface-variant": "#464554", "on-secondary-fixed-variant": "#574400", "on-primary-fixed": "#02006e", "surface-container": "#f0ecf7", "on-secondary-fixed": "#241a00", "tertiary-fixed": "#ffdad4"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {base: "8px", gutter: "12px", xs: "4px", xl: "32px", md: "16px", "container-margin": "16px", sm: "12px", lg: "24px"}, fontFamily: {"display-md": ["Inter"], "display-lg": ["Inter"], "body-lg": ["Inter"], "headline-sm": ["Inter"], "label-bold": ["Inter"], "display-lg-mobile": ["Inter"], "body-md": ["Inter"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}]}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Subtle slide-in animation for onboarding content */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-slide-up {
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-lg">
+<!-- Header (Suppressed navigation shell as this is an onboarding flow) -->
+<header class="w-full flex justify-between items-center px-container-margin h-16 pt-md">
+<!-- Back button - structural only for linear flow -->
+<button aria-label="Retour" class="w-12 h-12 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:opacity-70">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_back</span>
+</button>
+<!-- Progress indicator -->
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-8 h-2 rounded-full bg-primary-container"></div>
+</div>
+<div class="w-12 h-12"></div> <!-- Spacer for flex balance -->
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col items-center justify-center px-container-margin py-lg max-w-md mx-auto w-full relative z-10">
+<!-- Illustration Container (Bento-style card) -->
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest border border-outline-variant/30 mb-xl animate-slide-up relative">
+<img alt="Illustration embarquement par QR code" class="w-full h-full object-cover" data-alt="A clean, flat vector illustration in a modern corporate style showing a passenger holding up a smartphone with a prominent QR code. An agent in a professional blue uniform smiles and gestures towards a sleek modern intercity bus in the background. The color palette uses bright yellow accents (Motoboy primary) against crisp whites and navy blues, conveying efficiency, safety, and modern mobility in a bright, daylight setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhC9pXuA4xmHH6Z1i8gkQDBaEtZKDLSshAVhc0vX6acrXoGU7zUHwtqjCjeYD26uyG6yoRlzpaCBgxCeeN4pPEekUPbKQLOVDkm0wqKV7GzB2WIwAS6s8MKUQEguLixiBaCXIAMPa5cJbuEY-4g03XbVugP7d-viENIW9t1WUz6_HzUXgUHRENRdLDAXCWvgUyCzUtK1qmi4NbO-9xgRwsslY2AYIrMVtYEsblcWmyxTIeDzGo9D0E"/>
+<!-- Decorative element -->
+<div class="absolute bottom-4 right-4 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center shadow-lg animate-bounce" style="animation-duration: 2s;">
+<span class="material-symbols-outlined text-on-primary-container">qr_code_scanner</span>
+</div>
+</div>
+<!-- Typography Content -->
+<div class="text-center w-full animate-slide-up delay-100 mb-lg">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-md">
+                Embarquement immédiat
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-sm mx-auto">
+                Présentez votre billet électronique QR code à l'agence et voyagez sans stress.
+            </p>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="w-full px-container-margin pb-xl pt-md bg-gradient-to-t from-surface to-transparent animate-slide-up delay-200 sticky bottom-0 z-20">
+<div class="max-w-md mx-auto">
+<button class="w-full bg-primary-container text-on-primary-container font-headline-sm text-headline-sm py-md shadow-md hover:bg-primary hover:text-on-primary transition-all duration-300 active:scale-95 flex justify-center items-center gap-sm rounded-full">
+                Commencer
+                <span class="material-symbols-outlined">rocket_launch</span>
+</button>
+</div>
+</div>
+</body></html>

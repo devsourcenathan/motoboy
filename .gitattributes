@@ -1,0 +1,31 @@
+# Fins de ligne épinglées.
+#
+# Sans ce fichier, un poste Windows avec `core.autocrlf=true` — le réglage par
+# défaut — restitue tout en CRLF. Deux conséquences, l'une agaçante et l'autre
+# grave :
+#
+# - Prettier est configuré en `lf` : `pnpm verify` échoue sur des dizaines de
+#   fichiers que personne n'a touchés ;
+# - **un script shell en CRLF ne s'exécute pas.** Le noyau lit `#!/bin/sh\r` et
+#   cherche un interpréteur de ce nom. Le point d'entrée du conteneur meurt alors
+#   sur « bad interpreter », et le déploiement échoue sans que la cause soit
+#   lisible nulle part.
+
+* text=auto eol=lf
+
+# Explicites, parce que ce sont ceux dont l'exécution en dépend.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Jamais convertis.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

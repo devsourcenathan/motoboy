@@ -31,6 +31,36 @@ final class ApiRootTest extends TestCase
             ->assertJsonPath('code', 'UNAUTHENTICATED');
     }
 
+    public function test_the_contract_is_served_as_it_stands(): void
+    {
+        $spec = $this->get('/openapi.yaml')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/yaml; charset=UTF-8')
+            ->getContent();
+
+        // C'est le fichier qui fait foi qui est servi, pas une régénération
+        // depuis le code : une documentation dérivée d'autre chose finirait par
+        // décrire un produit qui n'existe pas.
+        $this->assertIsString($spec);
+        $this->assertStringContainsString('openapi: 3.1', $spec);
+        $this->assertStringContainsString('/v1/agency/counter-sales', $spec);
+    }
+
+    public function test_the_documentation_page_renders(): void
+    {
+        $this->get('/docs')
+            ->assertOk()
+            ->assertSee('swagger', false);
+    }
+
+    public function test_the_documentation_can_be_closed(): void
+    {
+        config(['api.docs_enabled' => false]);
+
+        $this->get('/docs')->assertNotFound();
+        $this->get('/openapi.yaml')->assertNotFound();
+    }
+
     public function test_the_health_probe_answers(): void
     {
         // C'est ce chemin que l'hébergeur interroge pour décider si le

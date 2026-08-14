@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>MOTOBOY - Sélection de place</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-fixed-dim": "#ffb4a6", "secondary-fixed-dim": "#efc11f", "on-secondary": "#ffffff", "surface-bright": "#fcf8ff", "primary-fixed-dim": "#bfc2ff", "on-secondary-fixed": "#241a00", "on-primary-fixed": "#02006e", "surface-container-highest": "#e4e1ec", "on-tertiary-fixed-variant": "#852313", error: "#ba1a1a", "outline-variant": "#c7c4d6", "inverse-primary": "#bfc2ff", secondary: "#745b00", "on-background": "#1b1b22", "surface-container-lowest": "#ffffff", "on-surface-variant": "#464554", surface: "#fcf8ff", "on-primary-fixed-variant": "#2b30bb", "surface-variant": "#e4e1ec", "surface-tint": "#464dd3", "on-primary-container": "#838aff", "tertiary-container": "#610700", "on-tertiary-container": "#ee6f58", "on-secondary-container": "#705900", "tertiary-fixed": "#ffdad4", "secondary-fixed": "#ffe089", "on-primary": "#ffffff", primary: "#010067", "surface-container-low": "#f5f2fd", "inverse-on-surface": "#f3effa", "on-surface": "#1b1b22", "on-tertiary-fixed": "#3f0300", outline: "#777585", "surface-container-high": "#eae6f2", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#574400", "inverse-surface": "#303038", "on-tertiary": "#ffffff", "surface-container": "#f0ecf7", "on-error-container": "#93000a", background: "#fcf8ff", "primary-fixed": "#e0e0ff", "secondary-container": "#fecf30", tertiary: "#3b0300", "on-error": "#ffffff", "primary-container": "#0400a4", "surface-dim": "#dcd8e3"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {md: "16px", base: "8px", lg: "24px", "container-margin": "16px", sm: "12px", xs: "4px", xl: "32px", gutter: "12px"}, fontFamily: {"display-lg": ["Inter", "sans-serif"], "body-md": ["Inter", "sans-serif"], "display-lg-mobile": ["Inter", "sans-serif"], "body-lg": ["Inter", "sans-serif"], "display-md": ["Inter", "sans-serif"], "headline-sm": ["Inter", "sans-serif"], "label-bold": ["Inter", "sans-serif"], headline: ["Inter"], display: ["Inter"], body: ["Inter"], label: ["Inter"]}, fontSize: {"display-lg": ["32px", {lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700"}], "body-md": ["14px", {lineHeight: "20px", fontWeight: "400"}], "display-lg-mobile": ["28px", {lineHeight: "36px", fontWeight: "700"}], "body-lg": ["16px", {lineHeight: "24px", fontWeight: "400"}], "display-md": ["24px", {lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700"}], "headline-sm": ["20px", {lineHeight: "28px", fontWeight: "600"}], "label-bold": ["12px", {lineHeight: "16px", fontWeight: "600"}]}}}};</script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Smooth transitions for seat selection */
+        .seat {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .seat:active {
+            transform: scale(0.95);
+            box-shadow: none !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col relative pb-[140px]">
+<!-- Shared Component: TopAppBar -->
+<header class="flex justify-between items-center w-full px-container-margin h-16 bg-surface shadow-sm docked full-width top-0 z-50">
+<button aria-label="Retour" class="w-12 h-12 flex items-center justify-start text-primary active:opacity-70 transition-all rounded-full hover:bg-surface-container">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-display-md text-display-md text-primary tracking-tight">MOTOBOY</h1>
+<div class="w-12 h-12"></div> <!-- Spacer to keep centered -->
+</header>
+<main class="flex-grow px-container-margin pt-lg pb-xl space-y-lg max-w-2xl mx-auto w-full">
+<!-- Progress Bar -->
+<div class="flex items-center justify-between px-md">
+<div class="flex flex-col items-center gap-xs relative z-10">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-label-bold shadow-sm">1</div>
+<span class="font-label-bold text-label-bold text-primary">Places</span>
+</div>
+<div class="flex-grow h-[2px] bg-outline-variant mx-xs relative -top-3"></div>
+<div class="flex flex-col items-center gap-xs relative z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold">2</div>
+<span class="font-label-bold text-label-bold text-on-surface-variant">Infos</span>
+</div>
+<div class="flex-grow h-[2px] bg-outline-variant mx-xs relative -top-3"></div>
+<div class="flex flex-col items-center gap-xs relative z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold">3</div>
+<span class="font-label-bold text-label-bold text-on-surface-variant">Paiement</span>
+</div>
+</div>
+<!-- Header -->
+<div class="text-center mt-md">
+<h2 class="font-headline-sm text-headline-sm text-on-background">Sélectionnez votre place</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Douala vers Yaoundé • Bus VIP</p>
+</div>
+<!-- Legend -->
+<div class="flex justify-center gap-lg py-sm bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant">
+<div class="flex items-center gap-xs">
+<div class="w-6 h-6 rounded-md border-2 border-outline-variant bg-surface-container-lowest"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Libre</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-6 h-6 rounded-md bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="close">close</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant">Occupé</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-6 h-6 rounded-md bg-primary-container border-2 border-primary"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Choisie</span>
+</div>
+</div>
+<!-- Interactive Bus Plan (Bento/Glassmorphism inspired) -->
+<div class="bg-surface-container-lowest rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-surface-variant p-lg relative overflow-hidden flex flex-col items-center">
+<!-- Bus Front / Driver -->
+<div class="w-full flex justify-end mb-lg pb-md border-b border-outline-variant relative">
+<!-- Decorative bus front curve -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-2 bg-surface-variant rounded-full opacity-50"></div>
+<div class="flex flex-col items-center justify-center bg-surface-container p-sm rounded-xl text-on-surface-variant mr-md mt-sm">
+<span class="material-symbols-outlined" data-icon="steering_wheel">card_travel</span>
+</div>
+</div>
+<!-- Seating Layout 2x2 -->
+<div class="flex flex-col gap-md w-full max-w-[280px]">
+<!-- Row 1 -->
+<div class="flex justify-between items-center w-full">
+<div class="flex gap-sm">
+<!-- Occupied Seat -->
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+<!-- Occupied Seat -->
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="w-8 flex justify-center text-outline-variant font-label-bold text-[10px]">1</div>
+<div class="flex gap-sm">
+<!-- Free Seat -->
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="A3">A3</button>
+<!-- Free Seat -->
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="A4">A4</button>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="flex justify-between items-center w-full">
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="B1">B1</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="B2">B2</button>
+</div>
+<div class="w-8 flex justify-center text-outline-variant font-label-bold text-[10px]">2</div>
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="B4">B4</button>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="flex justify-between items-center w-full">
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="C1">C1</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="C2">C2</button>
+</div>
+<div class="w-8 flex justify-center text-outline-variant font-label-bold text-[10px]">3</div>
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="C3">C3</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="5000" data-seat="C4">C4</button>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="flex justify-between items-center w-full">
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+<div class="w-8 flex justify-center text-outline-variant font-label-bold text-[10px]">4</div>
+<div class="flex gap-sm">
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-variant border-2 border-transparent text-on-surface-variant flex items-center justify-center font-label-bold text-label-bold opacity-70 cursor-not-allowed" disabled="">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Row 5 (Back Row) -->
+<div class="flex justify-between items-center w-full mt-sm">
+<div class="flex gap-sm w-full justify-between">
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="4500" data-seat="D1">D1</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="4500" data-seat="D2">D2</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="4500" data-seat="D3">D3</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="4500" data-seat="D4">D4</button>
+<button class="seat w-12 h-12 rounded-xl bg-surface-container-lowest border-2 border-outline-variant text-on-surface hover:border-primary-fixed-dim hover:bg-surface-container transition-all flex items-center justify-center font-label-bold text-label-bold" data-price="4500" data-seat="D5">D5</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Fixed Bottom Summary & CTA -->
+<div class="fixed bottom-0 w-full bg-surface-container-lowest shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-surface-variant z-40 pb-[calc(16px+env(safe-area-inset-bottom))] pt-md px-container-margin">
+<div class="max-w-2xl mx-auto flex items-center justify-between gap-md">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface-variant" id="selection-text">Aucune place choisie</span>
+<span class="font-display-md text-display-md text-on-background font-bold" id="price-text">0 FCFA</span>
+</div>
+<button class="bg-surface-variant text-on-surface-variant font-headline-sm text-headline-sm py-sm px-xl flex items-center gap-xs opacity-50 cursor-not-allowed transition-all duration-300 rounded-full" disabled="" id="btn-continue">
+<span class="">Continuer</span>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Note: BottomNavBar is intentionally suppressed here as per the design guidelines for task-focused/transactional screens. -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const seats = document.querySelectorAll('.seat:not([disabled])');
+            const selectionText = document.getElementById('selection-text');
+            const priceText = document.getElementById('price-text');
+            const btnContinue = document.getElementById('btn-continue');
+            
+            let selectedSeat = null;
+            let currentPrice = 0;
+
+            // Define classes for active state based on brand guidelines (Dynamic Yellow + Navy Text)
+            const activeClasses = ['bg-primary-container', 'border-primary', 'text-on-secondary-fixed', 'shadow-md'];
+            const inactiveClasses = ['bg-surface-container-lowest', 'border-outline-variant', 'text-on-surface'];
+
+            seats.forEach(seat => {
+                seat.addEventListener('click', function() {
+                    const seatId = this.getAttribute('data-seat');
+                    const seatPrice = parseInt(this.getAttribute('data-price'), 10);
+
+                    // Deselect previous
+                    if (selectedSeat && selectedSeat !== this) {
+                        selectedSeat.classList.remove(...activeClasses);
+                        selectedSeat.classList.add(...inactiveClasses);
+                    }
+
+                    // Toggle current
+                    if (this === selectedSeat) {
+                        // Deselecting
+                        this.classList.remove(...activeClasses);
+                        this.classList.add(...inactiveClasses);
+                        selectedSeat = null;
+                        currentPrice = 0;
+                        
+                        // Update UI to empty state
+                        selectionText.textContent = "Aucune place choisie";
+                        priceText.textContent = "0 FCFA";
+                        
+                        // Disable button
+                        btnContinue.disabled = true;
+                        btnContinue.classList.remove('bg-primary-container', 'text-on-secondary-fixed', 'opacity-100', 'cursor-pointer', 'shadow-lg');
+                        btnContinue.classList.add('bg-surface-variant', 'text-on-surface-variant', 'opacity-50', 'cursor-not-allowed');
+                        
+                    } else {
+                        // Selecting new
+                        this.classList.remove(...inactiveClasses);
+                        this.classList.add(...activeClasses);
+                        selectedSeat = this;
+                        currentPrice = seatPrice;
+                        
+                        // Update UI with selection
+                        selectionText.textContent = `Place ${seatId}`;
+                        priceText.textContent = `${currentPrice.toLocaleString('fr-FR')} FCFA`;
+                        
+                        // Enable button with Brand colors
+                        btnContinue.disabled = false;
+                        btnContinue.classList.remove('bg-surface-variant', 'text-on-surface-variant', 'opacity-50', 'cursor-not-allowed');
+                        btnContinue.classList.add('bg-primary-container', 'text-on-secondary-fixed', 'opacity-100', 'cursor-pointer', 'shadow-lg', 'hover:bg-primary-fixed-dim');
+                        
+                        // Add slight pulse animation to CTA to draw attention
+                        btnContinue.animate([
+                            { transform: 'scale(1)' },
+                            { transform: 'scale(1.02)' },
+                            { transform: 'scale(1)' }
+                        ], {
+                            duration: 300,
+                            easing: 'ease-in-out'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body></html>
