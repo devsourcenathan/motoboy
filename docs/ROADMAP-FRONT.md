@@ -17,10 +17,10 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | parcours complet jusqu'au billet · 58 tests |
+| `apps/mobile` | parcours complet, compte compris · 65 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : le compte et l'annulation côté mobile, et tout le web.
+**Ce qui n'existe pas** : l'annulation côté mobile, et tout le web.
 
 **Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
 langue épinglés, branché dans `pnpm verify`. 38 tests.
@@ -271,10 +271,28 @@ Après paiement, on arrive sur la **liste** et non sur un billet : une
 réservation de trois places produit trois billets, un par passager, et la
 référence de réservation n'en désigne aucun.
 
-### 4.8 Compte et historique
+### 4.8 Compte et historique — ✅ fait
 
-Inscription et connexion par OTP. Historique trié par date de départ
-décroissante — le voyage qui vient est celui qu'on cherche.
+Inscription et connexion **sur le même écran**, qui ne diffèrent que par deux
+champs de nom : en faire deux obligerait le passager à décider, avant de
+commencer, s'il a déjà un compte — question à laquelle il ne sait pas toujours
+répondre.
+
+**La connexion arrive au dernier moment.** Recherche, résultats et plan de
+sièges fonctionnent sans compte ; c'est en appuyant sur « Continuer », au moment
+de réserver, qu'elle est demandée — et l'écran dit pourquoi. La destination
+voyage avec : renvoyer sur l'accueil après connexion obligerait à refaire toute
+la recherche.
+
+**Le renvoi de code attend trente secondes.** Chaque envoi coûte un SMS et l'OTP
+est le seul canal sans alternative : un bouton toujours actif invite à insister,
+et la facture suit ([I8](BRIEF.md)). Le délai laisse aussi au message le temps
+d'arriver sur un réseau lent, avant que le passager ne conclue qu'il s'est perdu.
+
+Les tentatives restantes sont affichées : découvrir le blocage au dernier essai
+n'aide personne. La déconnexion **vide le cache** — y laisser les réservations
+d'un compte les rendrait visibles au suivant, sur un téléphone qui change de
+mains — et se ferme localement même hors ligne.
 
 ### 4.9 Annulation
 

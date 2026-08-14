@@ -40,6 +40,9 @@ export type SeatingMode = S['SeatingMode']
 export type VehicleType = S['VehicleType']
 
 export type User = S['User']
+
+/** Défi OTP : validité de 10 minutes, 4 tentatives au maximum. */
+export type OtpChallenge = S['OtpChallenge']
 export type Money = S['Money']
 export type PlaceSuggestion = S['PlaceSuggestion']
 export type TripSummary = S['TripSummary']

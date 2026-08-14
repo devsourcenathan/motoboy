@@ -14,6 +14,7 @@ import { formatMoney, formatTime } from '@motoboy/shared'
 import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
+import { useCurrentUser } from '../../account'
 import { useSeatMap, useTrip } from '../api/useTrip'
 import { hasSeatMap, isComplete, toggleSeat } from '../model/seatSelection'
 import { SeatGrid } from './SeatGrid'
@@ -36,6 +37,7 @@ export function TripScreen() {
   const reference = params.reference ?? ''
   const passengers = Math.max(1, Number(params.passengers ?? 1) || 1)
 
+  const me = useCurrentUser()
   const trip = useTrip(reference)
   const seats = useSeatMap(reference)
   const [selected, setSelected] = useState<readonly number[]>([])
@@ -54,13 +56,37 @@ export function TripScreen() {
   function goToBooking() {
     const chosen = (seats.data?.seats ?? []).filter((seat) => selected.includes(seat.id))
 
-    router.push({
-      pathname: '/booking',
+    const destination = {
+      pathname: '/booking' as const,
       params: {
         reference,
         seats: chosen.map((seat) => `${seat.id}:${seat.label}`).join(','),
       },
-    })
+    }
+
+    /*
+     * La connexion n'est demandée qu'ici.
+     *
+     * Recherche, résultats et plan de sièges fonctionnent sans compte : exiger
+     * une session d'entrée ferait renoncer quelqu'un qui veut seulement savoir
+     * s'il y a un car ce soir (§35). Mais réserver écrit au nom de quelqu'un,
+     * et l'API l'exige — autant le demander au moment où cela se comprend.
+     *
+     * La destination voyage avec : renvoyer sur l'accueil après connexion
+     * obligerait à refaire toute la recherche.
+     */
+    if (me.data === null || me.data === undefined) {
+      router.push({
+        pathname: '/account/sign-in',
+        params: {
+          next: `/booking?reference=${reference}&seats=${destination.params.seats}`,
+        },
+      })
+
+      return
+    }
+
+    router.push(destination)
   }
 
   if (trip.isPending) {

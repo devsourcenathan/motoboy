@@ -142,6 +142,32 @@ export interface PassengerMessages {
     readonly used: string
     readonly departure: string
   }
+  readonly account: {
+    readonly title: string
+    readonly signIn: string
+    readonly signUp: string
+    readonly phone: string
+    readonly phoneHint: string
+    readonly firstName: string
+    readonly lastName: string
+    readonly continue: string
+    readonly noAccount: string
+    readonly haveAccount: string
+    readonly signOut: string
+    readonly history: string
+    readonly historyEmpty: string
+    readonly whyNeeded: string
+    readonly otp: {
+      readonly title: string
+      readonly sentTo: string
+      readonly code: string
+      readonly verify: string
+      readonly resend: string
+      readonly resendIn: string
+      readonly attemptsLeft: string
+      readonly expired: string
+    }
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -304,6 +330,37 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       used: 'Billet déjà utilisé',
       departure: 'Départ',
     },
+    account: {
+      title: 'Compte',
+      signIn: 'Se connecter',
+      signUp: 'Créer un compte',
+      phone: 'Téléphone',
+      phoneHint: 'Au format international, par exemple +237690000000.',
+      firstName: 'Prénom',
+      lastName: 'Nom',
+      continue: 'Continuer',
+      noAccount: 'Pas encore de compte ?',
+      haveAccount: 'J’ai déjà un compte',
+      signOut: 'Se déconnecter',
+      history: 'Mes voyages',
+      historyEmpty: 'Aucun voyage pour le moment.',
+      // La connexion n'est demandée qu'au dernier moment, une fois les places
+      // choisies : l'exiger d'entrée ferait renoncer quelqu'un qui veut
+      // seulement savoir s'il y a un car ce soir (§35).
+      whyNeeded: 'Un compte est nécessaire pour finaliser la réservation.',
+      otp: {
+        title: 'Code de vérification',
+        sentTo: 'Un code a été envoyé au {{phone}}.',
+        code: 'Code reçu',
+        verify: 'Valider',
+        resend: 'Renvoyer le code',
+        // Chaque envoi coûte un SMS, et l'OTP est le seul canal sans
+        // alternative : le renvoi attend, plutôt que d'inviter à insister (I8).
+        resendIn: 'Renvoyer dans {{seconds}} s',
+        attemptsLeft: '{{count}} tentative(s) restante(s)',
+        expired: 'Ce code a expiré. Demandez-en un nouveau.',
+      },
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -443,6 +500,32 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       cancelled: 'Ticket cancelled',
       used: 'Ticket already used',
       departure: 'Departure',
+    },
+    account: {
+      title: 'Account',
+      signIn: 'Sign in',
+      signUp: 'Create an account',
+      phone: 'Phone',
+      phoneHint: 'International format, for example +237690000000.',
+      firstName: 'First name',
+      lastName: 'Last name',
+      continue: 'Continue',
+      noAccount: 'No account yet?',
+      haveAccount: 'I already have an account',
+      signOut: 'Sign out',
+      history: 'My trips',
+      historyEmpty: 'No trips yet.',
+      whyNeeded: 'An account is needed to complete the booking.',
+      otp: {
+        title: 'Verification code',
+        sentTo: 'A code was sent to {{phone}}.',
+        code: 'Code received',
+        verify: 'Verify',
+        resend: 'Resend the code',
+        resendIn: 'Resend in {{seconds}}s',
+        attemptsLeft: '{{count}} attempt(s) left',
+        expired: 'This code has expired. Ask for a new one.',
+      },
     },
     tabs: {
       search: 'Search',
