@@ -17,11 +17,10 @@ lisible sur `/docs` de l'instance déployée.
 |---|---|
 | `@motoboy/api-client` | client typé **généré** depuis le contrat, plus une entrée sans DOM |
 | `@motoboy/shared` | locale, montants, dates, libellés d'erreur, jetons de design |
-| `apps/mobile` | socle, onboarding, recherche, résultats, **plan de sièges** · 38 tests |
+| `apps/mobile` | socle, onboarding, recherche, résultats, plan de sièges, **réservation** · 48 tests |
 | `apps/web` | Vite nu — un écran de vérification |
 
-**Ce qui n'existe pas** : la réservation, le paiement, le billet, le compte — et
-tout le web.
+**Ce qui n'existe pas** : le paiement, le billet, le compte — et tout le web.
 
 **Le harnais de test est en place** — jest-expo et Testing Library, fuseau et
 langue épinglés, branché dans `pnpm verify`. 38 tests.
@@ -204,11 +203,29 @@ trente secondes. Mais **l'écran affiche, il ne décide pas** — c'est l'index
 unique partiel qui arbitre au moment de réserver, et deux passagers peuvent
 viser le même siège à la seconde près.
 
-### 4.5 Réservation
+### 4.5 Réservation — ✅ fait
 
-Passagers, contact. La réservation **tient les places avant le paiement** : le
-compte à rebours est visible, sinon le passager ne comprend pas pourquoi son
-siège lui échappe ([B2](BRIEF.md)).
+Un formulaire par passager, plus **un contact** : c'est lui qui reçoit le billet
+et les alertes de départ, pas le premier voyageur. Une réservation se fait
+couramment pour quelqu'un d'autre, et envoyer le billet au passager plutôt qu'à
+l'acheteur le laisserait sans rien.
+
+La réservation **tient les places à l'envoi**, avant tout paiement. Le compte à
+rebours est donc visible en permanence, pas caché derrière un avertissement
+qu'on ferme : un passager qui cherche son téléphone pour saisir son code Mobile
+Money doit voir ce qu'il lui reste, sinon la perte de sa place ressemble à une
+panne ([B2](BRIEF.md)).
+
+**La clé d'idempotence survit aux tentatives.** C'est tout son objet : en
+régénérer une à chaque essai reviendrait à ne pas en avoir, et une requête qui
+expire côté téléphone mais aboutit côté serveur — banal sur une connexion de
+gare — ferait tenir deux fois les places et payer deux fois.
+
+Un conflit d'inventaire **se dit et se répare** : « une place vient d'être
+prise » appelle un geste précis, choisir une autre place, que l'écran propose.
+Un message générique laisserait le passager réessayer indéfiniment le même
+siège. « Complet » et « ventes closes », eux, n'offrent pas ce geste — parce
+qu'il n'existe pas.
 
 ### 4.6 Paiement
 

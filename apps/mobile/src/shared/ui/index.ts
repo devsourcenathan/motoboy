@@ -8,4 +8,5 @@
 export * from './Button'
 export * from './Field'
 export * from './Screen'
+export * from './TextField'
 export * from './theme'

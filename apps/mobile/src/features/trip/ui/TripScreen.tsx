@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -29,6 +29,7 @@ import { SeatLegend } from './SeatLegend'
  */
 export function TripScreen() {
   const { t } = useTranslation()
+  const router = useRouter()
   const locale = useLocale()
   const params = useLocalSearchParams<{ reference: string; passengers?: string }>()
   const reference = params.reference ?? ''
@@ -40,6 +41,25 @@ export function TripScreen() {
 
   function toggle(seat: Seat) {
     setSelected((current) => toggleSeat(current, seat, passengers))
+  }
+
+  /*
+   * Les places partent appariées `identifiant:numéro`.
+   *
+   * L'identifiant sert au serveur, le numéro s'affiche au passager. Les
+   * transmettre ensemble évite à l'écran suivant de redemander le plan au seul
+   * motif d'en relire les étiquettes.
+   */
+  function goToBooking() {
+    const chosen = (seats.data?.seats ?? []).filter((seat) => selected.includes(seat.id))
+
+    router.push({
+      pathname: '/booking',
+      params: {
+        reference,
+        seats: chosen.map((seat) => `${seat.id}:${seat.label}`).join(','),
+      },
+    })
   }
 
   if (trip.isPending) {
@@ -115,7 +135,7 @@ export function TripScreen() {
             {t('trip.seatsChosen', { chosen: selected.length, total: passengers })}
           </Text>
         ) : null}
-        <Button label={t('trip.continue')} onPress={() => undefined} disabled={!ready} />
+        <Button label={t('trip.continue')} onPress={goToBooking} disabled={!ready} />
       </View>
     </Screen>
   )

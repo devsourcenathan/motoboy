@@ -77,6 +77,29 @@ export interface PassengerMessages {
     readonly passengers: string
     readonly seatTaken: string
   }
+  readonly booking: {
+    readonly title: string
+    readonly passenger: string
+    readonly firstName: string
+    readonly lastName: string
+    readonly contact: string
+    readonly contactPhone: string
+    readonly contactHint: string
+    readonly submit: string
+    readonly seatLabel: string
+    readonly held: {
+      readonly title: string
+      readonly body: string
+      readonly expired: string
+      readonly restart: string
+    }
+    readonly conflict: {
+      readonly seatTaken: string
+      readonly tripFull: string
+      readonly closed: string
+      readonly pickAnother: string
+    }
+  }
   readonly tabs: {
     readonly search: string
     readonly tickets: string
@@ -164,6 +187,31 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       passengers: 'Passagers',
       seatTaken: 'Cette place vient d’être prise',
     },
+    booking: {
+      title: 'Vos informations',
+      passenger: 'Passager {{index}}',
+      firstName: 'Prénom',
+      lastName: 'Nom',
+      contact: 'Contact',
+      contactPhone: 'Téléphone',
+      contactHint: 'Le billet et les alertes de départ y seront envoyés.',
+      submit: 'Réserver',
+      seatLabel: 'Place {{label}}',
+      held: {
+        title: 'Places tenues',
+        // Le passager doit savoir qu'il est chronométré : sans compte à
+        // rebours, il ne comprend pas pourquoi son siège lui échappe (B2).
+        body: 'Il vous reste {{time}} pour payer.',
+        expired: 'Le délai est écoulé, les places ont été libérées.',
+        restart: 'Recommencer',
+      },
+      conflict: {
+        seatTaken: 'Une des places vient d’être prise.',
+        tripFull: 'Ce départ est complet.',
+        closed: 'Les réservations en ligne sont closes pour ce départ.',
+        pickAnother: 'Choisir une autre place',
+      },
+    },
     tabs: {
       search: 'Rechercher',
       tickets: 'Mes billets',
@@ -238,6 +286,29 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       capacityMode: 'Unnumbered seating on this vehicle.',
       passengers: 'Passengers',
       seatTaken: 'That seat has just been taken',
+    },
+    booking: {
+      title: 'Your details',
+      passenger: 'Passenger {{index}}',
+      firstName: 'First name',
+      lastName: 'Last name',
+      contact: 'Contact',
+      contactPhone: 'Phone',
+      contactHint: 'The ticket and departure alerts will be sent there.',
+      submit: 'Book',
+      seatLabel: 'Seat {{label}}',
+      held: {
+        title: 'Seats held',
+        body: 'You have {{time}} left to pay.',
+        expired: 'Time is up, the seats have been released.',
+        restart: 'Start over',
+      },
+      conflict: {
+        seatTaken: 'One of the seats has just been taken.',
+        tripFull: 'This departure is full.',
+        closed: 'Online sales are closed for this departure.',
+        pickAnother: 'Pick another seat',
+      },
     },
     tabs: {
       search: 'Search',
