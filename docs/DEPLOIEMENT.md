@@ -41,6 +41,25 @@ Neon fournit une URL complète. Elle va dans `DB_URL`, telle quelle :
 postgresql://<user>:<password>@<endpoint>.eu-central-1.aws.neon.tech/<db>?sslmode=require
 ```
 
+### ⚠️ `DB_URL` seule — pas de `DB_HOST` ni de `DB_PORT` à côté
+
+**L'URL ne remplace que ce qu'elle contient.** Les composants absents retombent
+sur les variables discrètes. Or une URL Neon **n'indique pas de port** : un
+`DB_PORT` résiduel — celui d'un `.env` local recopié dans l'interface, par
+exemple `5433` — envoie donc la connexion sur le **mauvais port du bon
+serveur**.
+
+Le symptôme est un délai d'attente réseau qui ne nomme jamais la contradiction :
+
+```
+connection to server at "ep-....aws.neon.tech" (3.23.109.155), port 5433 failed:
+timeout expired
+```
+
+Le conteneur refuse désormais de démarrer sur cette combinaison, en la nommant.
+Dans l'environnement Render, **seule `DB_URL` doit exister** : supprimer
+`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` et `DB_PASSWORD`.
+
 ### Endpoint direct, pas le pooler
 
 Neon expose deux endpoints : le direct et le **pooler**, reconnaissable au
@@ -169,9 +188,11 @@ de rendre la main.
 Ordre de lecture :
 
 1. `APP_KEY manquante.` — refus volontaire.
-2. `Connexion à la base et migrations…` sans rien après : c'est la base.
+2. `DB_URL est définie en même temps que DB_HOST ou DB_PORT.` — supprimer les
+   variables discrètes, voir §2.
+3. `Connexion à la base et migrations…` sans rien après : c'est la base.
    Vérifier `DB_URL`, et qu'elle pointe l'endpoint **direct** de Neon.
-3. `Migrations à jour.` puis `écoute sur le port N` : le démarrage est allé au
+4. `Migrations à jour.` puis `écoute sur le port N` : le démarrage est allé au
    bout, et le problème est ailleurs.
 
 **Un hôte qui absorbe les paquets sans les refuser met environ 85 secondes à

@@ -40,6 +40,28 @@ if [ -z "${APP_KEY}" ]; then
     exit 1
 fi
 
+# `DB_URL` et les variables discrètes ne se mélangent pas.
+#
+# L'URL ne remplace que ce qu'elle porte : les composants absents retombent sur
+# `DB_HOST`, `DB_PORT`, etc. Une URL Neon n'indique pas de port — le port d'un
+# `.env` local recopié ici l'emporte donc, et la connexion part vers le bon hôte
+# sur le mauvais port. Le symptôme est un délai d'attente réseau qui ne nomme
+# jamais la contradiction.
+if [ -n "${DB_URL}" ] && { [ -n "${DB_HOST}" ] || [ -n "${DB_PORT}" ]; }; then
+    echo "DB_URL est définie en même temps que DB_HOST ou DB_PORT." >&2
+    echo "" >&2
+    echo "  DB_HOST=${DB_HOST:-<absent>}" >&2
+    echo "  DB_PORT=${DB_PORT:-<absent>}" >&2
+    echo "" >&2
+    echo "L'URL ne fournit que ce qu'elle contient ; le reste retombe sur ces" >&2
+    echo "variables. Une URL Neon n'indiquant pas de port, un DB_PORT résiduel" >&2
+    echo "envoie la connexion sur le mauvais port du bon serveur." >&2
+    echo "" >&2
+    echo "Supprimer DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME et DB_PASSWORD" >&2
+    echo "de l'environnement : DB_URL suffit et fait foi." >&2
+    exit 1
+fi
+
 # ─────────────────────────────── Préparation ───────────────────────────────
 
 cd /var/www/html
