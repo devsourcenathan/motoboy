@@ -323,7 +323,7 @@ même annulation, sans quoi la seconde porterait sur des passagers déjà annul�
 L'entrée est le billet : c'est là qu'un passager pense à annuler, et là qu'il a
 sous les yeux ce qu'il s'apprête à perdre.
 
-### 4.9 bis Design system — ✅ socle, écrans en cours
+### 4.9 bis Design system — ✅ appliqué à tout le parcours
 
 La référence est `stitch_motoboy_mobility_platform/` : quinze écrans rendus et un
 `DESIGN.md`, versés au dépôt comme **normatifs**, au même titre que
@@ -334,18 +334,26 @@ bouton primaire or ; chaque maquette montre un CTA bleu, l'or restant aux
 contours secondaires, aux repères d'origine et aux titres de section. C'est
 l'écran qui a été validé.
 
-Fait : jetons (bleu `#0f0fa9`, or `#e9bc17`, page `#fbf8ff`, grille de 8),
-barre d'onglets, mot-symbole sur chaque route, boutons en capsule, champs à
-rayon 8, plan de sièges, **accueil**, **résultats**, **billet**, **profil**.
+Jetons (bleu `#0f0fa9`, or `#e9bc17`, page `#fbf8ff`, grille de 8), barre
+d'onglets, mot-symbole sur chaque route, boutons en capsule, champs à rayon 8,
+fil d'étapes places/infos/paiement, compte à rebours en bandeau d'alerte — puis
+les treize écrans du parcours.
 
-Reste : réservation, paiement, connexion, OTP, onboarding, mes réservations.
+**Ce que la maquette demande et qui n'existe pas.** À chaque fois, l'absence est
+préférée au leurre :
 
-Trois endroits où la maquette demande ce qui n'existe pas, et où j'ai préféré
-dire non plutôt que dessiner un leurre : le badge VIP/CLASSIQUE (remplacé par le
-gabarit du véhicule, qui est un vrai critère), le logo d'agence et la photo de
-profil (initiales), le réglage de langue (affiché, pas réglable — un sélecteur
-sans persistance repartirait à zéro au démarrage suivant, ce qui est pire que
-son absence).
+| Demandé | Choix |
+|---|---|
+| Badge VIP / CLASSIQUE | Gabarit du véhicule — un vrai critère de comparaison |
+| Logo d'agence, photo de profil | Initiales |
+| « Modifier », notifications, aide | Omis : aucun endpoint |
+| Réglage de langue | Affiché, pas réglable — sans persistance il repartirait à zéro |
+| Carte bancaire au paiement | Omis : pas de passerelle |
+| Illustrations d'onboarding | Panneau teinté et glyphe |
+| Code OTP à 4 cases | Six, comme le serveur les émet |
+
+Le nombre de voyageurs, lui, a été gardé **en le rendant réel** : il traverse la
+recherche jusqu'au plan de sièges, où il dira combien de places choisir.
 
 ### 4.10 Essayer le parcours en local — ✅ vérifié de bout en bout
 

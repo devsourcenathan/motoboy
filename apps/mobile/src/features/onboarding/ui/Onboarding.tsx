@@ -12,7 +12,18 @@ import {
 } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, fontSize, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
+import {
+  Button,
+  CheckIcon,
+  fontSize,
+  lineHeight,
+  radius,
+  SearchIcon,
+  spacing,
+  TabIcon,
+  theme,
+  TOUCH_TARGET,
+} from '../../../shared/ui'
 
 import { markOnboardingSeen } from '../model/storage'
 import type { PassengerMessages } from '@motoboy/shared/i18n/passenger'
@@ -62,15 +73,6 @@ export function Onboarding() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <View style={styles.skipRow}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void finish()}
-          style={styles.skip}
-        >
-          <Text style={styles.skipLabel}>{t('onboarding.skip')}</Text>
-        </Pressable>
-      </View>
 
       <FlatList
         ref={list}
@@ -81,15 +83,44 @@ export function Onboarding() {
         onMomentumScrollEnd={onScroll}
         keyExtractor={(slide) => slide.title}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        renderItem={({ item }) => (
+        renderItem={({ item, index: position }) => (
           <View style={[styles.slide, { width }]}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.body}>{item.body}</Text>
+            {/*
+              Un panneau teinté portant un glyphe, faute d'illustrations : la
+              maquette en montre trois, aucune n'existe comme fichier, et un
+              cadre vide dirait qu'il en manque une.
+            */}
+            <View style={styles.stage}>
+              <View style={styles.glyph}>
+                {position === 0 ? <SearchIcon color={theme.text.brand} size={64} /> : null}
+                {position === 1 ? (
+                  <TabIcon name="tickets" color={theme.text.brand} size={64} />
+                ) : null}
+                {position === 2 ? <CheckIcon color={theme.text.brand} size={64} /> : null}
+              </View>
+            </View>
+
+            <View style={styles.text}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.body}>{item.body}</Text>
+            </View>
           </View>
         )}
       />
 
       <View style={styles.footer}>
+        {/*
+          « Passer » reste atteignable au pouce, en bas : en haut à droite il
+          demande de changer de main sur un grand téléphone.
+        */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void finish()}
+          style={styles.skip}
+        >
+          <Text style={styles.skipLabel}>{t('onboarding.skip')}</Text>
+        </Pressable>
+
         <View
           style={styles.dots}
           accessibilityRole="progressbar"
@@ -117,53 +148,78 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.surface.page,
   },
-  skipRow: {
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.md,
+  slide: {
+    flex: 1,
+  },
+  /** Le panneau occupe la moitié haute, comme sur la maquette. */
+  stage: {
+    flex: 1,
+    margin: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.xl,
+    backgroundColor: theme.surface.brandSoft,
+  },
+  glyph: {
+    width: 132,
+    height: 132,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.card,
+  },
+  text: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  title: {
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    color: theme.text.primary,
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
+    color: theme.text.secondary,
+    textAlign: 'center',
+  },
+  footer: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: theme.surface.card,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
   },
   skip: {
+    alignSelf: 'flex-end',
     minHeight: TOUCH_TARGET,
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,
   },
   skipLabel: {
-    color: theme.text.muted,
     fontSize: fontSize.base,
-  },
-  slide: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: fontSize['2xl'],
-    fontWeight: '700',
-    color: theme.text.primary,
-  },
-  body: {
-    fontSize: fontSize.lg,
-    lineHeight: fontSize.lg * 1.5,
-    color: theme.text.secondary,
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.lg,
+    fontWeight: '600',
+    color: theme.text.muted,
   },
   dots: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
+    alignSelf: 'center',
+    gap: spacing.base,
+    paddingBottom: spacing.base,
   },
   dot: {
-    width: spacing.sm,
-    height: spacing.sm,
-    borderRadius: spacing.sm / 2,
-    backgroundColor: theme.surface.border,
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.inert,
   },
+  /** La page courante s'allonge : la position se lit sans compter les points. */
   dotActive: {
+    width: 28,
     backgroundColor: theme.surface.brand,
-    width: spacing.lg,
   },
 })
