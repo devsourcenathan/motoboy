@@ -30,6 +30,7 @@ export interface PassengerMessages {
   }
   readonly search: {
     readonly title: string
+    readonly subtitle: string
     readonly from: string
     readonly to: string
     readonly date: string
@@ -38,6 +39,9 @@ export interface PassengerMessages {
     readonly submit: string
     readonly swap: string
     readonly pickCity: string
+    readonly fromExample: string
+    readonly toExample: string
+    readonly passengers: string
     readonly searchCity: string
     readonly noCity: string
     readonly typeMore: string
@@ -45,6 +49,8 @@ export interface PassengerMessages {
   }
   readonly results: {
     readonly title: string
+    readonly choose: string
+    readonly vehicle: { readonly BUS: string; readonly CAR: string }
     readonly seatsLeft: string
     readonly soldOut: string
     readonly directOnly: string
@@ -225,15 +231,19 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       ],
     },
     search: {
-      title: 'Où allez-vous ?',
+      title: "Où allez-vous aujourd'hui ?",
+      subtitle: 'Réservez votre trajet en toute sécurité.',
       from: 'Départ',
       to: 'Arrivée',
       date: 'Date',
       today: "Aujourd'hui",
       tomorrow: 'Demain',
-      submit: 'Rechercher',
-      swap: 'Inverser',
+      submit: 'Rechercher des trajets',
+      swap: 'Inverser départ et arrivée',
       pickCity: 'Choisir une ville',
+      fromExample: 'Ex : Douala',
+      toExample: 'Ex : Yaoundé',
+      passengers: 'Passagers',
       searchCity: 'Ville ou gare',
       noCity: 'Aucune ville trouvée',
       typeMore: 'Saisissez au moins deux lettres',
@@ -241,7 +251,11 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     results: {
       title: '{{from}} → {{to}}',
-      seatsLeft: '{{count}} place(s)',
+      choose: 'Choisir',
+      // Le gabarit du véhicule est un vrai critère de comparaison : on ne
+      // voyage pas cinq heures en berline comme en autocar.
+      vehicle: { BUS: 'Autocar', CAR: 'Voiture' },
+      seatsLeft: '{{count}} place(s) rest.',
       soldOut: 'Complet',
       directOnly: 'Direct',
       via: 'via {{stops}}',
@@ -439,15 +453,19 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       ],
     },
     search: {
-      title: 'Where are you going?',
+      title: 'Where are you going today?',
+      subtitle: 'Book your trip with confidence.',
       from: 'From',
       to: 'To',
       date: 'Date',
       today: 'Today',
       tomorrow: 'Tomorrow',
-      submit: 'Search',
-      swap: 'Swap',
+      submit: 'Search trips',
+      swap: 'Swap origin and destination',
       pickCity: 'Pick a city',
+      fromExample: 'e.g. Douala',
+      toExample: 'e.g. Yaoundé',
+      passengers: 'Passengers',
       searchCity: 'City or station',
       noCity: 'No city found',
       typeMore: 'Type at least two letters',
@@ -455,7 +473,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     results: {
       title: '{{from}} → {{to}}',
-      seatsLeft: '{{count}} seat(s)',
+      choose: 'Choose',
+      vehicle: { BUS: 'Coach', CAR: 'Car' },
+      seatsLeft: '{{count}} seat(s) left',
       soldOut: 'Sold out',
       directOnly: 'Direct',
       via: 'via {{stops}}',

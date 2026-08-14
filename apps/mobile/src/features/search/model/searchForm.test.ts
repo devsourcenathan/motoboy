@@ -4,6 +4,7 @@ import {
   toCityChoice,
   todayInDisplayTimezone,
   validate,
+  type SearchForm,
 } from './searchForm'
 import type { PlaceSuggestion } from '@motoboy/api-client/types'
 
@@ -64,36 +65,56 @@ describe('validate', () => {
   const douala = { cityId: 1, label: 'Douala' }
   const bafoussam = { cityId: 2, label: 'Bafoussam' }
 
+  /** Le nombre de voyageurs n'entre pas dans la validation : il ne filtre rien. */
+  const form = (over: Partial<SearchForm>): SearchForm => ({
+    from: null,
+    to: null,
+    date: '2026-08-15',
+    passengers: 1,
+    ...over,
+  })
+
   it('refuse tant qu’une ville manque', () => {
-    expect(validate({ from: null, to: bafoussam, date: '2026-08-15' })).toBe('INCOMPLETE')
-    expect(validate({ from: douala, to: null, date: '2026-08-15' })).toBe('INCOMPLETE')
+    expect(validate(form({ to: bafoussam }))).toBe('INCOMPLETE')
+    expect(validate(form({ from: douala }))).toBe('INCOMPLETE')
   })
 
   /** Le serveur refuserait de toute façon : autant l'éviter d'un aller-retour. */
   it('refuse deux fois la même ville', () => {
-    expect(validate({ from: douala, to: { ...douala }, date: '2026-08-15' })).toBe(
-      'SAME_CITY',
-    )
+    expect(validate(form({ from: douala, to: { ...douala } }))).toBe('SAME_CITY')
   })
 
   it('accepte deux villes distinctes', () => {
-    expect(validate({ from: douala, to: bafoussam, date: '2026-08-15' })).toBeNull()
+    expect(validate(form({ from: douala, to: bafoussam }))).toBeNull()
   })
 })
 
 describe('swap', () => {
   it('échange les deux villes sans toucher à la date', () => {
-    const form = {
+    const form: SearchForm = {
       from: { cityId: 1, label: 'Douala' },
       to: { cityId: 2, label: 'Bafoussam' },
       date: '2026-08-15',
+      passengers: 2,
     }
 
-    expect(swap(form)).toEqual({ from: form.to, to: form.from, date: '2026-08-15' })
+    // Ni la date ni le nombre de voyageurs ne bougent : seules les villes
+    // s'échangent.
+    expect(swap(form)).toEqual({
+      from: form.to,
+      to: form.from,
+      date: '2026-08-15',
+      passengers: 2,
+    })
   })
 
   it('reste utilisable quand une seule ville est choisie', () => {
-    const form = { from: { cityId: 1, label: 'Douala' }, to: null, date: '2026-08-15' }
+    const form: SearchForm = {
+      from: { cityId: 1, label: 'Douala' },
+      to: null,
+      date: '2026-08-15',
+      passengers: 1,
+    }
 
     expect(swap(form).to).toEqual(form.from)
     expect(swap(form).from).toBeNull()

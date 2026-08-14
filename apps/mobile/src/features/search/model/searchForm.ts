@@ -23,11 +23,30 @@ export function toCityChoice(suggestion: PlaceSuggestion): CityChoice {
   }
 }
 
+/**
+ * Plafond du nombre de voyageurs d'une même recherche.
+ *
+ * Au-delà, c'est un groupe : le plan de sièges ne permet plus de placer tout le
+ * monde ensemble sur un car de dix-huit places, et la conversation se fait avec
+ * l'agence. Le plafond est ici pour borner le pas-à-pas, pas pour décider — le
+ * serveur reste seul juge de ce qui est réservable.
+ */
+export const MAX_PASSENGERS = 6
+
 export interface SearchForm {
   readonly from: CityChoice | null
   readonly to: CityChoice | null
   /** `YYYY-MM-DD`, dans le fuseau d'affichage. */
   readonly date: string
+  /**
+   * Nombre de voyageurs.
+   *
+   * Il ne filtre pas la recherche — l'API compare des départs, pas des
+   * disponibilités par groupe — mais il **traverse le parcours** jusqu'au plan
+   * de sièges, où il dit combien de places choisir. Le saisir ici évite de le
+   * redemander trois écrans plus loin.
+   */
+  readonly passengers: number
 }
 
 export type SearchFormError = 'INCOMPLETE' | 'SAME_CITY' | null

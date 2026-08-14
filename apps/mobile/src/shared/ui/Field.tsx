@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { fontSize, radius, spacing, theme, TOUCH_TARGET } from './theme'
+import { fontSize, lineHeight, radius, spacing, theme, TOUCH_TARGET } from './theme'
 
 export interface FieldProps {
   label: string
@@ -7,6 +8,8 @@ export interface FieldProps {
   value: string | null
   placeholder: string
   onPress: () => void
+  /** Glyphe à gauche — cible au départ, épingle à l'arrivée. */
+  icon?: ReactNode
   /** Ajouté à l'annonce vocale — « Départ, Douala, bouton ». */
   hint?: string
 }
@@ -17,8 +20,11 @@ export interface FieldProps {
  * Ville et date ne se tapent pas : la ville vient d'un référentiel fermé, et
  * une date saisie à la main produit autant de formats que d'utilisateurs. Le
  * champ n'est donc qu'un bouton qui montre l'état courant.
+ *
+ * Rayon 8 et non capsule : le système réserve l'arrondi prononcé aux actions,
+ * et garde les champs « structurés et professionnels ».
  */
-export function Field({ label, value, placeholder, onPress, hint }: FieldProps) {
+export function Field({ label, value, placeholder, onPress, icon, hint }: FieldProps) {
   const filled = value !== null && value !== ''
 
   return (
@@ -29,15 +35,19 @@ export function Field({ label, value, placeholder, onPress, hint }: FieldProps) 
       onPress={onPress}
       style={({ pressed }) => [styles.field, pressed ? styles.pressed : null]}
     >
-      <Text style={styles.label}>{label}</Text>
-      <Text style={filled ? styles.value : styles.placeholder} numberOfLines={1}>
-        {filled ? value : placeholder}
-      </Text>
+      {icon === undefined ? null : <View style={styles.icon}>{icon}</View>}
+
+      <View style={styles.text}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={filled ? styles.value : styles.placeholder} numberOfLines={1}>
+          {filled ? value : placeholder}
+        </Text>
+      </View>
     </Pressable>
   )
 }
 
-export function FieldGroup({ children }: { children: React.ReactNode }) {
+export function FieldGroup({ children }: { children: ReactNode }) {
   return <View style={styles.group}>{children}</View>
 }
 
@@ -46,31 +56,42 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     minHeight: TOUCH_TARGET + spacing.sm,
-    justifyContent: 'center',
-    gap: spacing.xs / 2,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: theme.surface.raised,
+    paddingVertical: spacing.base,
+    backgroundColor: theme.surface.card,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: theme.surface.border,
   },
+  icon: {
+    width: 24,
+    alignItems: 'center',
+  },
+  text: {
+    flex: 1,
+    gap: 1,
+  },
   pressed: {
-    opacity: 0.85,
+    backgroundColor: theme.surface.raised,
   },
   label: {
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     color: theme.text.muted,
-    textTransform: 'uppercase',
   },
   value: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     color: theme.text.primary,
     fontWeight: '600',
   },
   placeholder: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     color: theme.text.muted,
   },
 })
