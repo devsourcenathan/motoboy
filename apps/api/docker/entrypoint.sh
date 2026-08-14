@@ -26,6 +26,22 @@ fi
 
 cd /var/www/html
 
+# Port d'écoute imposé par l'hébergeur.
+#
+# Render annonce le port par `PORT` et scrute celui-là. Un port figé dans
+# l'image laisse le service « en attente de détection de port » indéfiniment,
+# sans erreur : rien n'écoute là où il regarde.
+PORT="${PORT:-8080}"
+sed -i "s/__PORT__/${PORT}/" /etc/nginx/nginx.conf
+
+# L'URL publique vient de l'hébergeur. Elle sert à la génération d'URL — liens
+# signés, notifications — et non au routage : la renseigner à la main
+# obligerait à la corriger au premier changement de domaine.
+if [ -z "${APP_URL}" ] && [ -n "${RENDER_EXTERNAL_URL}" ]; then
+    APP_URL="${RENDER_EXTERNAL_URL}"
+    export APP_URL
+fi
+
 # Découverte des paquets : elle démarre Laravel, donc elle a besoin des
 # extensions du runtime — d'où sa place ici plutôt qu'à la construction.
 php_artisan package:discover --ansi
@@ -48,6 +64,7 @@ fi
 
 case "${CONTAINER_ROLE:-web}" in
     web)
+        echo "MOTOBOY API — écoute sur le port ${PORT}."
         exec supervisord -c /etc/supervisor/supervisord.conf
         ;;
     worker)

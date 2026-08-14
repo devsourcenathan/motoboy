@@ -111,14 +111,18 @@ une URL signée à durée limitée.
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.
-2. `package:discover`, puis mise en cache de la configuration, des routes et des
+2. **nginx est reconfiguré pour écouter sur `PORT`.** Render choisit le port et
+   l'annonce par cette variable ; un port figé dans l'image laisse le service
+   « en attente de détection de port » indéfiniment, sans qu'aucune erreur ne
+   soit émise — rien n'écoute là où l'hébergeur regarde.
+3. `package:discover`, puis mise en cache de la configuration, des routes et des
    événements. **Au démarrage, jamais à la construction de l'image** : mettre la
    configuration en cache fige les valeurs d'environnement, et celles de
    production ne sont pas connues au moment du build.
-3. `migrate --force --isolated`. Le verrou d'isolation est partagé par le cache
+4. `migrate --force --isolated`. Le verrou d'isolation est partagé par le cache
    en base : deux conteneurs qui démarrent ensemble — le cas normal d'un
    redéploiement — n'en jouent qu'une seule série.
-4. `supervisord` lance nginx, php-fpm, le planificateur et le worker.
+5. `supervisord` lance nginx, php-fpm, le planificateur et le worker.
 
 Le blueprint pointe la sonde de santé sur `/up`.
 
