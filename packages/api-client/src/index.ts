@@ -1,5 +1,6 @@
 import createClient from 'openapi-fetch'
 import type { paths } from './schema.js'
+import { Session } from './session.js'
 
 /**
  * Client HTTP typé par le contrat OpenAPI.
@@ -9,20 +10,23 @@ import type { paths } from './schema.js'
  * `@motoboy/api-client/types`, qui n'exige rien.
  */
 export * from './types.js'
+export * from './errors.js'
+export * from './session.js'
 
 export interface CreateApiClientOptions {
   baseUrl: string
-  /** Renvoie le jeton Sanctum courant, ou `null` hors session. */
-  getToken?: () => string | null | Promise<string | null>
-  /** Appelé sur `401`, pour que l'application purge sa session. */
-  onUnauthenticated?: () => void
+  /**
+   * La session. Le client y lit le jeton et lui signale les `401` — il ne
+   * connaît ni le coffre du système ni le stockage du navigateur.
+   */
+  session?: Session
   fetch?: typeof fetch
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>
 
 export function createApiClient(options: CreateApiClientOptions) {
-  const { baseUrl, getToken, onUnauthenticated } = options
+  const { baseUrl, session } = options
 
   const client = createClient<paths>({
     baseUrl,
@@ -31,13 +35,16 @@ export function createApiClient(options: CreateApiClientOptions) {
 
   client.use({
     async onRequest({ request }) {
-      const token = await getToken?.()
+      const token = await session?.token()
       if (token) request.headers.set('Authorization', `Bearer ${token}`)
       request.headers.set('Accept', 'application/json')
       return request
     },
     async onResponse({ response }) {
-      if (response.status === 401) onUnauthenticated?.()
+      // Purge immédiate : laisser un jeton mort en place ferait renvoyer 401
+      // à chaque écran suivant, et l'application semblerait cassée plutôt que
+      // déconnectée.
+      if (response.status === 401) session?.expire()
       return response
     },
   })
