@@ -1,8 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { formatDateTime, ticketStatusLabels } from '@motoboy/shared'
-import { Button, fontSize, radius, Screen, spacing, theme } from '../../../shared/ui'
+import { formatDate, formatTime, ticketStatusLabels } from '@motoboy/shared'
+import {
+  Button,
+  CheckIcon,
+  fontSize,
+  lineHeight,
+  radius,
+  RouteDot,
+  Screen,
+  sharedStyles,
+  spacing,
+  theme,
+} from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useTicket } from '../api/useTickets'
@@ -16,6 +27,10 @@ import { TicketQr } from './TicketQr'
  * le QR se **regénère à partir des données stockées** plutôt que de se
  * télécharger comme image. Un billet dont le code ne s'affiche pas en gare ne
  * vaut rien (I5).
+ *
+ * La carte reprend la découpe de la maquette, perforation comprise : le QR en
+ * haut, encadré de bleu pour qu'on le trouve d'un coup d'œil sur un quai, puis
+ * les informations que le contrôleur lit à voix haute.
  */
 export function TicketScreen() {
   const { t } = useTranslation()
@@ -31,7 +46,7 @@ export function TicketScreen() {
   if (ticket.isPending) {
     return (
       <Screen title={t('ticket.title')}>
-        <View style={styles.centered}>
+        <View style={sharedStyles.centered}>
           <ActivityIndicator color={theme.text.brand} />
         </View>
       </Screen>
@@ -41,8 +56,8 @@ export function TicketScreen() {
   if (ticket.data === undefined) {
     return (
       <Screen title={t('ticket.title')}>
-        <View style={styles.centered}>
-          <Text style={styles.error}>{describe(ticket.error)}</Text>
+        <View style={sharedStyles.centered}>
+          <Text style={styles.message}>{describe(ticket.error)}</Text>
           <Button
             label={t('action.retry', { ns: 'common' })}
             onPress={() => void ticket.refetch()}
@@ -57,35 +72,112 @@ export function TicketScreen() {
   const invalid = data.status !== 'VALID'
 
   return (
-    <Screen title={t('ticket.title')}>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         {invalid ? (
           <View style={styles.warning} accessibilityRole="alert">
             <Text style={styles.warningText}>
               {data.status === 'CANCELLED' ? t('ticket.cancelled') : t('ticket.used')}
             </Text>
+            <Text style={styles.warningHint}>
+              {ticketStatusLabels[locale][data.status]}
+            </Text>
           </View>
-        ) : null}
-
-        <TicketQr payload={data.qr_payload} dimmed={invalid} />
-
-        <Text style={styles.hint}>
-          {invalid ? ticketStatusLabels[locale][data.status] : t('ticket.showAtBoarding')}
-        </Text>
+        ) : (
+          <View style={styles.hero}>
+            <View style={styles.seal}>
+              <CheckIcon color={theme.text.inverse} size={30} />
+            </View>
+            <Text style={styles.heroTitle} accessibilityRole="header">
+              {t('ticket.confirmed')}
+            </Text>
+            <Text style={styles.heroBody}>{t('ticket.showAtBoarding')}</Text>
+          </View>
+        )}
 
         <View style={styles.card}>
-          <Row label={t('ticket.passenger')} value={data.passenger_name} />
-          <Row label={t('ticket.seat')} value={data.seat_label ?? t('ticket.noSeat')} />
-          <Row
-            label={t('ticket.departure')}
-            value={formatDateTime(data.trip.departure_at, { locale })}
-          />
-          <Row
-            label={t('search.from')}
-            value={`${data.trip.origin_station.city} · ${data.trip.origin_station.name}`}
-          />
-          <Row label={t('search.to')} value={data.trip.destination_station.city} />
-          <Row label={t('ticket.reference')} value={data.reference} />
+          <View style={styles.cardHeader}>
+            <View style={styles.headerCell}>
+              <Text style={styles.headerLabel}>{t('ticket.agency')}</Text>
+              <Text style={styles.headerValue} numberOfLines={1}>
+                {data.trip.agency.name}
+              </Text>
+            </View>
+            <View style={[styles.headerCell, styles.headerCellRight]}>
+              <Text style={styles.headerLabel}>{t('ticket.passenger')}</Text>
+              <Text style={styles.headerValue} numberOfLines={1}>
+                {data.passenger_name}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.qrZone}>
+            <View style={[styles.qrFrame, invalid ? styles.qrFrameDimmed : null]}>
+              <TicketQr payload={data.qr_payload} dimmed={invalid} />
+            </View>
+            <Text style={styles.reference}>
+              {t('ticket.reference')} · {data.reference}
+            </Text>
+          </View>
+
+          {/*
+            La perforation : deux encoches qui mordent sur les bords et un trait
+            tireté entre elles. C'est ce qui fait lire l'objet comme un billet
+            plutôt que comme une fiche.
+          */}
+          <View style={styles.perforation}>
+            <View style={[styles.notch, styles.notchLeft]} />
+            <View style={styles.dashes} />
+            <View style={[styles.notch, styles.notchRight]} />
+          </View>
+
+          <View style={styles.body}>
+            <View style={styles.ends}>
+              <View style={styles.end}>
+                <Text style={styles.endLabel}>{t('ticket.origin')}</Text>
+                <View style={styles.endName}>
+                  <RouteDot color={theme.route.origin} size={10} />
+                  <Text style={styles.city} numberOfLines={1}>
+                    {data.trip.origin_station.city}
+                  </Text>
+                </View>
+                <Text style={styles.station} numberOfLines={1}>
+                  {data.trip.origin_station.name}
+                </Text>
+              </View>
+
+              <View style={[styles.end, styles.endRight]}>
+                <Text style={styles.endLabel}>{t('ticket.destination')}</Text>
+                <View style={styles.endName}>
+                  <Text style={styles.city} numberOfLines={1}>
+                    {data.trip.destination_station.city}
+                  </Text>
+                  <RouteDot color={theme.route.destination} size={10} />
+                </View>
+                <Text style={[styles.station, styles.stationRight]} numberOfLines={1}>
+                  {data.trip.destination_station.name}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.rule} />
+
+            <View style={styles.ends}>
+              <Detail label={t('ticket.date')} value={formatDate(data.trip.departure_at, { locale })} />
+              <Detail
+                label={t('ticket.time')}
+                value={formatTime(data.trip.departure_at, { locale })}
+                align="right"
+              />
+            </View>
+
+            <View style={styles.rule} />
+
+            <View style={styles.seatRow}>
+              <Text style={styles.endLabel}>{t('ticket.seat')}</Text>
+              <Text style={styles.seat}>{data.seat_label ?? t('ticket.noSeat')}</Text>
+            </View>
+          </View>
         </View>
 
         <Text style={styles.offline}>{t('ticket.offline')}</Text>
@@ -107,68 +199,204 @@ export function TicketScreen() {
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Detail({
+  label,
+  value,
+  align = 'left',
+}: {
+  label: string
+  value: string
+  align?: 'left' | 'right'
+}) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={[styles.end, align === 'right' ? styles.endRight : null]}>
+      <Text style={styles.endLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    padding: spacing.md,
+    gap: spacing.md,
   },
-  centered: {
-    flex: 1,
+  hero: {
+    alignItems: 'center',
+    gap: spacing.base,
+    paddingTop: spacing.base,
+  },
+  seal: {
+    width: 72,
+    height: 72,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.brand,
+  },
+  heroTitle: {
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    color: theme.text.primary,
+    textAlign: 'center',
+  },
+  heroBody: {
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
+    color: theme.text.secondary,
+    textAlign: 'center',
   },
   warning: {
+    gap: spacing.xs,
     padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: theme.surface.raised,
+    borderRadius: radius.lg,
+    backgroundColor: theme.surface.dangerSoft,
   },
   warningText: {
     fontSize: fontSize.base,
     fontWeight: '700',
-    color: theme.text.danger,
+    color: theme.text.onDangerSoft,
     textAlign: 'center',
   },
-  hint: {
-    fontSize: fontSize.base,
-    color: theme.text.secondary,
+  warningHint: {
+    fontSize: fontSize.sm,
+    color: theme.text.onDangerSoft,
     textAlign: 'center',
   },
   card: {
+    ...sharedStyles.card,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    flexDirection: 'row',
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: theme.surface.raised,
-    borderRadius: radius.lg,
   },
-  row: {
-    gap: spacing.xs / 2,
+  headerCell: {
+    flex: 1,
+    gap: 1,
   },
-  rowLabel: {
+  headerCellRight: {
+    alignItems: 'flex-end',
+  },
+  headerLabel: {
+    ...sharedStyles.sectionLabel,
+    color: theme.text.muted,
+  },
+  headerValue: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  qrZone: {
+    alignItems: 'center',
+    gap: spacing.base,
+    padding: spacing.md,
+  },
+  qrFrame: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: theme.surface.brand,
+    backgroundColor: theme.surface.card,
+  },
+  qrFrameDimmed: {
+    borderColor: theme.surface.border,
+  },
+  reference: {
     fontSize: fontSize.xs,
     color: theme.text.muted,
-    textTransform: 'uppercase',
   },
-  rowValue: {
-    fontSize: fontSize.base,
+  perforation: {
+    height: 20,
+    justifyContent: 'center',
+  },
+  notch: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.page,
+  },
+  notchLeft: {
+    left: -10,
+  },
+  notchRight: {
+    right: -10,
+  },
+  dashes: {
+    marginHorizontal: spacing.md,
+    borderBottomWidth: 2,
+    borderStyle: 'dashed',
+    borderBottomColor: theme.surface.border,
+  },
+  body: {
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  ends: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  end: {
+    flex: 1,
+    gap: 2,
+  },
+  endRight: {
+    alignItems: 'flex-end',
+  },
+  endLabel: {
+    ...sharedStyles.sectionLabel,
+    color: theme.text.muted,
+  },
+  endName: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  city: {
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '700',
     color: theme.text.primary,
-    fontWeight: '600',
+  },
+  station: {
+    fontSize: fontSize.xs,
+    color: theme.text.muted,
+  },
+  stationRight: {
+    textAlign: 'right',
+  },
+  detailValue: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  rule: {
+    height: 1,
+    backgroundColor: theme.surface.border,
+  },
+  seatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  seat: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '800',
+    color: theme.text.brand,
   },
   offline: {
     fontSize: fontSize.sm,
     color: theme.text.muted,
     textAlign: 'center',
   },
-  error: {
+  message: {
     fontSize: fontSize.base,
     color: theme.text.secondary,
     textAlign: 'center',

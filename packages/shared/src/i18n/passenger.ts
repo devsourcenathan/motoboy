@@ -147,6 +147,12 @@ export interface PassengerMessages {
     readonly cancelled: string
     readonly used: string
     readonly departure: string
+    readonly confirmed: string
+    readonly agency: string
+    readonly origin: string
+    readonly destination: string
+    readonly date: string
+    readonly time: string
   }
   readonly account: {
     readonly title: string
@@ -163,6 +169,9 @@ export interface PassengerMessages {
     readonly history: string
     readonly historyEmpty: string
     readonly whyNeeded: string
+    readonly language: string
+    readonly languageName: string
+    readonly historyHint: string
     readonly otp: {
       readonly title: string
       readonly sentTo: string
@@ -366,6 +375,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       cancelled: 'Billet annulé',
       used: 'Billet déjà utilisé',
       departure: 'Départ',
+      confirmed: 'Voyage confirmé !',
+      agency: 'Agence',
+      origin: 'Départ',
+      destination: 'Destination',
+      date: 'Date',
+      time: 'Heure',
     },
     account: {
       title: 'Compte',
@@ -385,6 +400,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       // choisies : l'exiger d'entrée ferait renoncer quelqu'un qui veut
       // seulement savoir s'il y a un car ce soir (§35).
       whyNeeded: 'Un compte est nécessaire pour finaliser la réservation.',
+      language: 'Langue',
+      languageName: 'Français (Cameroun)',
+      historyHint: 'Consultez vos trajets passés et vos reçus',
       otp: {
         title: 'Code de vérification',
         sentTo: 'Un code a été envoyé au {{phone}}.',
@@ -571,6 +589,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       cancelled: 'Ticket cancelled',
       used: 'Ticket already used',
       departure: 'Departure',
+      confirmed: 'Trip confirmed!',
+      agency: 'Agency',
+      origin: 'From',
+      destination: 'To',
+      date: 'Date',
+      time: 'Time',
     },
     account: {
       title: 'Account',
@@ -587,6 +611,9 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       history: 'My trips',
       historyEmpty: 'No trips yet.',
       whyNeeded: 'An account is needed to complete the booking.',
+      language: 'Language',
+      languageName: 'English (Cameroon)',
+      historyHint: 'Your past trips and receipts',
       otp: {
         title: 'Verification code',
         sentTo: 'A code was sent to {{phone}}.',

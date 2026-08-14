@@ -323,6 +323,30 @@ même annulation, sans quoi la seconde porterait sur des passagers déjà annul�
 L'entrée est le billet : c'est là qu'un passager pense à annuler, et là qu'il a
 sous les yeux ce qu'il s'apprête à perdre.
 
+### 4.9 bis Design system — ✅ socle, écrans en cours
+
+La référence est `stitch_motoboy_mobility_platform/` : quinze écrans rendus et un
+`DESIGN.md`, versés au dépôt comme **normatifs**, au même titre que
+`docs/openapi.yaml` l'est pour l'API.
+
+**Quand le document et l'écran divergent, l'écran gagne.** `DESIGN.md` annonce un
+bouton primaire or ; chaque maquette montre un CTA bleu, l'or restant aux
+contours secondaires, aux repères d'origine et aux titres de section. C'est
+l'écran qui a été validé.
+
+Fait : jetons (bleu `#0f0fa9`, or `#e9bc17`, page `#fbf8ff`, grille de 8),
+barre d'onglets, mot-symbole sur chaque route, boutons en capsule, champs à
+rayon 8, plan de sièges, **accueil**, **résultats**, **billet**, **profil**.
+
+Reste : réservation, paiement, connexion, OTP, onboarding, mes réservations.
+
+Trois endroits où la maquette demande ce qui n'existe pas, et où j'ai préféré
+dire non plutôt que dessiner un leurre : le badge VIP/CLASSIQUE (remplacé par le
+gabarit du véhicule, qui est un vrai critère), le logo d'agence et la photo de
+profil (initiales), le réglage de langue (affiché, pas réglable — un sélecteur
+sans persistance repartirait à zéro au démarrage suivant, ce qui est pire que
+son absence).
+
 ### 4.10 Essayer le parcours en local — ✅ vérifié de bout en bout
 
 **Expo Go doit correspondre au SDK.** Le projet est sur le SDK 57, qui réclame
