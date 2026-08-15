@@ -49,6 +49,7 @@ export interface PassengerMessages {
     readonly greeting: string
     readonly recent: string
     readonly seeAll: string
+    readonly promo: { readonly title: string; readonly body: string }
   }
   readonly results: {
     readonly title: string
@@ -292,6 +293,10 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       greeting: 'Bonjour 👋',
       recent: 'Recherches récentes',
       seeAll: 'Voir tout',
+      promo: {
+        title: 'Voyagez en toute sérénité',
+        body: 'Réservez, payez et obtenez votre billet en quelques clics.',
+      },
     },
     results: {
       title: 'Résultats',
@@ -551,6 +556,10 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       greeting: 'Hello 👋',
       recent: 'Recent searches',
       seeAll: 'See all',
+      promo: {
+        title: 'Travel with peace of mind',
+        body: 'Book, pay and get your ticket in a few taps.',
+      },
     },
     results: {
       title: 'Results',

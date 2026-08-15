@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useFocusEffect, useRouter } from 'expo-router'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ImageBackground,
@@ -16,6 +16,7 @@ import { DEFAULT_TIMEZONE, formatDate } from '@motoboy/shared'
 import {
   Button,
   CalendarIcon,
+  CheckIcon,
   Field,
   fontSize,
   HistoryIcon,
@@ -79,17 +80,27 @@ export function SearchScreen() {
   const [showCalendar, setShowCalendar] = useState(false)
   const [recent, setRecent] = useState<readonly RecentSearch[]>([])
 
-  useEffect(() => {
-    let active = true
+  /*
+   * Relu **à chaque retour sur l'écran**, pas seulement au montage.
+   *
+   * L'accueil est une racine d'onglet : il reste monté pendant qu'on parcourt
+   * les résultats. Avec un simple `useEffect([])`, la recherche qu'on vient de
+   * lancer n'apparaissait jamais dans la liste — le bloc restait vide
+   * indéfiniment.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      let active = true
 
-    void readRecentSearches().then((entries) => {
-      if (active) setRecent(entries)
-    })
+      void readRecentSearches().then((entries) => {
+        if (active) setRecent(entries)
+      })
 
-    return () => {
-      active = false
-    }
-  }, [])
+      return () => {
+        active = false
+      }
+    }, []),
+  )
 
   const error = validate(form)
   const today = todayInDisplayTimezone(DEFAULT_TIMEZONE)
@@ -149,6 +160,7 @@ export function SearchScreen() {
         >
           <View style={styles.veil} />
           <Text style={styles.wordmark}>MOTOBOY</Text>
+          <View style={styles.heroSpacer} />
           <Text style={styles.greeting}>{t('search.greeting')}</Text>
           <Text style={styles.question} accessibilityRole="header">
             {t('search.title')}
@@ -276,6 +288,21 @@ export function SearchScreen() {
             </View>
           </View>
         )}
+        {/*
+          Ce que le produit promet, dit une fois sur l'écran d'accueil. La
+          couverture sera faible au lancement : quelqu'un qui ouvre
+          l'application sans rien y trouver doit au moins savoir à quoi elle
+          sert.
+        */}
+        <View style={styles.promo}>
+          <View style={styles.promoSeal}>
+            <CheckIcon color={theme.text.inverse} size={22} />
+          </View>
+          <View style={styles.promoText}>
+            <Text style={styles.promoTitle}>{t('search.promo.title')}</Text>
+            <Text style={styles.promoBody}>{t('search.promo.body')}</Text>
+          </View>
+        </View>
       </ScrollView>
 
       <CityPicker
@@ -391,9 +418,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   hero: {
+    // La photo a besoin de place pour se lire comme une image et non comme une
+    // texture. Le texte est poussé en bas, là où le voile est le plus dense.
+    minHeight: 260,
+    justifyContent: 'flex-end',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg + OVERLAP,
     // Repli si l'image tarde ou manque : le texte blanc reste lisible.
     backgroundColor: theme.surface.ink,
@@ -414,13 +445,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10, 33, 56, 0.66)',
   },
   wordmark: {
-    alignSelf: 'center',
+    position: 'absolute',
+    top: spacing.md,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     fontSize: fontSize.lg,
     lineHeight: lineHeight.lg,
     fontWeight: '800',
     letterSpacing: 1,
     color: theme.text.inverse,
-    marginBottom: spacing.sm,
+  },
+  heroSpacer: {
+    flex: 1,
   },
   greeting: {
     fontSize: fontSize.base,
@@ -574,5 +611,36 @@ const styles = StyleSheet.create({
   recentMeta: {
     fontSize: fontSize.xs,
     color: theme.text.muted,
+  },
+  promo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: theme.surface.inkSoft,
+  },
+  promoSeal: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.ink,
+  },
+  promoText: {
+    flex: 1,
+    gap: 2,
+  },
+  promoTitle: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.ink,
+  },
+  promoBody: {
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
+    color: theme.text.secondary,
   },
 })
