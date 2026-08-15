@@ -27,6 +27,27 @@ export function normalisePhone(input: string): string {
   return input.replace(/[\s\-().]/g, '')
 }
 
+/** Indicatif du Cameroun, seul pays desservi au MVP. */
+export const DIALLING_CODE = '+237'
+
+/**
+ * Compose le numéro international à partir de ce qui est tapé **sous**
+ * l'indicatif affiché.
+ *
+ * Trois saisies mènent au même numéro, parce que les trois se produisent :
+ * `690000001` (ce que l'écran demande), `0690000001` (le format national, avec
+ * son zéro), et `+237690000001` (un numéro collé depuis un contact). Sans quoi
+ * le passager obtiendrait `+237+237…` ou un zéro de trop, et attendrait un code
+ * parti nulle part.
+ */
+export function toInternational(input: string, code: string = DIALLING_CODE): string {
+  const digits = normalisePhone(input)
+
+  if (digits.startsWith('+')) return digits
+
+  return `${code}${digits.replace(/^0+/, '')}`
+}
+
 export function validate(form: CredentialsForm, intent: AuthIntent): CredentialsError {
   if (!E164.test(normalisePhone(form.phone))) return 'PHONE_INVALID'
 

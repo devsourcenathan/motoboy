@@ -206,6 +206,7 @@ export interface PassengerMessages {
     readonly historyEmpty: string
     readonly whyNeeded: string
     readonly tagline: string
+    readonly welcome: string
     readonly authBody: string
     readonly language: string
     readonly languageName: string
@@ -489,6 +490,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       // seulement savoir s'il y a un car ce soir (§35).
       whyNeeded: 'Un compte est nécessaire pour finaliser la réservation.',
       tagline: 'Déplacez-vous en toute confiance.',
+      welcome: 'Bienvenue 👋',
       authBody: 'Saisissez votre numéro pour continuer. Un code de vérification vous sera envoyé par SMS.',
       language: 'Langue',
       languageName: 'Français (Cameroun)',
@@ -747,6 +749,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       historyEmpty: 'No trips yet.',
       whyNeeded: 'An account is needed to complete the booking.',
       tagline: 'Travel with confidence.',
+      welcome: 'Welcome 👋',
       authBody: 'Enter your number to continue. We will text you a verification code.',
       language: 'Language',
       languageName: 'English (Cameroon)',

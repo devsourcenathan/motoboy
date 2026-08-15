@@ -1,4 +1,4 @@
-import { normaliseCode, normalisePhone, validate } from './auth'
+import { normaliseCode, normalisePhone, toInternational, validate } from './auth'
 
 describe('normalisePhone', () => {
   /**
@@ -69,5 +69,24 @@ describe('normaliseCode', () => {
   it('ne garde que les chiffres', () => {
     expect(normaliseCode('12 34 56')).toBe('123456')
     expect(normaliseCode('a1b2c3')).toBe('123')
+  })
+})
+
+describe('toInternational', () => {
+  /**
+   * L'écran affiche « +237 » à côté du champ : le passager tape la suite. Mais
+   * il colle aussi des numéros pris dans ses contacts, et écrit parfois le
+   * format national avec son zéro. Les trois doivent aboutir au même numéro,
+   * sans quoi le code part nulle part et personne ne sait pourquoi.
+   */
+  it('compose le même numéro depuis les trois saisies courantes', () => {
+    expect(toInternational('690000001')).toBe('+237690000001')
+    expect(toInternational('0690000001')).toBe('+237690000001')
+    expect(toInternational('+237690000001')).toBe('+237690000001')
+  })
+
+  it('tolère les espaces et les tirets de la saisie', () => {
+    expect(toInternational('6 90 00 00 01')).toBe('+237690000001')
+    expect(toInternational('690-000-001')).toBe('+237690000001')
   })
 })
