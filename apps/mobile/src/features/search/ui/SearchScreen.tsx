@@ -15,20 +15,17 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { DEFAULT_TIMEZONE, formatDate } from '@motoboy/shared'
 import {
   Button,
-  CalendarIcon,
   CheckIcon,
   Field,
   fontSize,
   HistoryIcon,
   lineHeight,
-  PersonIcon,
   PinIcon,
   radius,
   SearchIcon,
   sharedStyles,
   spacing,
   SwapIcon,
-  TargetIcon,
   theme,
   TOUCH_TARGET,
 } from '../../../shared/ui'
@@ -160,7 +157,6 @@ export function SearchScreen() {
         >
           <View style={styles.veil} />
           <Text style={styles.wordmark}>MOTOBOY</Text>
-          <View style={styles.heroSpacer} />
           <Text style={styles.greeting}>{t('search.greeting')}</Text>
           <Text style={styles.question} accessibilityRole="header">
             {t('search.title')}
@@ -169,18 +165,20 @@ export function SearchScreen() {
 
         <View style={styles.card}>
           {/*
-            Un seul panneau pour les deux villes, séparées d'un filet : elles
-            forment une paire — c'est un trajet, pas deux réglages
-            indépendants. Le bouton d'inversion se pose sur le filet, à cheval
-            sur ce qu'il échange.
+            Aucune bordure interne : la carte est **une seule surface**, et les
+            filets suffisent à séparer. Encadrer chaque groupe ferait lire trois
+            objets empilés là où il y en a un.
+
+            Le bouton d'inversion se pose sur le filet, à cheval sur les deux
+            villes qu'il échange.
           */}
-          <View style={styles.panel}>
+          <View style={styles.cities}>
             <Field
               bare
               label={t('search.from')}
               value={form.from?.label ?? null}
               placeholder={t('search.fromExample')}
-              icon={<TargetIcon color={theme.route.origin} />}
+              icon={<PinIcon color={theme.text.muted} size={20} />}
               onPress={() => setPicking('from')}
             />
 
@@ -191,7 +189,7 @@ export function SearchScreen() {
               label={t('search.to')}
               value={form.to?.label ?? null}
               placeholder={t('search.toExample')}
-              icon={<PinIcon color={theme.route.destination} />}
+              icon={<PinIcon color={theme.text.muted} size={20} />}
               onPress={() => setPicking('to')}
             />
 
@@ -201,24 +199,22 @@ export function SearchScreen() {
               onPress={() => setForm(swap)}
               style={({ pressed }) => [styles.swap, pressed ? styles.swapPressed : null]}
             >
-              <SwapIcon color={theme.text.ink} size={18} />
+              <SwapIcon color={theme.text.ink} size={16} />
             </Pressable>
           </View>
 
-          {/* Quand et combien : deux colonnes d'un même panneau. */}
-          <View style={[styles.panel, styles.panelRow]}>
+          <View style={styles.rule} />
+
+          <View style={styles.when}>
             <View style={styles.column}>
               <Field
                 bare
                 label={t('search.date')}
                 value={dateLabel}
                 placeholder={t('search.date')}
-                icon={<CalendarIcon color={theme.text.secondary} size={18} />}
                 onPress={() => setShowCalendar(true)}
               />
             </View>
-
-            <View style={styles.columnRule} />
 
             <View style={styles.column}>
               <PassengerStepper
@@ -359,8 +355,6 @@ function PassengerStepper({
 }) {
   return (
     <View style={styles.stepper} accessible accessibilityLabel={`${label}, ${value}`}>
-      <PersonIcon color={theme.text.secondary} size={18} />
-
       <View style={styles.stepperText}>
         <Text style={styles.stepperLabel}>{label}</Text>
         <Text style={styles.stepperValue}>{value}</Text>
@@ -419,9 +413,9 @@ const styles = StyleSheet.create({
   },
   hero: {
     // La photo a besoin de place pour se lire comme une image et non comme une
-    // texture. Le texte est poussé en bas, là où le voile est le plus dense.
+    // texture. Le texte se pose au milieu à gauche, pas en pied de bandeau.
     minHeight: 260,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.xl,
@@ -456,75 +450,64 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: theme.text.inverse,
   },
-  heroSpacer: {
-    flex: 1,
-  },
   greeting: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '600',
     color: theme.text.inverse,
-    opacity: 0.85,
+    opacity: 0.9,
   },
   question: {
-    fontSize: fontSize.xl,
-    lineHeight: lineHeight.xl,
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
     fontWeight: '700',
+    letterSpacing: -0.5,
     color: theme.text.inverse,
   },
   card: {
     ...sharedStyles.card,
-    gap: spacing.sm,
+    borderRadius: radius.xl + 4,
+    gap: spacing.base,
     padding: spacing.md,
     marginHorizontal: spacing.md,
     marginTop: -OVERLAP,
   },
-  /** Un cadre unique, des filets à l'intérieur : une paire, pas deux réglages. */
-  panel: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: theme.surface.border,
-  },
-  panelRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
+  cities: {
+    position: 'relative',
   },
   rule: {
     height: 1,
-    marginLeft: spacing.md + 24 + spacing.sm,
     backgroundColor: theme.surface.border,
+  },
+  when: {
+    flexDirection: 'row',
   },
   column: {
     flex: 1,
   },
-  columnRule: {
-    width: 1,
-    marginVertical: spacing.base,
-    backgroundColor: theme.surface.border,
-  },
   swap: {
     position: 'absolute',
-    right: spacing.base,
+    right: 0,
     // Centré sur le filet qui sépare les deux villes.
     top: '50%',
-    marginTop: -18,
-    width: 36,
-    height: 36,
+    marginTop: -16,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
-    backgroundColor: theme.surface.card,
-    borderWidth: 1,
-    borderColor: theme.surface.border,
-  },
-  swapPressed: {
     backgroundColor: theme.surface.raised,
   },
-  /** Nu : le panneau porte déjà le cadre. */
+  swapPressed: {
+    backgroundColor: theme.surface.inert,
+  },
+  /** Nu : la carte est une seule surface, le compteur n'a pas de cadre à lui. */
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.base,
     minHeight: TOUCH_TARGET + spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.base,
   },
   stepperText: {
