@@ -13,12 +13,41 @@ export const SEARCH_SORTS = ['best', 'price_asc', 'departure_asc', 'duration_asc
 
 export type SearchSort = (typeof SEARCH_SORTS)[number]
 
+/**
+ * Ce que le contrat sait filtrer.
+ *
+ * La maquette montre aussi une fourchette de prix et une plage horaire ;
+ * l'API n'en propose ni l'une ni l'autre. Les dessiner obligerait à filtrer
+ * après coup, sur la seule page reçue — ce qui donnerait un résultat faux dès
+ * qu'il y a plus d'une page.
+ */
+export interface SearchFilters {
+  readonly agencyIds: readonly number[]
+  readonly vehicleType: 'BUS' | 'CAR' | null
+  readonly onlyAvailable: boolean
+}
+
+export const NO_FILTERS: SearchFilters = {
+  agencyIds: [],
+  vehicleType: null,
+  onlyAvailable: false,
+}
+
+export function countFilters(filters: SearchFilters): number {
+  return (
+    (filters.agencyIds.length > 0 ? 1 : 0) +
+    (filters.vehicleType === null ? 0 : 1) +
+    (filters.onlyAvailable ? 1 : 0)
+  )
+}
+
 export interface SearchCriteria {
   readonly from: number
   readonly to: number
   /** `YYYY-MM-DD`. */
   readonly date: string
   readonly sort?: SearchSort
+  readonly filters?: SearchFilters
 }
 
 /**
@@ -37,7 +66,16 @@ export interface SearchCriteria {
 export function useTripSearch(criteria: SearchCriteria | null) {
   const result = useQuery({
     queryKey: criteria
-      ? queryKeys.search(criteria)
+      ? queryKeys.search({
+          ...criteria,
+          // Les filtres entrent dans la clé : deux jeux différents sont deux
+          // réponses, et les confondre montrerait le résultat précédent.
+          filters: [
+            [...(criteria.filters?.agencyIds ?? [])].sort().join('-'),
+            criteria.filters?.vehicleType ?? '',
+            criteria.filters?.onlyAvailable === true ? 'avail' : '',
+          ].join('|'),
+        })
       : queryKeys.search({ from: 0, to: 0, date: '' }),
     enabled: criteria !== null,
     queryFn: async ({ signal }) => {
@@ -48,6 +86,17 @@ export function useTripSearch(criteria: SearchCriteria | null) {
             destination_city_id: criteria!.to,
             date: criteria!.date,
             sort: criteria!.sort ?? 'best',
+            // Omis quand vides : envoyer `agency_ids=[]` demanderait « aucune
+            // agence » à un serveur qui comprend « toutes ».
+            ...(criteria!.filters?.agencyIds.length
+              ? { agency_ids: [...criteria!.filters.agencyIds] }
+              : {}),
+            ...(criteria!.filters?.vehicleType
+              ? { vehicle_type: criteria!.filters.vehicleType }
+              : {}),
+            ...(criteria!.filters?.onlyAvailable === true
+              ? { only_available: true }
+              : {}),
           },
         },
         signal,

@@ -53,6 +53,16 @@ export interface PassengerMessages {
   }
   readonly results: {
     readonly title: string
+    readonly filters: {
+      readonly title: string
+      readonly agencies: string
+      readonly vehicle: string
+      readonly onlyAvailable: string
+      readonly any: string
+      readonly reset: string
+      readonly apply: string
+      readonly active: string
+    }
     readonly summary: string
     readonly sort: {
       readonly best: string
@@ -318,6 +328,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     results: {
       title: 'Résultats',
+      filters: {
+        title: 'Filtres',
+        agencies: 'Agences',
+        vehicle: 'Type de véhicule',
+        onlyAvailable: 'Masquer les départs complets',
+        any: 'Tous',
+        reset: 'Réinitialiser',
+        apply: 'Afficher les résultats',
+        active: '{{count}} filtre(s)',
+      },
       summary: '{{date}} • {{count}} passager(s)',
       sort: {
         best: 'Meilleur',
@@ -600,6 +620,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     },
     results: {
       title: 'Results',
+      filters: {
+        title: 'Filters',
+        agencies: 'Agencies',
+        vehicle: 'Vehicle type',
+        onlyAvailable: 'Hide sold-out departures',
+        any: 'Any',
+        reset: 'Reset',
+        apply: 'Show results',
+        active: '{{count}} filter(s)',
+      },
       summary: '{{date}} • {{count}} passenger(s)',
       sort: {
         best: 'Best',

@@ -18,6 +18,25 @@ use Illuminate\Validation\Rule;
  */
 final class SearchRequest extends FormRequest
 {
+    /**
+     * Accepte `true` et `false` en toutes lettres.
+     *
+     * Le contrat déclare `only_available` comme un booléen, et la sérialisation
+     * canonique d'un booléen en paramètre de requête est `true`/`false` — c'est
+     * ce qu'émettent les clients générés depuis la spec. Or la règle `boolean`
+     * de Laravel ne reconnaît que `1`, `0`, `"1"` et `"0"` : le serveur
+     * refusait donc en 422 ce que son propre contrat décrit, et le filtre
+     * revenait vide sans que rien n'explique pourquoi.
+     */
+    protected function prepareForValidation(): void
+    {
+        $value = $this->query('only_available');
+
+        if ($value === 'true' || $value === 'false') {
+            $this->merge(['only_available' => $value === 'true']);
+        }
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

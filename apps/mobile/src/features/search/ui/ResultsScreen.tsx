@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -23,7 +23,15 @@ import {
 } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
-import { SEARCH_SORTS, useTripSearch, type SearchSort } from '../api/useTripSearch'
+import {
+  countFilters,
+  NO_FILTERS,
+  SEARCH_SORTS,
+  useTripSearch,
+  type SearchFilters,
+  type SearchSort,
+} from '../api/useTripSearch'
+import { FilterSheet, type AgencyOption } from './FilterSheet'
 import { EmptyResults } from './EmptyResults'
 import { TripCard } from './TripCard'
 
@@ -48,16 +56,36 @@ export function ResultsScreen() {
   }>()
 
   const [sort, setSort] = useState<SearchSort>('best')
+  const [filters, setFilters] = useState<SearchFilters>(NO_FILTERS)
+  const [filtering, setFiltering] = useState(false)
+
+  /*
+   * Les agences proposées au filtre sont celles qui desservent la liaison.
+   * Mémorisées **quand aucun filtre d'agence n'est actif** : sans cela, cocher
+   * une agence réduirait les résultats, donc la liste, et il deviendrait
+   * impossible d'en cocher une seconde.
+   */
+  const [agencies, setAgencies] = useState<readonly AgencyOption[]>([])
 
   const from = Number(params.from)
   const to = Number(params.to)
   const criteria =
     Number.isFinite(from) && Number.isFinite(to) && params.date
-      ? { from, to, date: params.date, sort }
+      ? { from, to, date: params.date, sort, filters }
       : null
 
   const { trips, suggestions, isPending, error, refetch } = useTripSearch(criteria)
   const passengers = Number(params.passengers ?? 1) || 1
+  const active = countFilters(filters)
+
+  useEffect(() => {
+    if (filters.agencyIds.length > 0 || trips.length === 0) return
+
+    const seen = new Map<number, string>()
+    for (const trip of trips) seen.set(trip.agency.id, trip.agency.name)
+
+    setAgencies([...seen].map(([id, name]) => ({ id, name })))
+  }, [trips, filters.agencyIds.length])
 
   return (
     <Screen title={t('results.title')}>
@@ -94,6 +122,19 @@ export function ResultsScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chips}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('results.filters.title')}
+          onPress={() => setFiltering(true)}
+          style={[styles.chip, active > 0 ? styles.chipActive : null]}
+        >
+          <Text style={[styles.chipLabel, active > 0 ? styles.chipLabelActive : null]}>
+            {active > 0
+              ? t('results.filters.active', { count: active })
+              : t('results.filters.title')}
+          </Text>
+        </Pressable>
+
         {SEARCH_SORTS.map((option) => (
           <Pressable
             key={option}
@@ -146,6 +187,16 @@ export function ResultsScreen() {
           )}
         />
       )}
+      <FilterSheet
+        visible={filtering}
+        agencies={agencies}
+        value={filters}
+        onClose={() => setFiltering(false)}
+        onApply={(next) => {
+          setFilters(next)
+          setFiltering(false)
+        }}
+      />
     </Screen>
   )
 }
