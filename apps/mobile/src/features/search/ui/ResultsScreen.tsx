@@ -134,7 +134,14 @@ export function ResultsScreen() {
           renderItem={({ item }) => (
             <TripCard
               trip={item}
-              onPress={() => router.push(`/trip/${item.reference}`)}
+              // Le nombre de voyageurs saisi à l'accueil poursuit sa route :
+              // c'est lui qui dira combien de places choisir sur le plan.
+              onPress={() =>
+                router.push({
+                  pathname: '/trip/[reference]',
+                  params: { reference: item.reference, passengers: String(passengers) },
+                })
+              }
             />
           )}
         />

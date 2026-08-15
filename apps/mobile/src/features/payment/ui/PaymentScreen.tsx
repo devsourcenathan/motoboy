@@ -14,6 +14,7 @@ import { unwrap, type Booking } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import {
   Button,
+  CheckIcon,
   fontSize,
   lineHeight,
   radius,
@@ -95,17 +96,68 @@ export function PaymentScreen() {
 
   if (phase === 'succeeded') {
     return (
-      <Screen title={t('payment.succeeded.title')}>
-        <View style={styles.centered}>
+      <Screen>
+        <ScrollView contentContainerStyle={styles.doneContent}>
+          <View style={styles.seal}>
+            <CheckIcon color={theme.text.inverse} size={34} />
+          </View>
+
+          <Text style={styles.doneTitle} accessibilityRole="header">
+            {t('payment.succeeded.title')}
+          </Text>
           <Text style={styles.body}>{t('payment.succeeded.body')}</Text>
+
+          {/*
+            La référence en évidence : c'est elle qu'on donne au guichet quand
+            le téléphone ne veut plus rien afficher.
+          */}
+          <View style={styles.referenceBox}>
+            <Text style={styles.referenceLabel}>{t('payment.succeeded.reference')}</Text>
+            <Text style={styles.referenceValue} selectable>
+              {bookingReference}
+            </Text>
+          </View>
+
+          {booking.data === undefined ? null : (
+            <View style={styles.doneCard}>
+              <SummaryRow
+                label={t('payment.route')}
+                value={`${booking.data.trip.origin_station.city} → ${booking.data.trip.destination_station.city}`}
+              />
+              <SummaryRow
+                label={t('payment.agency')}
+                value={booking.data.trip.agency.name}
+              />
+              <SummaryRow
+                label={t('payment.seats')}
+                value={String(booking.data.seats_count)}
+              />
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>{t('payment.total')}</Text>
+                <Text style={styles.totalValue}>
+                  {formatMoney(booking.data.total, locale)}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <Text style={styles.hint}>{t('payment.succeeded.notified')}</Text>
+
           <Button
             label={t('payment.succeeded.seeTicket')}
             // Vers la **liste** : une réservation de trois places produit
             // trois billets, un par passager, et la référence de réservation
             // n'en désigne aucun.
             onPress={() => router.replace('/tickets')}
+            style={styles.doneButton}
           />
-        </View>
+          <Button
+            label={t('payment.succeeded.home')}
+            variant="secondary"
+            onPress={() => router.replace('/search')}
+            style={styles.doneButton}
+          />
+        </ScrollView>
       </Screen>
     )
   }
@@ -277,6 +329,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.md,
     padding: spacing.lg,
+  },
+  doneContent: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    paddingTop: spacing.lg,
+  },
+  seal: {
+    width: 76,
+    height: 76,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.success,
+    marginBottom: spacing.base,
+  },
+  doneTitle: {
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    fontWeight: '700',
+    color: theme.text.success,
+    textAlign: 'center',
+  },
+  referenceBox: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    gap: spacing.xs,
+    padding: spacing.md,
+    marginTop: spacing.base,
+    borderRadius: radius.lg,
+    backgroundColor: theme.surface.successSoft,
+  },
+  referenceLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: theme.text.success,
+  },
+  referenceValue: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '800',
+    color: theme.text.primary,
+  },
+  doneCard: {
+    ...sharedStyles.card,
+    alignSelf: 'stretch',
+    gap: spacing.base,
+    padding: spacing.md,
+    marginTop: spacing.base,
+  },
+  doneButton: {
+    alignSelf: 'stretch',
+    marginTop: spacing.base,
   },
   body: {
     fontSize: fontSize.base,

@@ -79,6 +79,14 @@ export interface PassengerMessages {
     }
   }
   readonly trip: {
+    readonly details: string
+    readonly date: string
+    readonly busType: string
+    readonly capacity: string
+    readonly available: string
+    readonly seatsUnit: string
+    readonly pricePerPassenger: string
+    readonly choose: string
     readonly seatMap: string
     readonly pickSeats: string
     readonly seatsChosen: string
@@ -145,7 +153,10 @@ export interface PassengerMessages {
     readonly succeeded: {
       readonly title: string
       readonly body: string
+      readonly reference: string
+      readonly notified: string
       readonly seeTicket: string
+      readonly home: string
     }
     readonly expired: {
       readonly title: string
@@ -330,6 +341,14 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     trip: {
+      details: 'Détails du trajet',
+      date: 'Date',
+      busType: 'Type de bus',
+      capacity: 'Capacité',
+      available: 'Disponibles',
+      seatsUnit: '{{count}} places',
+      pricePerPassenger: 'Prix par passager',
+      choose: 'Choisir ce trajet',
       seatMap: 'Choisissez vos places',
       pickSeats: 'Sélectionnez {{count}} place(s)',
       seatsChosen: '{{chosen}} / {{total}} sélectionnée(s)',
@@ -405,9 +424,13 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         retry: 'Réessayer',
       },
       succeeded: {
-        title: 'Paiement confirmé',
-        body: 'Votre billet est disponible.',
-        seeTicket: 'Voir le billet',
+        title: 'Paiement réussi !',
+        body: 'Votre réservation a été confirmée.',
+        reference: 'Numéro de réservation',
+        // La maquette annonce « un e-mail et un SMS » ; seul le SMS existe.
+        notified: 'Un SMS de confirmation vous a été envoyé.',
+        seeTicket: 'Voir mon billet',
+        home: 'Retour à l’accueil',
       },
       expired: {
         title: 'Délai écoulé',
@@ -589,6 +612,14 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     trip: {
+      details: 'Trip details',
+      date: 'Date',
+      busType: 'Vehicle',
+      capacity: 'Capacity',
+      available: 'Available',
+      seatsUnit: '{{count}} seats',
+      pricePerPassenger: 'Price per passenger',
+      choose: 'Choose this trip',
       seatMap: 'Choose your seats',
       pickSeats: 'Select {{count}} seat(s)',
       seatsChosen: '{{chosen}} / {{total}} selected',
@@ -653,9 +684,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         retry: 'Try again',
       },
       succeeded: {
-        title: 'Payment confirmed',
-        body: 'Your ticket is ready.',
-        seeTicket: 'View ticket',
+        title: 'Payment successful!',
+        body: 'Your booking is confirmed.',
+        reference: 'Booking reference',
+        notified: 'A confirmation SMS has been sent to you.',
+        seeTicket: 'View my ticket',
+        home: 'Back to home',
       },
       expired: {
         title: 'Time is up',
