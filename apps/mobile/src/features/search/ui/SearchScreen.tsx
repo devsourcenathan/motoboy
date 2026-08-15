@@ -1,19 +1,20 @@
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { DEFAULT_TIMEZONE, formatDate } from '@motoboy/shared'
 import {
   Button,
   CalendarIcon,
   Field,
   fontSize,
+  HistoryIcon,
   lineHeight,
   PersonIcon,
   PinIcon,
   radius,
-  Screen,
   SearchIcon,
   sharedStyles,
   spacing,
@@ -23,6 +24,11 @@ import {
   TOUCH_TARGET,
 } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
+import {
+  readRecentSearches,
+  rememberSearch,
+  type RecentSearch,
+} from '../model/recentSearches'
 import {
   addDays,
   MAX_PASSENGERS,
@@ -45,6 +51,10 @@ type Picking = 'from' | 'to' | null
  *
  * Aucune authentification : c'est le premier écran, et il doit fonctionner
  * avant tout compte (§35 du brief).
+ *
+ * Le bandeau marine porte la marque, la carte blanche **chevauche son bord** :
+ * le formulaire est ainsi la première chose que l'œil rencontre en descendant,
+ * avant même d'avoir lu le titre.
  */
 export function SearchScreen() {
   const { t } = useTranslation()
@@ -59,6 +69,19 @@ export function SearchScreen() {
   }))
   const [picking, setPicking] = useState<Picking>(null)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [recent, setRecent] = useState<readonly RecentSearch[]>([])
+
+  useEffect(() => {
+    let active = true
+
+    void readRecentSearches().then((entries) => {
+      if (active) setRecent(entries)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const error = validate(form)
   const today = todayInDisplayTimezone(DEFAULT_TIMEZONE)
@@ -69,18 +92,27 @@ export function SearchScreen() {
     )
   }
 
-  function submit() {
-    if (error !== null || form.from === null || form.to === null) return
+  function run(search: SearchForm) {
+    if (search.from === null || search.to === null) return
+
+    // Mémorisé avant de naviguer : au retour, l'écran se remonte et relit la
+    // liste, qui doit déjà contenir la recherche qu'on vient de lancer.
+    void rememberSearch({
+      from: search.from,
+      to: search.to,
+      date: search.date,
+      passengers: search.passengers,
+    })
 
     router.push({
       pathname: '/results',
       params: {
-        from: String(form.from.cityId),
-        to: String(form.to.cityId),
-        date: form.date,
-        fromLabel: form.from.label,
-        toLabel: form.to.label,
-        passengers: String(form.passengers),
+        from: String(search.from.cityId),
+        to: String(search.to.cityId),
+        date: search.date,
+        fromLabel: search.from.label,
+        toLabel: search.to.label,
+        passengers: String(search.passengers),
       },
     })
   }
@@ -93,8 +125,16 @@ export function SearchScreen() {
         : formatDate(`${form.date}T00:00:00Z`, { locale })
 
   return (
-    <Screen title={t('search.title')} subtitle={t('search.subtitle')}>
-      <ScrollView contentContainerStyle={styles.body}>
+    <SafeAreaView style={sharedStyles.screen} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.page}>
+        <View style={styles.hero}>
+          <Text style={styles.wordmark}>MOTOBOY</Text>
+          <Text style={styles.greeting}>{t('search.greeting')}</Text>
+          <Text style={styles.question} accessibilityRole="header">
+            {t('search.title')}
+          </Text>
+        </View>
+
         <View style={styles.card}>
           {/*
             Le bouton d'inversion chevauche les deux champs qu'il échange : posé
@@ -123,7 +163,7 @@ export function SearchScreen() {
               onPress={() => setForm(swap)}
               style={({ pressed }) => [styles.swap, pressed ? styles.swapPressed : null]}
             >
-              <SwapIcon color={theme.text.brand} />
+              <SwapIcon color={theme.text.ink} />
             </Pressable>
           </View>
 
@@ -152,11 +192,59 @@ export function SearchScreen() {
 
           <Button
             label={t('search.submit')}
-            onPress={submit}
+            onPress={() => run(form)}
             disabled={error !== null}
             icon={<SearchIcon color={theme.text.inverse} size={20} />}
           />
         </View>
+
+        {/*
+          Les recherches récentes ne sont pas de la décoration : un passager fait
+          souvent l'aller puis le retour du même trajet, et les retaper de zéro
+          est le geste que cet écran doit éviter.
+        */}
+        {recent.length === 0 ? null : (
+          <View style={styles.recent}>
+            <Text style={styles.recentTitle}>{t('search.recent')}</Text>
+
+            <View style={styles.recentList}>
+              {recent.map((entry) => (
+                <Pressable
+                  key={`${entry.from.cityId}-${entry.to.cityId}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${entry.from.label} → ${entry.to.label}`}
+                  // La date mémorisée peut être passée : on relance sur le
+                  // trajet, à la date du jour, plutôt que sur un départ parti.
+                  onPress={() =>
+                    run({
+                      from: entry.from,
+                      to: entry.to,
+                      date: entry.date < today ? today : entry.date,
+                      passengers: entry.passengers,
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.recentRow,
+                    pressed ? styles.recentRowPressed : null,
+                  ]}
+                >
+                  <View style={styles.recentIcon}>
+                    <HistoryIcon color={theme.text.muted} size={18} />
+                  </View>
+                  <View style={styles.recentText}>
+                    <Text style={styles.recentRoute} numberOfLines={1}>
+                      {entry.from.label} → {entry.to.label}
+                    </Text>
+                    <Text style={styles.recentMeta}>
+                      {formatDate(`${entry.date}T00:00:00Z`, { locale })} ·{' '}
+                      {t('search.passengers')} {entry.passengers}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       <CityPicker
@@ -191,7 +279,7 @@ export function SearchScreen() {
           }}
         />
       ) : null}
-    </Screen>
+    </SafeAreaView>
   )
 }
 
@@ -264,15 +352,48 @@ function StepButton({
   )
 }
 
+/** Ce que la carte blanche mord sur le bandeau, en points. */
+const OVERLAP = spacing.lg
+
 const styles = StyleSheet.create({
-  body: {
-    padding: spacing.md,
+  page: {
     paddingBottom: spacing.xl,
+  },
+  hero: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg + OVERLAP,
+    backgroundColor: theme.surface.ink,
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  wordmark: {
+    alignSelf: 'center',
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: theme.text.inverse,
+    marginBottom: spacing.sm,
+  },
+  greeting: {
+    fontSize: fontSize.base,
+    color: theme.text.inverse,
+    opacity: 0.85,
+  },
+  question: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '700',
+    color: theme.text.inverse,
   },
   card: {
     ...sharedStyles.card,
     gap: spacing.sm,
     padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: -OVERLAP,
   },
   pair: {
     gap: spacing.sm,
@@ -353,5 +474,50 @@ const styles = StyleSheet.create({
   error: {
     fontSize: fontSize.sm,
     color: theme.text.danger,
+  },
+  recent: {
+    gap: spacing.base,
+    padding: spacing.md,
+  },
+  recentTitle: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  recentList: {
+    ...sharedStyles.card,
+    overflow: 'hidden',
+  },
+  recentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: TOUCH_TARGET,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.base,
+  },
+  recentRowPressed: {
+    backgroundColor: theme.surface.raised,
+  },
+  recentIcon: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.raised,
+  },
+  recentText: {
+    flex: 1,
+    gap: 1,
+  },
+  recentRoute: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  recentMeta: {
+    fontSize: fontSize.xs,
+    color: theme.text.muted,
   },
 })

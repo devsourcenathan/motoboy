@@ -3,11 +3,22 @@ import { unwrap, type SearchSuggestions, type TripSummary } from '@motoboy/api-c
 import { api } from '../../../shared/api/client'
 import { queryKeys } from '../../../shared/api/queryKeys'
 
+/**
+ * Les ordres que le contrat expose.
+ *
+ * Le prix pèse lourd dans le classement du MVP : c'est le premier critère de
+ * comparaison entre deux agences qui desservent la même liaison.
+ */
+export const SEARCH_SORTS = ['best', 'price_asc', 'departure_asc', 'duration_asc'] as const
+
+export type SearchSort = (typeof SEARCH_SORTS)[number]
+
 export interface SearchCriteria {
   readonly from: number
   readonly to: number
   /** `YYYY-MM-DD`. */
   readonly date: string
+  readonly sort?: SearchSort
 }
 
 /**
@@ -36,6 +47,7 @@ export function useTripSearch(criteria: SearchCriteria | null) {
             origin_city_id: criteria!.from,
             destination_city_id: criteria!.to,
             date: criteria!.date,
+            sort: criteria!.sort ?? 'best',
           },
         },
         signal,

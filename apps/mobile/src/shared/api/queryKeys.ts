@@ -25,8 +25,10 @@ export type QueryRoot = (typeof QUERY_ROOT)[keyof typeof QUERY_ROOT]
 export const queryKeys = {
   places: (query: string) => [QUERY_ROOT.places, query] as const,
 
-  search: (params: { from: number; to: number; date: string }) =>
-    [QUERY_ROOT.search, params.from, params.to, params.date] as const,
+  // Le tri fait partie de la clé : deux ordres différents sont deux réponses
+  // différentes, et les confondre afficherait le classement précédent.
+  search: (params: { from: number; to: number; date: string; sort?: string }) =>
+    [QUERY_ROOT.search, params.from, params.to, params.date, params.sort ?? 'best'] as const,
 
   trip: (reference: string) => [QUERY_ROOT.trip, reference] as const,
   tripSeats: (reference: string) => [QUERY_ROOT.trip, reference, 'seats'] as const,

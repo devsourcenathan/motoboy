@@ -46,9 +46,19 @@ export interface PassengerMessages {
     readonly noCity: string
     readonly typeMore: string
     readonly sameCity: string
+    readonly greeting: string
+    readonly recent: string
+    readonly seeAll: string
   }
   readonly results: {
     readonly title: string
+    readonly summary: string
+    readonly sort: {
+      readonly best: string
+      readonly price_asc: string
+      readonly departure_asc: string
+      readonly duration_asc: string
+    }
     readonly choose: string
     readonly vehicle: { readonly BUS: string; readonly CAR: string }
     readonly seatsLeft: string
@@ -279,9 +289,19 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       noCity: 'Aucune ville trouvée',
       typeMore: 'Saisissez au moins deux lettres',
       sameCity: 'Le départ et l’arrivée doivent être différents',
+      greeting: 'Bonjour 👋',
+      recent: 'Recherches récentes',
+      seeAll: 'Voir tout',
     },
     results: {
-      title: '{{from}} → {{to}}',
+      title: 'Résultats',
+      summary: '{{date}} • {{count}} passager(s)',
+      sort: {
+        best: 'Meilleur',
+        price_asc: 'Prix',
+        departure_asc: 'Heure',
+        duration_asc: 'Durée',
+      },
       choose: 'Choisir',
       // Le gabarit du véhicule est un vrai critère de comparaison : on ne
       // voyage pas cinq heures en berline comme en autocar.
@@ -528,9 +548,19 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       noCity: 'No city found',
       typeMore: 'Type at least two letters',
       sameCity: 'Origin and destination must differ',
+      greeting: 'Hello 👋',
+      recent: 'Recent searches',
+      seeAll: 'See all',
     },
     results: {
-      title: '{{from}} → {{to}}',
+      title: 'Results',
+      summary: '{{date}} • {{count}} passenger(s)',
+      sort: {
+        best: 'Best',
+        price_asc: 'Price',
+        departure_asc: 'Time',
+        duration_asc: 'Duration',
+      },
       choose: 'Choose',
       vehicle: { BUS: 'Coach', CAR: 'Car' },
       seatsLeft: '{{count}} seat(s) left',
