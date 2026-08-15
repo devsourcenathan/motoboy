@@ -69,7 +69,12 @@ export const colors = {
     /** Place libre : vert tendre, comme la légende du plan de sièges. */
     available: '#22a45d',
     availableSoft: '#e8f7ef',
-    held: '#f4661b',
+    /*
+     * Tenue par quelqu'un d'autre. **Jamais orange** : l'orange dit « votre
+     * action », et cette place n'est pas la vôtre. Elle se distingue de
+     * « vendue » par un contour tireté, pas par la teinte.
+     */
+    held: '#8b93a1',
     taken: '#e5e7eb',
     danger: '#d1443c',
     dangerSoft: '#fdeceb',

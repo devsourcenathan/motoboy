@@ -86,6 +86,8 @@ export interface PassengerMessages {
     readonly available: string
     readonly seatsUnit: string
     readonly pricePerPassenger: string
+    readonly selectedSeats: string
+    readonly total: string
     readonly choose: string
     readonly seatMap: string
     readonly pickSeats: string
@@ -208,6 +210,8 @@ export interface PassengerMessages {
     readonly language: string
     readonly languageName: string
     readonly historyHint: string
+    readonly sectionAccount: string
+    readonly sectionPreferences: string
     readonly otp: {
       readonly title: string
       readonly sentTo: string
@@ -348,6 +352,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       available: 'Disponibles',
       seatsUnit: '{{count}} places',
       pricePerPassenger: 'Prix par passager',
+      selectedSeats: 'Places sélectionnées',
+      total: 'Total',
       choose: 'Choisir ce trajet',
       seatMap: 'Choisissez vos places',
       pickSeats: 'Sélectionnez {{count}} place(s)',
@@ -487,6 +493,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       language: 'Langue',
       languageName: 'Français (Cameroun)',
       historyHint: 'Consultez vos trajets passés et vos reçus',
+      sectionAccount: 'Compte',
+      sectionPreferences: 'Préférences',
       otp: {
         title: 'Code de vérification',
         sentTo: 'Un code a été envoyé au {{phone}}.',
@@ -619,6 +627,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       available: 'Available',
       seatsUnit: '{{count}} seats',
       pricePerPassenger: 'Price per passenger',
+      selectedSeats: 'Selected seats',
+      total: 'Total',
       choose: 'Choose this trip',
       seatMap: 'Choose your seats',
       pickSeats: 'Select {{count}} seat(s)',
@@ -741,6 +751,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       language: 'Language',
       languageName: 'English (Cameroon)',
       historyHint: 'Your past trips and receipts',
+      sectionAccount: 'Account',
+      sectionPreferences: 'Preferences',
       otp: {
         title: 'Verification code',
         sentTo: 'A code was sent to {{phone}}.',

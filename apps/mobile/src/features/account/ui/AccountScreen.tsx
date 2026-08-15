@@ -90,25 +90,7 @@ export function AccountScreen() {
           )}
         </View>
 
-        {/*
-          La langue est **affichée, pas réglée**. Un sélecteur ici demanderait
-          de persister le choix et de le pousser sur le profil : sans cela il
-          repartirait à zéro au prochain démarrage, ce qui est pire qu'un
-          réglage absent.
-        */}
-        <View style={styles.tile}>
-          <View style={styles.tileTop}>
-            <View style={styles.tileIcon}>
-              <PersonIcon color={theme.text.brand} size={22} />
-            </View>
-            <View style={styles.chip}>
-              <Text style={styles.chipLabel}>{locale === 'fr' ? 'FR' : 'EN'}</Text>
-            </View>
-          </View>
-          <Text style={styles.tileTitle}>{t('account.language')}</Text>
-          <Text style={styles.tileBody}>{t('account.languageName')}</Text>
-        </View>
-
+        <Text style={styles.section}>{t('account.sectionAccount')}</Text>
         <View style={styles.menu}>
           <MenuRow
             icon={<HistoryIcon color={theme.text.brand} size={22} />}
@@ -118,12 +100,35 @@ export function AccountScreen() {
           />
         </View>
 
-        <Button
-          label={t('account.signOut')}
+        <Text style={styles.section}>{t('account.sectionPreferences')}</Text>
+        <View style={styles.menu}>
+          {/*
+            La langue est **affichée, pas réglée** — d'où l'absence de chevron.
+            Un sélecteur demanderait de persister le choix et de le pousser sur
+            le profil ; sans cela il repartirait à zéro au démarrage suivant, ce
+            qui est pire qu'un réglage absent.
+          */}
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <PersonIcon color={theme.text.brand} size={22} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle}>{t('account.language')}</Text>
+              <Text style={styles.rowHint}>{t('account.languageName')}</Text>
+            </View>
+            <Text style={styles.rowValue}>{locale === 'fr' ? 'FR' : 'EN'}</Text>
+          </View>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ busy: signOut.isPending }}
+          disabled={signOut.isPending}
           onPress={() => signOut.mutate()}
-          variant="ghost"
-          busy={signOut.isPending}
-        />
+          style={({ pressed }) => [styles.signOut, pressed ? styles.rowPressed : null]}
+        >
+          <Text style={styles.signOutLabel}>{t('account.signOut')}</Text>
+        </Pressable>
       </ScrollView>
     </Screen>
   )
@@ -200,48 +205,30 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: theme.text.secondary,
   },
-  tile: {
-    ...sharedStyles.card,
-    gap: spacing.xs,
-    padding: spacing.md,
-  },
-  tileTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  tileIcon: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.md,
-    backgroundColor: theme.surface.brandSoft,
-  },
-  chip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: theme.surface.brand,
-  },
-  chipLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: '700',
-    color: theme.text.inverse,
-  },
-  tileTitle: {
-    fontSize: fontSize.lg,
-    lineHeight: lineHeight.lg,
-    fontWeight: '700',
-    color: theme.text.primary,
-  },
-  tileBody: {
-    fontSize: fontSize.sm,
-    color: theme.text.secondary,
+  section: {
+    ...sharedStyles.sectionLabel,
+    marginTop: spacing.base,
   },
   menu: {
     ...sharedStyles.card,
     overflow: 'hidden',
+  },
+  rowValue: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: theme.text.muted,
+  },
+  signOut: {
+    ...sharedStyles.card,
+    minHeight: TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.base,
+  },
+  signOutLabel: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.danger,
   },
   row: {
     flexDirection: 'row',
