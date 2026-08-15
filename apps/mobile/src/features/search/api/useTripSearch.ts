@@ -21,23 +21,43 @@ export type SearchSort = (typeof SEARCH_SORTS)[number]
  * après coup, sur la seule page reçue — ce qui donnerait un résultat faux dès
  * qu'il y a plus d'une page.
  */
+/**
+ * Tranches horaires plutôt qu'un curseur à deux poignées.
+ *
+ * Le contrat prend `departure_from`/`departure_to` en heures locales, donc un
+ * intervalle libre serait possible — mais viser deux poignées au pouce dans un
+ * car en marche rate une fois sur deux, et personne ne cherche « entre 07:20 et
+ * 13:40 ». On cherche le matin.
+ */
+export const PERIODS = {
+  ANY: null,
+  MORNING: { from: '00:00', to: '11:59' },
+  AFTERNOON: { from: '12:00', to: '17:59' },
+  EVENING: { from: '18:00', to: '23:59' },
+} as const
+
+export type Period = keyof typeof PERIODS
+
 export interface SearchFilters {
   readonly agencyIds: readonly number[]
   readonly vehicleType: 'BUS' | 'CAR' | null
   readonly onlyAvailable: boolean
+  readonly period: Period
 }
 
 export const NO_FILTERS: SearchFilters = {
   agencyIds: [],
   vehicleType: null,
   onlyAvailable: false,
+  period: 'ANY',
 }
 
 export function countFilters(filters: SearchFilters): number {
   return (
     (filters.agencyIds.length > 0 ? 1 : 0) +
     (filters.vehicleType === null ? 0 : 1) +
-    (filters.onlyAvailable ? 1 : 0)
+    (filters.onlyAvailable ? 1 : 0) +
+    (filters.period === 'ANY' ? 0 : 1)
   )
 }
 
@@ -74,6 +94,7 @@ export function useTripSearch(criteria: SearchCriteria | null) {
             [...(criteria.filters?.agencyIds ?? [])].sort().join('-'),
             criteria.filters?.vehicleType ?? '',
             criteria.filters?.onlyAvailable === true ? 'avail' : '',
+            criteria.filters?.period ?? 'ANY',
           ].join('|'),
         })
       : queryKeys.search({ from: 0, to: 0, date: '' }),
@@ -96,6 +117,12 @@ export function useTripSearch(criteria: SearchCriteria | null) {
               : {}),
             ...(criteria!.filters?.onlyAvailable === true
               ? { only_available: true }
+              : {}),
+            ...(criteria!.filters?.period && criteria!.filters.period !== 'ANY'
+              ? {
+                  departure_from: PERIODS[criteria!.filters.period]!.from,
+                  departure_to: PERIODS[criteria!.filters.period]!.to,
+                }
               : {}),
           },
         },

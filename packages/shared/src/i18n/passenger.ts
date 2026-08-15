@@ -58,6 +58,13 @@ export interface PassengerMessages {
       readonly agencies: string
       readonly vehicle: string
       readonly onlyAvailable: string
+      readonly departure: string
+      readonly period: {
+        readonly ANY: string
+        readonly MORNING: string
+        readonly AFTERNOON: string
+        readonly EVENING: string
+      }
       readonly any: string
       readonly reset: string
       readonly apply: string
@@ -333,6 +340,13 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         agencies: 'Agences',
         vehicle: 'Type de véhicule',
         onlyAvailable: 'Masquer les départs complets',
+        departure: 'Heure de départ',
+        period: {
+          ANY: 'Toute la journée',
+          MORNING: 'Matin · avant 12 h',
+          AFTERNOON: 'Après-midi · 12 h – 18 h',
+          EVENING: 'Soir · après 18 h',
+        },
         any: 'Tous',
         reset: 'Réinitialiser',
         apply: 'Afficher les résultats',
@@ -625,6 +639,13 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         agencies: 'Agencies',
         vehicle: 'Vehicle type',
         onlyAvailable: 'Hide sold-out departures',
+        departure: 'Departure time',
+        period: {
+          ANY: 'Any time',
+          MORNING: 'Morning · before 12',
+          AFTERNOON: 'Afternoon · 12–18',
+          EVENING: 'Evening · after 18',
+        },
         any: 'Any',
         reset: 'Reset',
         apply: 'Show results',

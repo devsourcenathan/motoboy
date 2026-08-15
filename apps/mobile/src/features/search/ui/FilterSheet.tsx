@@ -13,7 +13,7 @@ import {
   theme,
   TOUCH_TARGET,
 } from '../../../shared/ui'
-import { NO_FILTERS, type SearchFilters } from '../api/useTripSearch'
+import { NO_FILTERS, PERIODS, type Period, type SearchFilters } from '../api/useTripSearch'
 
 export interface AgencyOption {
   readonly id: number
@@ -34,14 +34,15 @@ const VEHICLES = ['BUS', 'CAR'] as const
 /**
  * Les filtres de la liste de résultats.
  *
- * **Trois critères, ceux que le serveur sait appliquer.** La maquette montre
- * aussi un prix et une plage horaire ; filtrer là-dessus côté téléphone ne
- * porterait que sur la page reçue, et donnerait donc un résultat faux dès
- * qu'il y en a plusieurs. Mieux vaut trois filtres exacts que cinq
- * approximatifs.
+ * **Tout est appliqué par le serveur.** Filtrer côté téléphone ne porterait que
+ * sur la page reçue, et donnerait un résultat faux dès qu'il y en a plusieurs.
  *
  * Les agences proposées sont celles qui **desservent cette liaison** : une
  * liste figée ferait cocher des transporteurs qui ne passent pas par là.
+ *
+ * Le prix reste absent : le contrat l'accepte, mais une fourchette demande un
+ * curseur à deux poignées, et c'est un composant à part entière — pas une case
+ * à cocher de plus.
  */
 export function FilterSheet({
   visible,
@@ -96,6 +97,20 @@ export function FilterSheet({
               </View>
             </View>
           )}
+
+          <View style={styles.group}>
+            <Text style={styles.groupTitle}>{t('results.filters.departure')}</Text>
+            <View style={styles.card}>
+              {(Object.keys(PERIODS) as Period[]).map((period) => (
+                <Choice
+                  key={period}
+                  label={t(`results.filters.period.${period}`)}
+                  checked={draft.period === period}
+                  onPress={() => setDraft((current) => ({ ...current, period }))}
+                />
+              ))}
+            </View>
+          </View>
 
           <View style={styles.group}>
             <Text style={styles.groupTitle}>{t('results.filters.vehicle')}</Text>
