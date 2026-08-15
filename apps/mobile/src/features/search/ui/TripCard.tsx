@@ -193,12 +193,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
-    backgroundColor: theme.surface.accent,
+    backgroundColor: theme.surface.inkSoft,
   },
   initialsLabel: {
     fontSize: fontSize.xs,
     fontWeight: '800',
-    color: theme.text.accent,
+    color: theme.text.ink,
   },
   agency: {
     flex: 1,

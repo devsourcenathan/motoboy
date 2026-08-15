@@ -6,73 +6,74 @@
  * consomme via la configuration Tailwind, le mobile via ses propres
  * primitives de style.
  *
- * Les valeurs viennent du système *Motoboy Design System*
- * (`stitch_motoboy_mobility_platform/motoboy_design_system/DESIGN.md`) et des
- * écrans qui l'accompagnent. **En cas de désaccord entre les deux, l'écran
- * l'emporte** : le document annonce un bouton primaire or, les maquettes le
- * montrent bleu et l'or réservé aux actions secondaires, aux repères d'origine
- * et aux titres de section. C'est l'écran qui a été validé.
+ * Les valeurs viennent des maquettes de `design/`. Orange pour agir, marine
+ * pour l'identité, vert pour ce qui est acquis : trois rôles distincts, jamais
+ * interchangeables. C'est ce qui permet de savoir où appuyer sans lire.
  */
 
 export const colors = {
   /**
-   * Bleu électrique profond — technologie, loyauté, sécurité.
+   * Orange — **la couleur de l'action, et d'elle seule.**
    *
-   * Porte les CTA, le mot-symbole, les prix et la place choisie. `600` est la
-   * teinte dominante ; `700` sert aux aplats les plus sombres.
+   * Tout ce qui fait avancer le parcours la porte : rechercher, continuer,
+   * payer. Elle marque aussi les prix et la place choisie. Ne jamais la poser
+   * sur un élément qui ne se presse pas — c'est le repère qui rend l'écran
+   * lisible d'un coup d'œil en gare.
    */
   brand: {
-    50: '#e0e0ff',
-    100: '#bfc2ff',
-    500: '#2b30bb',
-    600: '#0f0fa9',
-    700: '#020075',
+    50: '#fff1e8',
+    100: '#ffd9c0',
+    500: '#f4661b',
+    600: '#e05610',
+    700: '#b6430a',
   },
   /**
-   * Or solaire — visibilité en plein soleil, énergie du mouvement.
+   * Marine — l'identité, les en-têtes, les actions secondaires pleines.
    *
-   * Jamais sur un CTA principal : il marque l'origine d'un trajet, les titres
-   * de section, les puces de statut et le contour des actions secondaires.
+   * Elle porte le bandeau d'accueil et le haut du billet : les deux endroits où
+   * la marque doit se voir sans crier.
    */
-  accent: {
-    100: '#ffe089',
-    300: '#fecf30',
-    500: '#e9bc17',
-    700: '#745b00',
-    900: '#574400',
+  ink: {
+    50: '#eef2f7',
+    500: '#1d4b73',
+    700: '#10314f',
+    900: '#0a2138',
+  },
+  /**
+   * Vert — ce qui est **acquis** : places disponibles, paiement réussi,
+   * réservation confirmée. Jamais une action à faire.
+   */
+  success: {
+    50: '#e8f7ef',
+    500: '#22a45d',
+    700: '#177a44',
   },
   neutral: {
-    /** Cartes et feuilles — le niveau 1 du système d'élévation. */
+    /** Cartes et feuilles. */
     0: '#ffffff',
-    /** Bandeaux d'en-tête de carte, lignes encastrées. */
-    50: '#f5f2fe',
-    100: '#efecf8',
-    /** Places occupées, puces inactives, boutons désactivés. */
-    200: '#e4e1ed',
+    /** Lignes encastrées, bandeaux d'en-tête de carte. */
+    50: '#f7f8fa',
+    100: '#f1f3f6',
+    /** Éléments inertes : place occupée, bouton désactivé. */
+    200: '#e5e7eb',
     /** Bordures. */
-    300: '#c6c5d7',
-    500: '#767686',
-    700: '#454554',
-    900: '#1b1b23',
+    300: '#d7dbe0',
+    500: '#8b93a1',
+    700: '#4b5563',
+    900: '#1a1d21',
   },
-  /**
-   * Fond de page.
-   *
-   * Lavande très clair plutôt que blanc pur : il fait ressortir les cartes
-   * blanches sans ombre appuyée, ce qui tient mieux sur les dalles bon marché
-   * où une ombre légère disparaît.
-   */
-  page: '#fbf8ff',
+  /** Fond de page — gris très clair, pour que les cartes blanches ressortent. */
+  page: '#f5f6f8',
   /** États métier — repris tels quels dans les deux clients. */
   status: {
-    /** Place libre : contour, pas aplat. Un aplat vert ferait un damier. */
-    available: '#c6c5d7',
-    held: '#e9bc17',
-    taken: '#e4e1ed',
-    success: '#0f0fa9',
-    danger: '#ba1a1a',
-    dangerSoft: '#ffdad6',
-    onDangerSoft: '#93000a',
+    /** Place libre : vert tendre, comme la légende du plan de sièges. */
+    available: '#22a45d',
+    availableSoft: '#e8f7ef',
+    held: '#f4661b',
+    taken: '#e5e7eb',
+    danger: '#d1443c',
+    dangerSoft: '#fdeceb',
+    onDangerSoft: '#8f2820',
   },
 } as const
 
@@ -92,8 +93,8 @@ export const radius = {
   md: 8,
   lg: 12,
   xl: 16,
-  /** Boutons principaux — capsules, pour se distinguer des cartes. */
-  pill: 24,
+  /** Boutons principaux — coins francs mais nets, pas des capsules. */
+  pill: 12,
   full: 9999,
 } as const
 
@@ -111,7 +112,7 @@ export const fontSize = {
  * Hauteurs de ligne, en points et non en multiplicateurs.
  *
  * React Native attend un nombre absolu ; laisser le défaut donne un interligne
- * serré qui se voit surtout sur les titres longs — « Où allez-vous
+ * serré qui se voit surtout sur les titres longs — « Où souhaitez-vous aller
  * aujourd'hui ? » passe sur deux lignes dans les deux langues.
  */
 export const lineHeight = {

@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.surface.inert,
   },
   rankFirst: {
-    backgroundColor: theme.surface.accent,
+    backgroundColor: theme.surface.brandSoft,
   },
   rankLabel: {
     fontSize: fontSize.sm,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
   },
   rankLabelFirst: {
-    color: theme.text.accent,
+    color: theme.text.brand,
   },
   groupTitle: {
     flex: 1,

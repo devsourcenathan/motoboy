@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
-    backgroundColor: theme.surface.accent,
+    backgroundColor: theme.surface.successSoft,
   },
   statusChipOff: {
     backgroundColor: theme.surface.inert,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: fontSize.xs,
     fontWeight: '700',
-    color: theme.text.accent,
+    color: theme.text.success,
   },
   statusLabelOff: {
     color: theme.text.secondary,

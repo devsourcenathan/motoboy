@@ -229,6 +229,7 @@ export interface PassengerMessages {
   }
   readonly tabs: {
     readonly home: string
+    readonly trips: string
     readonly tickets: string
     readonly account: string
   }
@@ -484,6 +485,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     steps: { seats: 'Places', details: 'Infos', payment: 'Paiement' },
     tabs: {
       home: 'Accueil',
+      trips: 'Mes voyages',
       tickets: 'Mes billets',
       account: 'Profil',
     },
@@ -706,6 +708,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     steps: { seats: 'Seats', details: 'Details', payment: 'Payment' },
     tabs: {
       home: 'Home',
+      trips: 'My trips',
       tickets: 'My tickets',
       account: 'Profile',
     },

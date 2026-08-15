@@ -146,7 +146,7 @@ export function VerifyOtpScreen() {
           }
           style={styles.resend}
         >
-          {wait > 0 ? <TimerIcon color={theme.text.accent} size={18} /> : null}
+          {wait > 0 ? <TimerIcon color={theme.text.muted} size={18} /> : null}
           <Text style={wait > 0 ? styles.resendWaiting : styles.resendLabel}>
             {wait > 0
               ? t('account.otp.resendIn', { seconds: wait })
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   resendWaiting: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: theme.text.accent,
+    color: theme.text.muted,
   },
   footer: {
     padding: spacing.md,

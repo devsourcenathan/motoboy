@@ -99,7 +99,7 @@ export function AccountScreen() {
         <View style={styles.tile}>
           <View style={styles.tileTop}>
             <View style={styles.tileIcon}>
-              <PersonIcon color={theme.text.accent} size={22} />
+              <PersonIcon color={theme.text.brand} size={22} />
             </View>
             <View style={styles.chip}>
               <Text style={styles.chipLabel}>{locale === 'fr' ? 'FR' : 'EN'}</Text>
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
-    backgroundColor: theme.surface.accentSoft,
+    backgroundColor: theme.surface.brandSoft,
   },
   chip: {
     paddingHorizontal: spacing.sm,
