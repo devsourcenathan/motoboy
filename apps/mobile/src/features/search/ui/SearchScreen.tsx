@@ -2,7 +2,15 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import {
+  ImageBackground,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DEFAULT_TIMEZONE, formatDate } from '@motoboy/shared'
 import {
@@ -127,29 +135,47 @@ export function SearchScreen() {
   return (
     <SafeAreaView style={sharedStyles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.page}>
-        <View style={styles.hero}>
+        {/*
+          Photo de gare routière sous un voile marine. Le voile n'est pas
+          décoratif : sans lui, le texte blanc passe sur un ciel clair et
+          disparaît — et c'est justement dehors, en plein jour, que cet écran
+          s'ouvre.
+        */}
+        <ImageBackground
+          source={require('../../../../assets/home.jpg')}
+          style={styles.hero}
+          imageStyle={styles.heroImage}
+          accessible={false}
+        >
+          <View style={styles.veil} />
           <Text style={styles.wordmark}>MOTOBOY</Text>
           <Text style={styles.greeting}>{t('search.greeting')}</Text>
           <Text style={styles.question} accessibilityRole="header">
             {t('search.title')}
           </Text>
-        </View>
+        </ImageBackground>
 
         <View style={styles.card}>
           {/*
-            Le bouton d'inversion chevauche les deux champs qu'il échange : posé
-            à côté, il faudrait lire son étiquette pour comprendre sur quoi il
-            porte.
+            Un seul panneau pour les deux villes, séparées d'un filet : elles
+            forment une paire — c'est un trajet, pas deux réglages
+            indépendants. Le bouton d'inversion se pose sur le filet, à cheval
+            sur ce qu'il échange.
           */}
-          <View style={styles.pair}>
+          <View style={styles.panel}>
             <Field
+              bare
               label={t('search.from')}
               value={form.from?.label ?? null}
               placeholder={t('search.fromExample')}
               icon={<TargetIcon color={theme.route.origin} />}
               onPress={() => setPicking('from')}
             />
+
+            <View style={styles.rule} />
+
             <Field
+              bare
               label={t('search.to')}
               value={form.to?.label ?? null}
               placeholder={t('search.toExample')}
@@ -163,21 +189,26 @@ export function SearchScreen() {
               onPress={() => setForm(swap)}
               style={({ pressed }) => [styles.swap, pressed ? styles.swapPressed : null]}
             >
-              <SwapIcon color={theme.text.ink} />
+              <SwapIcon color={theme.text.ink} size={18} />
             </Pressable>
           </View>
 
-          <View style={styles.row}>
-            <View style={styles.half}>
+          {/* Quand et combien : deux colonnes d'un même panneau. */}
+          <View style={[styles.panel, styles.panelRow]}>
+            <View style={styles.column}>
               <Field
+                bare
                 label={t('search.date')}
                 value={dateLabel}
                 placeholder={t('search.date')}
-                icon={<CalendarIcon color={theme.text.secondary} />}
+                icon={<CalendarIcon color={theme.text.secondary} size={18} />}
                 onPress={() => setShowCalendar(true)}
               />
             </View>
-            <View style={styles.half}>
+
+            <View style={styles.columnRule} />
+
+            <View style={styles.column}>
               <PassengerStepper
                 label={t('search.passengers')}
                 value={form.passengers}
@@ -301,7 +332,7 @@ function PassengerStepper({
 }) {
   return (
     <View style={styles.stepper} accessible accessibilityLabel={`${label}, ${value}`}>
-      <PersonIcon color={theme.text.secondary} />
+      <PersonIcon color={theme.text.secondary} size={18} />
 
       <View style={styles.stepperText}>
         <Text style={styles.stepperLabel}>{label}</Text>
@@ -364,9 +395,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg + OVERLAP,
+    // Repli si l'image tarde ou manque : le texte blanc reste lisible.
     backgroundColor: theme.surface.ink,
+    overflow: 'hidden',
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
+  },
+  heroImage: {
+    borderBottomLeftRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+  },
+  veil: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(10, 33, 56, 0.66)',
   },
   wordmark: {
     alignSelf: 'center',
@@ -395,17 +440,37 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     marginTop: -OVERLAP,
   },
-  pair: {
-    gap: spacing.sm,
+  /** Un cadre unique, des filets à l'intérieur : une paire, pas deux réglages. */
+  panel: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: theme.surface.border,
+  },
+  panelRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  rule: {
+    height: 1,
+    marginLeft: spacing.md + 24 + spacing.sm,
+    backgroundColor: theme.surface.border,
+  },
+  column: {
+    flex: 1,
+  },
+  columnRule: {
+    width: 1,
+    marginVertical: spacing.base,
+    backgroundColor: theme.surface.border,
   },
   swap: {
     position: 'absolute',
-    right: -spacing.base,
-    // Centré sur la couture entre les deux champs.
+    right: spacing.base,
+    // Centré sur le filet qui sépare les deux villes.
     top: '50%',
-    marginTop: -22,
-    width: 44,
-    height: 44,
+    marginTop: -18,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
@@ -416,13 +481,7 @@ const styles = StyleSheet.create({
   swapPressed: {
     backgroundColor: theme.surface.raised,
   },
-  row: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  half: {
-    flex: 1,
-  },
+  /** Nu : le panneau porte déjà le cadre. */
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,10 +489,6 @@ const styles = StyleSheet.create({
     minHeight: TOUCH_TARGET + spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.base,
-    backgroundColor: theme.surface.card,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: theme.surface.border,
   },
   stepperText: {
     flex: 1,
