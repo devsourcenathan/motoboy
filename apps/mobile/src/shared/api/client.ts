@@ -11,7 +11,16 @@ import { session } from '../session/session'
  * joindre, puisqu'il vient d'y charger le paquet.
  */
 function resolveBaseUrl(): string {
-  const configured = process.env['EXPO_PUBLIC_API_URL']
+  /*
+   * ⚠️ **Notation pointée obligatoire.**
+   *
+   * Expo remplace `process.env.EXPO_PUBLIC_*` à la compilation, en repérant
+   * l'accès par point. Écrit `process.env['EXPO_PUBLIC_API_URL']`, rien n'est
+   * remplacé : la valeur vaut `undefined` dans le paquet et le réglage n'a
+   * jamais d'effet, sans le moindre avertissement — vérifié en cherchant
+   * l'adresse dans le bundle, où elle était absente.
+   */
+  const configured = process.env.EXPO_PUBLIC_API_URL
 
   if (configured) return configured
 
