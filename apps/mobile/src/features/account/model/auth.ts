@@ -4,6 +4,14 @@ export interface CredentialsForm {
   readonly phone: string
   readonly firstName: string
   readonly lastName: string
+  /**
+   * Facultatif, et le rester.
+   *
+   * Le contrat ne l'exige pas, et le produit ne s'en sert pour rien : les
+   * billets et les alertes partent par SMS. L'imposer écarterait des passagers
+   * qui n'ont pas d'adresse, ce qui est courant.
+   */
+  readonly email: string
 }
 
 export type CredentialsError = 'PHONE_INVALID' | 'NAME_MISSING' | null

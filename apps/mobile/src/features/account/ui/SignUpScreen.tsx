@@ -14,7 +14,6 @@ import {
   Button,
   fontSize,
   lineHeight,
-  radius,
   Screen,
   sharedStyles,
   spacing,
@@ -31,31 +30,20 @@ import {
 } from '../model/auth'
 
 /**
- * Connexion ou inscription, sur le même écran.
+ * Création de compte.
  *
- * Les deux ne diffèrent que par deux champs de nom : en faire deux écrans
- * obligerait le passager à comprendre, avant de commencer, s'il a déjà un
- * compte — question à laquelle il ne sait pas toujours répondre.
- *
- * **La connexion arrive tard dans le parcours.** La recherche, les résultats et
- * le plan de sièges fonctionnent sans compte ; c'est seulement pour finaliser
- * la réservation qu'il en faut un (§35). Le message le dit, plutôt que de
- * laisser croire à un mur.
+ * **Aucun mot de passe.** L'identité tient au numéro, et sa preuve au code reçu
+ * par SMS : il n'y a donc rien à choisir, rien à retenir, et rien à réinitialiser
+ * le jour où c'est oublié. C'est aussi ce qui permet de créer un compte en gare,
+ * debout, en trente secondes.
  */
-export function SignInScreen() {
+export function SignUpScreen() {
   const { t } = useTranslation()
   const router = useRouter()
   const describe = useErrorMessage()
 
-  // `next` transporte la destination d'origine : quelqu'un renvoyé ici depuis
-  // le plan de sièges doit y revenir, pas atterrir sur l'accueil.
   const { next } = useLocalSearchParams<{ next?: string }>()
 
-  /*
-   * Les noms restent dans le formulaire bien que l'écran ne les demande pas :
-   * la validation de connexion ne les regarde pas, et la forme partagée évite
-   * un second type qui divergerait au premier champ ajouté.
-   */
   const [form, setForm] = useState<CredentialsForm>({
     phone: '',
     firstName: '',
@@ -65,26 +53,21 @@ export function SignInScreen() {
 
   const request = useRequestOtp()
 
-  /*
-   * Le champ ne contient que ce qui suit l'indicatif affiché. Le numéro complet
-   * se compose ici — et une seule fois — pour que la validation et l'envoi
-   * portent exactement sur ce qui partira au serveur.
-   */
   const submitted: CredentialsForm = { ...form, phone: toInternational(form.phone) }
-  const error = validate(submitted, 'signIn')
+  const error = validate(submitted, 'signUp')
 
   function submit() {
     if (error !== null) return
 
     request.mutate(
-      { form: submitted, intent: 'signIn' },
+      { form: submitted, intent: 'signUp' },
       {
         onSuccess: (challenge) => {
           router.push({
             pathname: '/account/verify',
             params: {
               phone: submitted.phone,
-              purpose: 'LOGIN',
+              purpose: 'REGISTRATION',
               expiresAt: challenge.expires_at,
               attempts: String(challenge.attempts_remaining),
               ...(next === undefined ? {} : { next }),
@@ -96,7 +79,7 @@ export function SignInScreen() {
   }
 
   return (
-    <Screen chrome={false}>
+    <Screen>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -107,43 +90,68 @@ export function SignInScreen() {
         >
           <View style={styles.heading}>
             <Text style={styles.title} accessibilityRole="header">
-              {t('account.welcome')}
+              {t('account.signUp')}
             </Text>
-            <Text style={styles.subtitle}>
-              {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
-            </Text>
+            <Text style={styles.subtitle}>{t('account.signUpBody')}</Text>
           </View>
 
           <View style={styles.card}>
-          <TextField
-            label={t('account.phone')}
-            hint={t('account.phoneHint')}
-            prefix={DIALLING_CODE}
-            value={form.phone}
-            onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
-            keyboardType="phone-pad"
-            textContentType="telephoneNumber"
-            autoComplete="tel"
-          />
+            {/*
+              Prénom et nom séparés, là où la maquette montre « Nom complet » :
+              le contrat les veut distincts, et découper une chaîne à l'espace se
+              trompe dès le premier nom composé.
+            */}
+            <TextField
+              label={t('account.firstName')}
+              value={form.firstName}
+              onChangeText={(firstName) => setForm((current) => ({ ...current, firstName }))}
+              autoCapitalize="words"
+              textContentType="givenName"
+            />
+            <TextField
+              label={t('account.lastName')}
+              value={form.lastName}
+              onChangeText={(lastName) => setForm((current) => ({ ...current, lastName }))}
+              autoCapitalize="words"
+              textContentType="familyName"
+            />
+            <TextField
+              label={t('account.phone')}
+              hint={t('account.phoneHint')}
+              prefix={DIALLING_CODE}
+              value={form.phone}
+              onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              autoComplete="tel"
+            />
+            <TextField
+              label={t('account.emailOptional')}
+              value={form.email}
+              onChangeText={(email) => setForm((current) => ({ ...current, email }))}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="emailAddress"
+              autoComplete="email"
+            />
 
-          {request.error ? (
-            <Text style={styles.error}>{describe(request.error)}</Text>
-          ) : null}
+            {request.error ? (
+              <Text style={styles.error}>{describe(request.error)}</Text>
+            ) : null}
           </View>
 
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              router.push({
-                pathname: '/account/sign-up',
+              router.replace({
+                pathname: '/account/sign-in',
                 ...(next === undefined ? {} : { params: { next } }),
               })
             }
             style={styles.switch}
           >
-            <Text style={styles.switchLabel}>
-              {t('account.noAccount')}
-            </Text>
+            <Text style={styles.switchLabel}>{t('account.haveAccount')}</Text>
           </Pressable>
         </ScrollView>
 
@@ -171,7 +179,6 @@ const styles = StyleSheet.create({
   heading: {
     gap: spacing.xs,
     paddingTop: spacing.base,
-    paddingBottom: spacing.base,
   },
   title: {
     fontSize: fontSize['2xl'],
@@ -185,10 +192,6 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.base,
     color: theme.text.secondary,
   },
-  /*
-   * Un monogramme, pas un logotype : aucun fichier de marque n'existe encore,
-   * et une image absente laisserait un carré vide au premier écran vu.
-   */
   card: {
     ...sharedStyles.card,
     gap: spacing.sm,
@@ -201,7 +204,7 @@ const styles = StyleSheet.create({
   },
   switchLabel: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.text.brand,
   },
   footer: {

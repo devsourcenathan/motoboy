@@ -1,4 +1,10 @@
-import { normaliseCode, normalisePhone, toInternational, validate } from './auth'
+import {
+  normaliseCode,
+  normalisePhone,
+  toInternational,
+  validate,
+  type CredentialsForm,
+} from './auth'
 
 describe('normalisePhone', () => {
   /**
@@ -17,6 +23,15 @@ describe('normalisePhone', () => {
 })
 
 describe('validate', () => {
+  /** Ajouter un champ au formulaire ne doit pas faire réécrire chaque cas. */
+  const form = (over: Partial<CredentialsForm>): CredentialsForm => ({
+    phone: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    ...over,
+  })
+
   const phone = '+237690000001'
 
   /**
@@ -25,30 +40,30 @@ describe('validate', () => {
    * qui n'arrivera jamais.
    */
   it('exige le format international', () => {
-    expect(validate({ phone: '690000001', firstName: '', lastName: '' }, 'signIn')).toBe(
+    expect(validate(form({ phone: '690000001' }), 'signIn')).toBe(
       'PHONE_INVALID',
     )
     expect(
-      validate({ phone: '00237690000001', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '00237690000001' }), 'signIn'),
     ).toBe('PHONE_INVALID')
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signIn')).toBeNull()
+    expect(validate(form({ phone }), 'signIn')).toBeNull()
   })
 
   it('accepte un numéro saisi avec des espaces', () => {
     expect(
-      validate({ phone: '+237 690 00 00 01', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+237 690 00 00 01' }), 'signIn'),
     ).toBeNull()
   })
 
   it('n’exige les noms qu’à l’inscription', () => {
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signIn')).toBeNull()
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signUp')).toBe(
+    expect(validate(form({ phone }), 'signIn')).toBeNull()
+    expect(validate(form({ phone }), 'signUp')).toBe(
       'NAME_MISSING',
     )
-    expect(validate({ phone, firstName: 'Awa', lastName: '  ' }, 'signUp')).toBe(
+    expect(validate(form({ phone, firstName: 'Awa', lastName: '  ' }), 'signUp')).toBe(
       'NAME_MISSING',
     )
-    expect(validate({ phone, firstName: 'Awa', lastName: 'Nkeng' }, 'signUp')).toBeNull()
+    expect(validate(form({ phone, firstName: 'Awa', lastName: 'Nkeng' }), 'signUp')).toBeNull()
   })
 
   /**
@@ -57,10 +72,10 @@ describe('validate', () => {
    */
   it('accepte d’autres indicatifs que le Cameroun', () => {
     expect(
-      validate({ phone: '+33612345678', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+33612345678' }), 'signIn'),
     ).toBeNull()
     expect(
-      validate({ phone: '+15551234567', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+15551234567' }), 'signIn'),
     ).toBeNull()
   })
 })

@@ -57,6 +57,9 @@ export function useRequestOtp() {
                 phone,
                 first_name: form.firstName.trim(),
                 last_name: form.lastName.trim(),
+                // Omis plutôt qu'envoyé vide : une chaîne vide serait stockée
+                // comme une adresse, et le serveur la refuserait au format.
+                ...(form.email.trim() === '' ? {} : { email: form.email.trim() }),
                 locale: deviceLocale(),
               },
             })
