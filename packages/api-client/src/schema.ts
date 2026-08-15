@@ -278,7 +278,48 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Modifie son propre profil
+         * @description Mise a jour partielle : seuls les champs transmis sont modifies.
+         *
+         *     Le telephone n'y figure pas. Il porte l'identite du compte et la
+         *     destination des SMS ; le changer demande de prouver la possession du
+         *     nouveau numero, donc un parcours OTP a part.
+         *
+         *     `locale` decide de la langue des SMS.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        first_name?: string;
+                        last_name?: string;
+                        /** Format: email */
+                        email?: string | null;
+                        locale?: components["schemas"]["Locale"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["User"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
         trace?: never;
     };
     "/v1/auth/logout": {

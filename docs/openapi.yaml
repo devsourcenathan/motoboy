@@ -254,6 +254,36 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Auth]
+      summary: Modifie son propre profil
+      description: |
+        Mise a jour partielle : seuls les champs transmis sont modifies.
+
+        Le telephone n'y figure pas. Il porte l'identite du compte et la
+        destination des SMS ; le changer demande de prouver la possession du
+        nouveau numero, donc un parcours OTP a part.
+
+        `locale` decide de la langue des SMS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string, maxLength: 100 }
+                last_name: { type: string, maxLength: 100 }
+                email: { type: [string, 'null'], format: email, maxLength: 255 }
+                locale: { $ref: '#/components/schemas/Locale' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/auth/logout:
     post:

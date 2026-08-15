@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { unwrap, type OtpChallenge, type User } from '@motoboy/api-client'
+import type { Locale } from '@motoboy/shared'
 import { api } from '../../../shared/api/client'
 import { queryKeys } from '../../../shared/api/queryKeys'
 import { session } from '../../../shared/session/session'
@@ -140,6 +141,29 @@ export function useSignOut() {
     onSettled: async () => {
       await session.end()
       queryClient.clear()
+    },
+  })
+}
+
+/**
+ * Modifie son propre profil.
+ *
+ * Utilisé pour l'instant par le seul réglage de langue, et c'est ce qui lui
+ * donne son intérêt : `users.locale` décide de la langue des **SMS**. Sans cet
+ * appel, basculer l'application en anglais laissait arriver les billets en
+ * français — l'incohérence que l'écran de réglages portait jusqu'ici.
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (changes: { locale?: Locale }) => {
+      const response = await api.PATCH('/v1/me', { body: changes })
+
+      return unwrap(response)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.me() })
     },
   })
 }

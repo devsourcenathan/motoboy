@@ -16,7 +16,7 @@ import {
 } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { chooseLanguage } from '../../../shared/i18n/language'
-import { useSignOut } from '../api/useAuth'
+import { useCurrentUser, useSignOut, useUpdateProfile } from '../api/useAuth'
 
 /**
  * Les réglages.
@@ -33,6 +33,20 @@ export function SettingsScreen() {
   const router = useRouter()
   const locale = useLocale()
   const signOut = useSignOut()
+  const me = useCurrentUser()
+  const updateProfile = useUpdateProfile()
+
+  /*
+   * Deux effets, et seulement le premier est indispensable : l'interface change
+   * de langue tout de suite, et le serveur suit **s'il y a une session**. Sans
+   * compte, il n'y a pas de profil à mettre à jour — et la recherche fonctionne
+   * sans compte, donc ce réglage doit fonctionner aussi.
+   */
+  function pick(option: Locale) {
+    void chooseLanguage(option)
+
+    if (me.data !== undefined) updateProfile.mutate({ locale: option })
+  }
 
   return (
     <Screen title={t('account.settings')}>
@@ -49,7 +63,7 @@ export function SettingsScreen() {
               key={option}
               accessibilityRole="radio"
               accessibilityState={{ selected: locale === option }}
-              onPress={() => void chooseLanguage(option)}
+              onPress={() => pick(option)}
               style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
             >
               <Text style={styles.rowTitle}>

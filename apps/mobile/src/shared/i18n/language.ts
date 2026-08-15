@@ -28,11 +28,10 @@ export async function readChosenLanguage(): Promise<Locale | null> {
  * passager vient de demander ; il la reperdra au prochain démarrage, ce qui est
  * moins grave qu'un réglage qui ne fait rien.
  *
- * Le serveur n'est pas prévenu, faute d'endpoint : `users.locale` continue de
- * décider de la langue des **SMS**. Un passager qui bascule l'application en
- * anglais recevra donc ses billets dans la langue de son inscription. C'est une
- * incohérence assumée, pas un oubli — la corriger demande une mise à jour du
- * profil côté API.
+ * Cette fonction ne prévient pas le serveur : c'est l'écran de réglages qui
+ * pousse le choix sur le profil quand une session existe, parce que la
+ * recherche fonctionne sans compte et que le réglage doit fonctionner aussi.
+ * `users.locale` décide de la langue des **SMS** ; les deux doivent suivre.
  */
 export async function chooseLanguage(locale: Locale): Promise<void> {
   await i18next.changeLanguage(locale)

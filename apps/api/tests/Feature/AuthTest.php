@@ -274,4 +274,64 @@ final class AuthTest extends TestCase
 
         return $matches[1] ?? '';
     }
+
+    public function test_a_passenger_updates_only_the_fields_sent(): void
+    {
+        $user = User::factory()->create([
+            'first_name' => 'Awa',
+            'last_name' => 'Nkeng',
+            'locale' => Locale::French,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson('/api/v1/me', ['locale' => 'en'])
+            ->assertOk()
+            ->assertJsonPath('locale', 'en')
+            // Le nom n'etait pas transmis : un ecran qui ne regle que la langue
+            // ne doit pas ecraser ce qu'il ne montre pas.
+            ->assertJsonPath('first_name', 'Awa');
+
+        $this->assertSame(Locale::English, $user->refresh()->locale);
+    }
+
+    /**
+     * Le telephone porte l'identite du compte et la destination des SMS. Le
+     * laisser passer ici deplacerait un compte vers un numero qu'on ne detient
+     * pas, sans jamais le prouver.
+     */
+    public function test_the_phone_cannot_be_changed_through_the_profile(): void
+    {
+        $user = User::factory()->create(['phone' => '+237690000123']);
+
+        $this->actingAs($user)
+            ->patchJson('/api/v1/me', ['phone' => '+237690000999'])
+            ->assertOk();
+
+        $this->assertSame('+237690000123', $user->refresh()->phone);
+    }
+
+    public function test_an_email_already_taken_is_refused(): void
+    {
+        User::factory()->create(['email' => 'occupe@motoboy.test']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patchJson('/api/v1/me', ['email' => 'occupe@motoboy.test'])
+            ->assertStatus(422);
+    }
+
+    /** Renvoyer sa propre adresse n'est pas un doublon. */
+    public function test_a_passenger_keeps_their_own_email(): void
+    {
+        $user = User::factory()->create(['email' => 'moi@motoboy.test']);
+
+        $this->actingAs($user)
+            ->patchJson('/api/v1/me', ['email' => 'moi@motoboy.test'])
+            ->assertOk();
+    }
+
+    public function test_the_profile_requires_a_session(): void
+    {
+        $this->patchJson('/api/v1/me', ['locale' => 'en'])->assertStatus(401);
+    }
 }
