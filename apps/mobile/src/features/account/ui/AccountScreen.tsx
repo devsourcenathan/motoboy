@@ -102,22 +102,12 @@ export function AccountScreen() {
 
         <Text style={styles.section}>{t('account.sectionPreferences')}</Text>
         <View style={styles.menu}>
-          {/*
-            La langue est **affichée, pas réglée** — d'où l'absence de chevron.
-            Un sélecteur demanderait de persister le choix et de le pousser sur
-            le profil ; sans cela il repartirait à zéro au démarrage suivant, ce
-            qui est pire qu'un réglage absent.
-          */}
-          <View style={styles.row}>
-            <View style={styles.rowIcon}>
-              <PersonIcon color={theme.text.brand} size={22} />
-            </View>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>{t('account.language')}</Text>
-              <Text style={styles.rowHint}>{t('account.languageName')}</Text>
-            </View>
-            <Text style={styles.rowValue}>{locale === 'fr' ? 'FR' : 'EN'}</Text>
-          </View>
+          <MenuRow
+            icon={<PersonIcon color={theme.text.brand} size={22} />}
+            title={t('account.settings')}
+            hint={t('account.languageName')}
+            onPress={() => router.push('/account/settings')}
+          />
         </View>
 
         <Pressable

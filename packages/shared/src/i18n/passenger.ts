@@ -239,6 +239,12 @@ export interface PassengerMessages {
     readonly historyHint: string
     readonly sectionAccount: string
     readonly sectionPreferences: string
+    readonly settings: string
+    readonly sectionSupport: string
+    readonly currency: string
+    readonly about: string
+    readonly languageFr: string
+    readonly languageEn: string
     readonly otp: {
       readonly title: string
       readonly sentTo: string
@@ -549,6 +555,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       historyHint: 'Consultez vos trajets passés et vos reçus',
       sectionAccount: 'Compte',
       sectionPreferences: 'Préférences',
+      settings: 'Paramètres',
+      sectionSupport: 'Support',
+      currency: 'Devise',
+      about: 'À propos de MOTOBOY',
+      languageFr: 'Français',
+      languageEn: 'Anglais',
       otp: {
         title: 'Code de vérification',
         sentTo: 'Un code a été envoyé au {{phone}}.',
@@ -834,6 +846,12 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       historyHint: 'Your past trips and receipts',
       sectionAccount: 'Account',
       sectionPreferences: 'Preferences',
+      settings: 'Settings',
+      sectionSupport: 'Support',
+      currency: 'Currency',
+      about: 'About MOTOBOY',
+      languageFr: 'French',
+      languageEn: 'English',
       otp: {
         title: 'Verification code',
         sentTo: 'A code was sent to {{phone}}.',
