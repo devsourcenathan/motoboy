@@ -13,7 +13,14 @@ import {
   theme,
   TOUCH_TARGET,
 } from '../../../shared/ui'
-import { NO_FILTERS, PERIODS, type Period, type SearchFilters } from '../api/useTripSearch'
+import {
+  NO_FILTERS,
+  PERIODS,
+  PRICE_BRACKETS,
+  type Period,
+  type PriceBracket,
+  type SearchFilters,
+} from '../api/useTripSearch'
 
 export interface AgencyOption {
   readonly id: number
@@ -40,9 +47,8 @@ const VEHICLES = ['BUS', 'CAR'] as const
  * Les agences proposées sont celles qui **desservent cette liaison** : une
  * liste figée ferait cocher des transporteurs qui ne passent pas par là.
  *
- * Le prix reste absent : le contrat l'accepte, mais une fourchette demande un
- * curseur à deux poignées, et c'est un composant à part entière — pas une case
- * à cocher de plus.
+ * Prix et horaires se choisissent par tranches, pas au curseur : personne ne
+ * cherche « entre 4 200 et 7 850 », et deux poignées se ratent au pouce.
  */
 export function FilterSheet({
   visible,
@@ -97,6 +103,20 @@ export function FilterSheet({
               </View>
             </View>
           )}
+
+          <View style={styles.group}>
+            <Text style={styles.groupTitle}>{t('results.filters.price')}</Text>
+            <View style={styles.card}>
+              {(Object.keys(PRICE_BRACKETS) as PriceBracket[]).map((bracket) => (
+                <Choice
+                  key={bracket}
+                  label={t(`results.filters.bracket.${bracket}`)}
+                  checked={draft.price === bracket}
+                  onPress={() => setDraft((current) => ({ ...current, price: bracket }))}
+                />
+              ))}
+            </View>
+          </View>
 
           <View style={styles.group}>
             <Text style={styles.groupTitle}>{t('results.filters.departure')}</Text>

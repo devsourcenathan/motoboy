@@ -38,11 +38,28 @@ export const PERIODS = {
 
 export type Period = keyof typeof PERIODS
 
+/**
+ * Tranches de prix, en XAF — la monnaie n'a pas de sous-unité, donc les bornes
+ * sont exactes et ne peuvent pas se chevaucher d'un centime.
+ *
+ * Des tranches plutôt qu'une fourchette libre, pour la même raison que les
+ * horaires : personne ne cherche « entre 4 200 et 7 850 ».
+ */
+export const PRICE_BRACKETS = {
+  ANY: null,
+  LOW: { min: null, max: 4_999 },
+  MID: { min: 5_000, max: 9_999 },
+  HIGH: { min: 10_000, max: null },
+} as const
+
+export type PriceBracket = keyof typeof PRICE_BRACKETS
+
 export interface SearchFilters {
   readonly agencyIds: readonly number[]
   readonly vehicleType: 'BUS' | 'CAR' | null
   readonly onlyAvailable: boolean
   readonly period: Period
+  readonly price: PriceBracket
 }
 
 export const NO_FILTERS: SearchFilters = {
@@ -50,6 +67,7 @@ export const NO_FILTERS: SearchFilters = {
   vehicleType: null,
   onlyAvailable: false,
   period: 'ANY',
+  price: 'ANY',
 }
 
 export function countFilters(filters: SearchFilters): number {
@@ -57,7 +75,8 @@ export function countFilters(filters: SearchFilters): number {
     (filters.agencyIds.length > 0 ? 1 : 0) +
     (filters.vehicleType === null ? 0 : 1) +
     (filters.onlyAvailable ? 1 : 0) +
-    (filters.period === 'ANY' ? 0 : 1)
+    (filters.period === 'ANY' ? 0 : 1) +
+    (filters.price === 'ANY' ? 0 : 1)
   )
 }
 
@@ -95,11 +114,14 @@ export function useTripSearch(criteria: SearchCriteria | null) {
             criteria.filters?.vehicleType ?? '',
             criteria.filters?.onlyAvailable === true ? 'avail' : '',
             criteria.filters?.period ?? 'ANY',
+            criteria.filters?.price ?? 'ANY',
           ].join('|'),
         })
       : queryKeys.search({ from: 0, to: 0, date: '' }),
     enabled: criteria !== null,
     queryFn: async ({ signal }) => {
+      const bracket = PRICE_BRACKETS[criteria!.filters?.price ?? 'ANY']
+
       const response = await api.GET('/v1/search', {
         params: {
           query: {
@@ -118,6 +140,15 @@ export function useTripSearch(criteria: SearchCriteria | null) {
             ...(criteria!.filters?.onlyAvailable === true
               ? { only_available: true }
               : {}),
+            // Chaque borne n'est envoyée que si la tranche la définit : une
+            // borne haute seule est une demande valable, et le serveur
+            // l'accepte.
+            ...(bracket?.min === null || bracket?.min === undefined
+              ? {}
+              : { price_min: bracket.min }),
+            ...(bracket?.max === null || bracket?.max === undefined
+              ? {}
+              : { price_max: bracket.max }),
             ...(criteria!.filters?.period && criteria!.filters.period !== 'ANY'
               ? {
                   departure_from: PERIODS[criteria!.filters.period]!.from,

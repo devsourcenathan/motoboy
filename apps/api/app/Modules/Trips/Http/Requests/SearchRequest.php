@@ -47,7 +47,17 @@ final class SearchRequest extends FormRequest
             'passengers' => ['integer', 'min:1', 'max:20'],
 
             'price_min' => ['nullable', 'integer', 'min:0'],
-            'price_max' => ['nullable', 'integer', 'min:0', 'gte:price_min'],
+            /*
+             * `gte:price_min` n'est posée que si la borne basse existe : sinon
+             * la règle compare à un champ absent et refuse la requête en 422.
+             * Or « moins de 5 000 » — une borne haute seule — est la demande la
+             * plus courante, et le contrat déclare bien les deux bornes
+             * indépendantes.
+             */
+            'price_max' => array_merge(
+                ['nullable', 'integer', 'min:0'],
+                $this->has('price_min') ? ['gte:price_min'] : [],
+            ),
 
             // Heures locales de pendule, pas des instants.
             'departure_from' => ['nullable', 'date_format:H:i'],

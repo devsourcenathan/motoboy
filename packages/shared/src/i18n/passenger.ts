@@ -59,6 +59,13 @@ export interface PassengerMessages {
       readonly vehicle: string
       readonly onlyAvailable: string
       readonly departure: string
+      readonly price: string
+      readonly bracket: {
+        readonly ANY: string
+        readonly LOW: string
+        readonly MID: string
+        readonly HIGH: string
+      }
       readonly period: {
         readonly ANY: string
         readonly MORNING: string
@@ -341,6 +348,13 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         vehicle: 'Type de véhicule',
         onlyAvailable: 'Masquer les départs complets',
         departure: 'Heure de départ',
+        price: 'Prix',
+        bracket: {
+          ANY: 'Tous les prix',
+          LOW: 'Moins de 5 000 FCFA',
+          MID: '5 000 – 10 000 FCFA',
+          HIGH: 'Plus de 10 000 FCFA',
+        },
         period: {
           ANY: 'Toute la journée',
           MORNING: 'Matin · avant 12 h',
@@ -640,6 +654,13 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
         vehicle: 'Vehicle type',
         onlyAvailable: 'Hide sold-out departures',
         departure: 'Departure time',
+        price: 'Price',
+        bracket: {
+          ANY: 'Any price',
+          LOW: 'Under 5,000 FCFA',
+          MID: '5,000 – 10,000 FCFA',
+          HIGH: 'Over 10,000 FCFA',
+        },
         period: {
           ANY: 'Any time',
           MORNING: 'Morning · before 12',
