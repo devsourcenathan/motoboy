@@ -58,7 +58,5 @@ export function usePlaceSuggestions(query: string) {
   return {
     ...result,
     suggestions: (result.data ?? []) as PlaceSuggestion[],
-    /** Vrai tant que la saisie est trop courte pour interroger le serveur. */
-    tooShort: settled.length > 0 && !enabled,
   }
 }

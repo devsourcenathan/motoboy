@@ -12,8 +12,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { PlaceSuggestion } from '@motoboy/api-client/types'
-import { fontSize, radius, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
-import { usePlaceSuggestions } from '../api/usePlaceSuggestions'
+import { Button, fontSize, radius, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
+import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
+import { MIN_QUERY_LENGTH, usePlaceSuggestions } from '../api/usePlaceSuggestions'
 import { toCityChoice, type CityChoice } from '../model/searchForm'
 
 export interface CityPickerProps {
@@ -32,8 +33,13 @@ export interface CityPickerProps {
  */
 export function CityPicker({ visible, title, onClose, onSelect }: CityPickerProps) {
   const { t } = useTranslation()
+  const describe = useErrorMessage()
   const [query, setQuery] = useState('')
-  const { suggestions, isFetching, tooShort } = usePlaceSuggestions(query)
+  const { suggestions, isFetching, error, refetch } = usePlaceSuggestions(query)
+
+  // Vrai aussi **champ vide**, et pas seulement après une lettre : sans cela,
+  // ouvrir le sélecteur montrait un écran blanc sans rien expliquer.
+  const tooShort = query.trim().length < MIN_QUERY_LENGTH
 
   function choose(suggestion: PlaceSuggestion) {
     onSelect(toCityChoice(suggestion))
@@ -75,13 +81,27 @@ export function CityPicker({ visible, title, onClose, onSelect }: CityPickerProp
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             <View style={styles.empty}>
-              {isFetching ? <ActivityIndicator color={theme.text.brand} /> : null}
-              {!isFetching && tooShort ? (
+              {/*
+                Quatre états, et **aucun silencieux**. Une panne de réseau
+                donnait jusqu'ici le même écran blanc qu'une saisie trop courte :
+                impossible de savoir s'il fallait taper plus ou réessayer.
+              */}
+              {isFetching ? (
+                <ActivityIndicator color={theme.text.brand} />
+              ) : error ? (
+                <>
+                  <Text style={styles.emptyLabel}>{describe(error)}</Text>
+                  <Button
+                    label={t('action.retry', { ns: 'common' })}
+                    onPress={() => void refetch()}
+                    variant="secondary"
+                  />
+                </>
+              ) : tooShort ? (
                 <Text style={styles.emptyLabel}>{t('search.typeMore')}</Text>
-              ) : null}
-              {!isFetching && !tooShort && query.length > 0 ? (
+              ) : (
                 <Text style={styles.emptyLabel}>{t('search.noCity')}</Text>
-              ) : null}
+              )}
             </View>
           }
           renderItem={({ item }) => (
@@ -165,6 +185,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     padding: spacing.xl,
+    gap: spacing.md,
     alignItems: 'center',
   },
   emptyLabel: {

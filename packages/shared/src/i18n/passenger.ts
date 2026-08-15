@@ -273,7 +273,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       ],
     },
     search: {
-      title: "Où allez-vous aujourd'hui ?",
+      title: "Où souhaitez-vous aller aujourd'hui ?",
       subtitle: 'Réservez votre trajet en toute sécurité.',
       from: 'Départ',
       to: 'Arrivée',
