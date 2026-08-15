@@ -43,6 +43,17 @@ export default function RootLayout() {
         client={queryClient}
         persistOptions={{
           persister,
+          /*
+           * Version de la **forme** du cache.
+           *
+           * À incrémenter dès qu'une clé de `queryKeys` change de structure.
+           * Sans cela, l'application tente de réhydrater des entrées écrites
+           * selon l'ancienne forme : la restauration échoue, et l'échec arrive
+           * au démarrage, là où il est le plus difficile à relier à sa cause.
+           * Un `buster` différent fait jeter l'ancien cache proprement au lieu
+           * d'essayer de le lire.
+           */
+          buster: 'v2-search-sort',
           // Le cache est écrit en clair : seules les données qui n'ont rien de
           // secret y restent — billets et départs, précisément ce qu'il faut
           // pouvoir consulter sans réseau (I5).
