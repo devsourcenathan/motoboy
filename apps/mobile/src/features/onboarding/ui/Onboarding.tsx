@@ -73,6 +73,22 @@ export function Onboarding() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+      <View style={styles.top}>
+        <Text style={styles.wordmark}>MOTOBOY</Text>
+        {/*
+          « Passer » est visible dès le premier écran. Un passager qui veut son
+          billet ne doit pas traverser une introduction, et cacher la sortie ne
+          la fait pas lire — elle fait désinstaller.
+        */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void finish()}
+          style={styles.skip}
+        >
+          <Text style={styles.skipLabel}>{t('onboarding.skip')}</Text>
+        </Pressable>
+      </View>
+
 
       <FlatList
         ref={list}
@@ -109,18 +125,6 @@ export function Onboarding() {
       />
 
       <View style={styles.footer}>
-        {/*
-          « Passer » reste atteignable au pouce, en bas : en haut à droite il
-          demande de changer de main sur un grand téléphone.
-        */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void finish()}
-          style={styles.skip}
-        >
-          <Text style={styles.skipLabel}>{t('onboarding.skip')}</Text>
-        </Pressable>
-
         <View
           style={styles.dots}
           accessibilityRole="progressbar"
@@ -146,15 +150,34 @@ export function Onboarding() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: theme.surface.page,
+    backgroundColor: theme.surface.card,
+  },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.base,
+  },
+  wordmark: {
+    flex: 1,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: theme.text.ink,
   },
   slide: {
     flex: 1,
   },
   /** Le panneau occupe la moitié haute, comme sur la maquette. */
+  /*
+   * Un panneau teinté portant un glyphe, faute d'illustrations : la maquette en
+   * montre trois, aucune n'existe comme fichier, et un cadre vide dirait qu'il
+   * en manque une.
+   */
   stage: {
     flex: 1,
-    margin: spacing.md,
+    margin: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.xl,
@@ -191,11 +214,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md,
     backgroundColor: theme.surface.card,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
   },
   skip: {
-    alignSelf: 'flex-end',
     minHeight: TOUCH_TARGET,
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,
@@ -217,9 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: theme.surface.inert,
   },
-  /** La page courante s'allonge : la position se lit sans compter les points. */
   dotActive: {
-    width: 28,
     backgroundColor: theme.surface.brand,
   },
 })
