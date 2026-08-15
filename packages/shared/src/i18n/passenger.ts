@@ -197,6 +197,8 @@ export interface PassengerMessages {
     readonly upcoming: string
     readonly history: string
     readonly seeQr: string
+    readonly seeTicket: string
+    readonly seats: string
     readonly empty: string
     readonly passenger: string
     readonly seat: string
@@ -508,6 +510,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       upcoming: 'Trajets à venir',
       history: 'Historique',
       seeQr: 'Voir le QR code',
+      seeTicket: 'Voir le billet',
+      seats: 'Places',
       empty: 'Aucun billet pour le moment.',
       passenger: 'Passager',
       seat: 'Place',
@@ -804,6 +808,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       upcoming: 'Upcoming trips',
       history: 'History',
       seeQr: 'Show QR code',
+      seeTicket: 'View ticket',
+      seats: 'Seats',
       empty: 'No tickets yet.',
       passenger: 'Passenger',
       seat: 'Seat',

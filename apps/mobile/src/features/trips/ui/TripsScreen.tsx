@@ -9,14 +9,13 @@ import {
   Text,
   View,
 } from 'react-native'
-import { bookingStatusLabels, formatDateTime, formatMoney } from '@motoboy/shared'
+import { bookingStatusLabels, formatDateTime } from '@motoboy/shared'
 import type { Booking } from '@motoboy/api-client/types'
 import {
   Button,
   fontSize,
   lineHeight,
   radius,
-  RouteDot,
   Screen,
   sharedStyles,
   spacing,
@@ -34,8 +33,8 @@ type Tab = 'upcoming' | 'past'
  *
  * **Une réservation n'est pas un billet.** Trois places réservées donnent trois
  * billets, un par personne qui embarque ; la réservation, elle, porte le
- * paiement, le montant et l'annulation. Les deux onglets existent parce que les
- * deux questions se posent : « combien ai-je payé » et « quel code je montre ».
+ * paiement et l'annulation. Cet écran répond à « où et quand je pars, et à
+ * quelle place » ; l'onglet Billets répond à « quel code je présente ».
  */
 export function TripsScreen() {
   const { t } = useTranslation()
@@ -159,6 +158,10 @@ function BookingCard({
   const { t } = useTranslation()
   const confirmed = booking.status === 'CONFIRMED'
 
+  const seats = booking.passengers
+    .map((passenger) => passenger.seat_label)
+    .filter((label): label is string => typeof label === 'string' && label !== '')
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -176,7 +179,6 @@ function BookingCard({
       </View>
 
       <View style={styles.route}>
-        <RouteDot color={theme.route.origin} size={10} />
         <Text style={styles.city} numberOfLines={1}>
           {booking.trip.origin_station.city}
         </Text>
@@ -184,7 +186,6 @@ function BookingCard({
         <Text style={styles.city} numberOfLines={1}>
           {booking.trip.destination_station.city}
         </Text>
-        <RouteDot color={theme.route.destination} size={10} />
       </View>
 
       <Text style={styles.when}>
@@ -195,7 +196,17 @@ function BookingCard({
         <Text style={styles.agency} numberOfLines={1}>
           {booking.trip.agency.name}
         </Text>
-        <Text style={styles.total}>{formatMoney(booking.total, locale)}</Text>
+        {/*
+          La place plutôt que le montant : sur cette liste on cherche où l'on
+          s'assoit, pas ce qu'on a payé — le prix se relit sur le billet. Au
+          pluriel quand la réservation en porte plusieurs.
+        */}
+        {seats.length === 0 ? null : (
+          <Text style={styles.seatLabel}>
+            {seats.length === 1 ? t('ticket.seat') : t('ticket.seats')}{' '}
+            <Text style={styles.seatValue}>{seats.join(', ')}</Text>
+          </Text>
+        )}
       </View>
 
       {/*
@@ -204,7 +215,7 @@ function BookingCard({
       */}
       {confirmed ? (
         <View style={styles.cta} importantForAccessibility="no-hide-descendants">
-          <Text style={styles.ctaLabel}>{t('ticket.seeQr')}</Text>
+          <Text style={styles.ctaLabel}>{t('ticket.seeTicket')}</Text>
         </View>
       ) : null}
     </Pressable>
@@ -289,9 +300,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.text.primary,
   },
+  /** Flèche orange : c'est elle qui fait lire les deux villes comme un trajet. */
   arrow: {
-    fontSize: fontSize.base,
-    color: theme.text.muted,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: theme.text.brand,
   },
   when: {
     fontSize: fontSize.sm,
@@ -307,11 +320,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: theme.text.muted,
   },
-  total: {
-    fontSize: fontSize.lg,
-    lineHeight: lineHeight.lg,
+  seatLabel: {
+    fontSize: fontSize.sm,
+    color: theme.text.muted,
+  },
+  seatValue: {
+    fontSize: fontSize.base,
     fontWeight: '800',
-    color: theme.text.brand,
+    color: theme.text.primary,
   },
   cta: {
     alignItems: 'center',
