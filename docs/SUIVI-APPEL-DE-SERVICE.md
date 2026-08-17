@@ -104,9 +104,23 @@ que le compléter, parce qu'un nom qui affirme le contraire de ce qu'il contient
 propage au prochain lecteur.
 
 Reste à faire **fonctionner une passe de reversement pour un bénéficiaire
-personne** : `BuildPayout::verifiedAccount()` prend encore une `Agency` en
-paramètre, et `BuildDuePayouts` balaie les agences. C'est de la plomberie, sans
-question ouverte — mais c'est ce qui sépare un solde calculé d'un virement reçu.
+personne**. Je l'ai tentée le 17 août et je l'ai annulée : ce n'est pas de la
+plomberie, contrairement à ce que j'avais annoncé.
+
+`BuildPayout` et `BuildDuePayouts` lisent le **délai** et le **minimum** de
+versement dans les `commercialTerms` de l'agence — conditions négociées, portées
+par B4. Un chauffeur indépendant n'en a aucune, et il ne négocie pas.
+
+Il faut donc trancher, avant d'écrire quoi que ce soit :
+
+| Question | Enjeu |
+|---|---|
+| Quel **délai** avant qu'une course soit reversable ? | Zéro se défend — la course est finie, il n'y a aucun départ à attendre, contrairement à une réservation. Mais un délai court laisse le temps de traiter une réclamation avant que l'argent parte |
+| Quel **minimum** de versement ? | Verser 500 F coûte plus de frais qu'il n'en rapporte. Trop haut, un chauffeur occasionnel n'est jamais payé |
+| Ces valeurs sont-elles **réglables** comme la commission ? | Le même mécanisme de réglages existe déjà |
+
+Tant que ce n'est pas décidé, les écritures s'accumulent correctement et le solde
+se calcule — mais rien ne part.
 
 ### Deux préalables, tous deux hors du périmètre d'une passe rapide
 
