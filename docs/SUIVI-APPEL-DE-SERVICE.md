@@ -149,7 +149,23 @@ ne négocie pas.
 | Validation d'un dossier pour tester | **`motoboy:approve-driver`** — l'espace web n'existe pas, et sans dossier validé aucun écran de chauffeur ne prouve rien |
 
 - [x] Commande de validation, pour débloquer le test de bout en bout
-- [ ] Passager : demander, suivre, comparer les offres, payer
+- [x] Passager : entrée sur l'accueil et formulaire de demande
+- [ ] Passager : suivre, comparer les offres, payer — **bloqué par le contrat**
+
+### Le contrat de la demande est insuffisant pour l'écran de suivi
+
+Tenté le 17 août, puis retiré : l'écran était bâti sur des champs que la
+ressource ne renvoie pas. Il manque trois choses, toutes dans `ServiceRequest` et
+`Ride` côté API :
+
+| Manque | Pourquoi c'est bloquant |
+|---|---|
+| `origin.city_id` sans **nom de ville** | L'écran affiche « Bafang », pas « 27 ». Résoudre la ville côté mobile ferait une requête de plus pour une donnée que le serveur a déjà en main |
+| Aucun indicateur de **paiement** sur la course | L'écran doit savoir s'il faut proposer de payer ou afficher les coordonnées du chauffeur. Le déduire d'une liste de paiements ferait porter au mobile une règle qui est métier |
+| `offer.driver` **facultatif** | Une offre sans chauffeur n'existe pas ; le rendre optionnel oblige chaque écran à gérer un cas impossible |
+
+C'est ma ressource de l'étape 3 qui est en cause, pas l'écran. À corriger côté
+API — ressource, contrat, client régénéré — **avant** de reprendre l'écran.
 - [ ] Chauffeur : bascule, demandes ouvertes, offrir, conduire, revenus
 - [ ] Administration web : la vraie file de modération
 
