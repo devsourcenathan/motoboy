@@ -13,7 +13,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 0. Spécification | ✅ fait |
 | 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
-| 3. Module `Rides` — demandes, offres, courses | 🔨 domaine fait, endpoints a venir |
+| 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
 | 4. Paiement et reversement de la course | ⬜ |
 | 5. Écrans passager | ⬜ |
 | 6. Écrans chauffeur | ⬜ |

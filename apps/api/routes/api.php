@@ -21,6 +21,8 @@ use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Rides\Http\Controllers\AdminDriverController;
 use App\Modules\Rides\Http\Controllers\DriverController;
+use App\Modules\Rides\Http\Controllers\DriverRideController;
+use App\Modules\Rides\Http\Controllers\ServiceRequestController;
 use App\Modules\Tickets\Http\Controllers\BoardingController;
 use App\Modules\Tickets\Http\Controllers\TicketController;
 use App\Modules\Trips\Http\Controllers\SearchController;
@@ -85,6 +87,29 @@ Route::prefix('v1')->group(function (): void {
         Route::get('driver', [DriverController::class, 'show']);
         Route::post('driver', [DriverController::class, 'submit']);
         Route::post('driver/documents', [DriverController::class, 'uploadDocument']);
+
+        /*
+         * Appel de service, cote passager (E1).
+         *
+         * Une demande se retrouve par sa reference, mais n'est rendue qu'a son
+         * auteur : un identifiant d'URL ne donne acces a rien.
+         */
+        Route::post('service-requests', [ServiceRequestController::class, 'store']);
+        Route::get('service-requests', [ServiceRequestController::class, 'index']);
+        Route::get('service-requests/{reference}', [ServiceRequestController::class, 'show']);
+        Route::post('service-requests/{reference}/cancel', [ServiceRequestController::class, 'cancel']);
+        Route::post('offers/{offer}/accept', [ServiceRequestController::class, 'accept']);
+
+        /*
+         * Appel de service, cote chauffeur (E1). Aucune permission RBAC : ce qui
+         * limite reellement est `canDrive()`, verifie a chaque offre.
+         */
+        Route::get('driver/requests', [DriverRideController::class, 'requests']);
+        Route::post('service-requests/{reference}/offers', [DriverRideController::class, 'offer']);
+        Route::get('driver/offers', [DriverRideController::class, 'offers']);
+        Route::get('driver/rides', [DriverRideController::class, 'rides']);
+        Route::post('driver/rides/{reference}/start', [DriverRideController::class, 'start']);
+        Route::post('driver/rides/{reference}/complete', [DriverRideController::class, 'complete']);
 
         // Réservation. La prise de places est l'opération atomique du produit :
         // elle tient les places avant même la saisie du paiement (B2).

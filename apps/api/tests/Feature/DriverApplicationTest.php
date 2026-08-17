@@ -187,7 +187,10 @@ final class DriverApplicationTest extends TestCase
             ->assertNotFound();
     }
 
-    /** @param array<string, mixed> $overrides */
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
     private function application(array $overrides = []): array
     {
         return [

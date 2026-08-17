@@ -450,6 +450,212 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /v1/service-requests:
+    post:
+      tags: [Rides]
+      summary: Ouvre un appel de service
+      description: |
+        Une seule demande ouverte par passager a la fois. La position est
+        declaree : ville du referentiel et point de repere en texte libre.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origin_city_id, origin_landmark, destination_city_id, passengers]
+              properties:
+                origin_city_id: { type: integer, format: int64 }
+                origin_landmark: { type: string, minLength: 3, maxLength: 160 }
+                destination_city_id: { type: integer, format: int64 }
+                destination_landmark: { type: [string, 'null'], maxLength: 160 }
+                passengers: { type: integer, minimum: 1, maximum: 20 }
+                note: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Ouverte
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    get:
+      tags: [Rides]
+      summary: Ses appels de service
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/service-requests/{reference}:
+    get:
+      tags: [Rides]
+      summary: Un appel de service et ses offres
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/DefaultError' }
+
+  /v1/service-requests/{reference}/cancel:
+    post:
+      tags: [Rides]
+      summary: Annule son appel de service
+      description: |
+        Les offres en attente tombent, et une course deja conclue est annulee avec
+        la demande. Sans penalite a ce stade.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: [string, 'null'], maxLength: 500 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/service-requests/{reference}/offers:
+    post:
+      tags: [Rides]
+      summary: Un chauffeur propose un prix
+      description: |
+        Reserve a un dossier valide, dans la ville de depart de la demande, et a
+        un chauffeur qui n'a pas de course en cours.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [price_amount, eta_minutes]
+              properties:
+                price_amount: { type: integer, minimum: 100 }
+                eta_minutes: { type: integer, minimum: 1, maximum: 240 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Deposee
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RideOffer' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/offers/{offer}/accept:
+    post:
+      tags: [Rides]
+      summary: Retient une offre
+      description: |
+        Operation concurrente : une seule offre acceptee par demande, une seule
+        course active par chauffeur. Les deux sont garanties par la base.
+      parameters:
+        - name: offer
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Course creee
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ride' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/requests:
+    get:
+      tags: [Rides]
+      summary: Les demandes ouvertes de sa ville
+      description: Les plus anciennes d'abord.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/offers:
+    get:
+      tags: [Rides]
+      summary: Ses offres
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/rides:
+    get:
+      tags: [Rides]
+      summary: Ses courses
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/rides/{reference}/start:
+    post:
+      tags: [Rides]
+      summary: Demarre la course
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ride' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/rides/{reference}/complete:
+    post:
+      tags: [Rides]
+      summary: Termine la course
+      description: La course quitte l'etat actif, ce qui libere le chauffeur.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ride' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /v1/auth/logout:
     post:
       tags: [Auth]
@@ -2835,6 +3041,85 @@ components:
     SeatingMode:
       type: string
       enum: [SEATED, CAPACITY]
+
+    ServiceRequestStatus:
+      type: string
+      enum: [OPEN, OFFERED, MATCHED, CANCELLED, EXPIRED]
+
+    OfferStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, DECLINED, EXPIRED]
+
+    RideStatus:
+      type: string
+      enum: [MATCHED, IN_PROGRESS, COMPLETED, CANCELLED]
+
+    ServiceRequestPlace:
+      type: object
+      required: [city_id, landmark]
+      properties:
+        city_id: { type: integer, format: int64 }
+        landmark: { type: [string, 'null'] }
+
+    ServiceRequest:
+      type: object
+      required: [reference, status, origin, destination, passengers, expires_at]
+      properties:
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/ServiceRequestStatus' }
+        origin: { $ref: '#/components/schemas/ServiceRequestPlace' }
+        destination: { $ref: '#/components/schemas/ServiceRequestPlace' }
+        passengers: { type: integer }
+        note: { type: [string, 'null'] }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: [string, 'null'], format: date-time }
+        offers:
+          type: array
+          items: { $ref: '#/components/schemas/RideOffer' }
+        ride:
+          oneOf:
+            - { $ref: '#/components/schemas/Ride' }
+            - { type: 'null' }
+
+    RideOffer:
+      type: object
+      required: [id, status, price, eta_minutes, expires_at]
+      properties:
+        id: { type: integer, format: int64 }
+        status: { $ref: '#/components/schemas/OfferStatus' }
+        price: { $ref: '#/components/schemas/Money' }
+        eta_minutes: { type: integer }
+        expires_at: { type: string, format: date-time }
+        driver:
+          type: object
+          description: |
+            Nom et vehicule seulement. Le telephone n'apparait qu'une fois l'offre
+            retenue : le livrer avec chaque offre publierait les numeros de tous
+            les chauffeurs qui repondent.
+          properties:
+            first_name: { type: [string, 'null'] }
+            vehicle_plate: { type: [string, 'null'] }
+            vehicle_model: { type: [string, 'null'] }
+            vehicle_seats: { type: [integer, 'null'] }
+
+    Ride:
+      type: object
+      required: [reference, status, price]
+      properties:
+        reference: { type: string }
+        status: { $ref: '#/components/schemas/RideStatus' }
+        price: { $ref: '#/components/schemas/Money' }
+        started_at: { type: [string, 'null'], format: date-time }
+        completed_at: { type: [string, 'null'], format: date-time }
+        driver:
+          type: object
+          description: Le telephone apparait ici, la course etant conclue.
+          properties:
+            first_name: { type: [string, 'null'] }
+            last_name: { type: [string, 'null'] }
+            phone: { type: [string, 'null'] }
+            vehicle_plate: { type: [string, 'null'] }
+            vehicle_model: { type: [string, 'null'] }
 
     DriverStatus:
       type: string
