@@ -304,8 +304,27 @@ export interface PassengerMessages {
     readonly submit: string
     readonly sameCity: string
     readonly missingLandmark: string
-    readonly sent: string
-    readonly sentBody: string
+    readonly waiting: string
+    readonly waitingBody: string
+    readonly offers: string
+    readonly eta: string
+    readonly accept: string
+    readonly expired: string
+    readonly expiredBody: string
+    readonly matched: string
+    readonly matchedBody: string
+    readonly driver: string
+    readonly plate: string
+    readonly meetAt: string
+    readonly pay: string
+    readonly paying: string
+    readonly paid: string
+    readonly noShow: string
+    readonly noShowConfirm: string
+    readonly cancel: string
+    readonly cancelled: string
+    readonly inProgress: string
+    readonly completed: string
   }
   readonly tabs: {
     readonly home: string
@@ -646,8 +665,27 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       submit: 'Envoyer la demande',
       sameCity: 'Le départ et l’arrivée doivent être différents',
       missingLandmark: 'Indiquez où vous attendre',
-      sent: 'Demande envoyée',
-      sentBody: 'Des chauffeurs de votre ville vont recevoir votre demande. Elle expire dans trente minutes.',
+      waiting: 'En attente d’offres',
+      waitingBody: 'Les chauffeurs de votre ville voient votre demande. Elle expire dans trente minutes.',
+      offers: 'Offres reçues',
+      eta: 'sur place dans {{minutes}} min',
+      accept: 'Retenir cette offre',
+      expired: 'Demande expirée',
+      expiredBody: 'Personne n’a répondu à temps. Vous pouvez en lancer une autre.',
+      matched: 'Chauffeur trouvé',
+      matchedBody: 'Payez pour confirmer, puis retrouvez-le au point indiqué.',
+      driver: 'Chauffeur',
+      plate: 'Plaque',
+      meetAt: 'Rendez-vous',
+      pay: 'Payer la course',
+      paying: 'Paiement en cours…',
+      paid: 'Course confirmée',
+      noShow: 'Le chauffeur n’est pas venu',
+      noShowConfirm: 'Vous serez remboursé intégralement.',
+      cancel: 'Annuler la demande',
+      cancelled: 'Demande annulée',
+      inProgress: 'Course en cours',
+      completed: 'Course terminée',
     },
     tabs: {
       home: 'Accueil',
@@ -952,8 +990,27 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       submit: 'Send the request',
       sameCity: 'Origin and destination must differ',
       missingLandmark: 'Say where to meet you',
-      sent: 'Request sent',
-      sentBody: 'Drivers in your city will see your request. It expires in thirty minutes.',
+      waiting: 'Waiting for offers',
+      waitingBody: 'Drivers in your city can see your request. It expires in thirty minutes.',
+      offers: 'Offers received',
+      eta: 'there in {{minutes}} min',
+      accept: 'Take this offer',
+      expired: 'Request expired',
+      expiredBody: 'Nobody answered in time. You can send another.',
+      matched: 'Driver found',
+      matchedBody: 'Pay to confirm, then meet them at the agreed spot.',
+      driver: 'Driver',
+      plate: 'Plate',
+      meetAt: 'Meeting point',
+      pay: 'Pay for the ride',
+      paying: 'Payment in progress…',
+      paid: 'Ride confirmed',
+      noShow: 'The driver never came',
+      noShowConfirm: 'You will be refunded in full.',
+      cancel: 'Cancel the request',
+      cancelled: 'Request cancelled',
+      inProgress: 'Ride in progress',
+      completed: 'Ride completed',
     },
     tabs: {
       home: 'Home',

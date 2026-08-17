@@ -521,7 +521,7 @@ un véhicule, des chauffeurs indépendants proposent leurs offres, il choisit.
 
 **L'ordre n'est pas négociable : rien n'a de sens sans chauffeur validé.**
 
-### 8.1 Bénéficiaire généralisé dans les reversements
+### 9.1 Bénéficiaire généralisé dans les reversements
 
 Le seul point de sortie d'argent est indexé sur `agency_id`. Le généraliser à un
 bénéficiaire — agence ou personne — **avant** d'en avoir besoin, plutôt que de
@@ -531,7 +531,7 @@ D'abord parce que c'est le chantier le plus risqué du lot, et que les 177 tests
 existants sont le filet qui le rend sûr. Ensuite parce qu'un second grand livre
 écrit « en attendant » ne se fusionne jamais.
 
-### 8.2 Chauffeur : compte, dossier, modération
+### 9.2 Chauffeur : compte, dossier, modération
 
 Rôle `DRIVER` sur un `User` ordinaire — connexion par OTP, comme tout le monde.
 Profil portant permis, véhicule, documents et compte de reversement. File de
@@ -539,20 +539,35 @@ modération dans l'espace administration, sur le modèle des gares.
 
 Aucune course tant que le dossier n'est pas validé.
 
-### 8.3 Module `Rides`
+### 9.3 Module `Rides`
 
 Demandes, offres, courses. Deux index uniques partiels comme garde-fous : un
 chauffeur n'a qu'une course active, une demande n'accepte qu'une offre.
 
-### 8.4 Paiement et reversement de la course
+### 9.4 Paiement et reversement de la course
 
-Réutilise Paiements ; le reversement passe par le bénéficiaire de 8.1.
+Réutilise Paiements ; le reversement passe par le bénéficiaire de 9.1.
 
-### 8.5 Écrans
+### 9.5 Écrans
 
 Côté passager : demander un véhicule, suivre ses offres, choisir. Côté chauffeur :
 demandes ouvertes de sa ville, ses courses, ses revenus. Les onglets dépendent du
 rôle.
+
+**Passager fait** (17 août 2026) : entrée « Besoin d'un véhicule ? » sur l'accueil,
+formulaire de demande — ville du référentiel plus point de repère en texte libre —
+et un écran de suivi unique qui couvre toute la vie de la demande : attente,
+comparaison des offres, paiement, absence du chauffeur. Sondage à dix secondes,
+arrêté dès que plus rien ne peut arriver ; pas de canal temps réel à ce stade.
+
+Trois champs manquaient au contrat pour que cet écran ne devine rien — le nom de la
+ville, l'état payé de la course, le chauffeur d'une offre. Corrigés côté API avant
+d'écrire l'écran, plutôt que compensés côté mobile. Détail et suite dans
+[Suivi de l'appel de service](SUIVI-APPEL-DE-SERVICE.md).
+
+**Chauffeur et administration restent à faire.** Premier obstacle connu :
+`GET /v1/driver/requests` déclare un `200` sans schéma de réponse, donc rien à
+typer pour l'écran qui en dépend.
 
 ### Ce qui n'en fait pas partie
 

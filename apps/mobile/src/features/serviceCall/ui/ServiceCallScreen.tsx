@@ -70,30 +70,13 @@ export function ServiceCallScreen() {
   function submit() {
     if (error !== null) return
 
-    open.mutate(form)
-  }
-
-  /*
-   * Confirmation **sur place**, faute d'écran de suivi.
-   *
-   * L'écran des offres est la suite immédiate ; y renvoyer maintenant ferait un
-   * lien mort, et repartir sur l'accueil laisserait le passager sans trace de ce
-   * qu'il vient d'envoyer. La référence affichée est ce qu'il peut donner au
-   * support en attendant.
-   */
-  if (open.data !== undefined) {
-    return (
-      <Screen title={t('serviceCall.title')}>
-        <View style={sharedStyles.centered}>
-          <Text style={styles.doneTitle}>{t('serviceCall.sent')}</Text>
-          <Text style={styles.doneBody}>{t('serviceCall.sentBody')}</Text>
-          <Text style={styles.doneReference} selectable>
-            {open.data.reference}
-          </Text>
-          <Button label={t('cancellation.done.close')} onPress={() => router.back()} />
-        </View>
-      </Screen>
-    )
+    /*
+     * `replace`, et non `push` : la demande est partie, et revenir en arrière sur
+     * un formulaire déjà envoyé n'invite qu'à l'envoyer une seconde fois.
+     */
+    open.mutate(form, {
+      onSuccess: (request) => router.replace(`/service-call/${request.reference}`),
+    })
   }
 
   return (
@@ -302,23 +285,5 @@ const styles = StyleSheet.create({
   error: {
     fontSize: fontSize.sm,
     color: theme.text.danger,
-  },
-  doneTitle: {
-    fontSize: fontSize.xl,
-    lineHeight: lineHeight.xl,
-    fontWeight: '700',
-    color: theme.text.primary,
-    textAlign: 'center',
-  },
-  doneBody: {
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.base,
-    color: theme.text.secondary,
-    textAlign: 'center',
-  },
-  doneReference: {
-    fontSize: fontSize.lg,
-    fontWeight: '800',
-    color: theme.text.brand,
   },
 })

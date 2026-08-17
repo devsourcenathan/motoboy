@@ -464,9 +464,15 @@ export interface paths {
         put?: never;
         /**
          * Paie la course retenue
-         * @description Le prix se regle a l'acceptation de l'offre. `Idempotency-Key` est
-         *     obligatoire et doit etre **conservee entre les tentatives** : la
-         *     regenerer reviendrait a ne pas avoir d'idempotence.
+         * @description Le prix se regle a l'acceptation de l'offre. Comme pour une reservation,
+         *     le paiement Mobile Money est **asynchrone** : la reponse est `PENDING` ou
+         *     `PROCESSING`, jamais `SUCCEEDED` immediatement, et c'est le webhook qui
+         *     tranche.
+         *
+         *     Une course porte **plusieurs tentatives**, dont une seule aboutie.
+         *     `Idempotency-Key` protege une requete rejouee, pas une nouvelle
+         *     tentative : reutiliser la cle apres un code errone renverrait le refus
+         *     precedent au lieu de reessayer.
          */
         post: {
             parameters: {

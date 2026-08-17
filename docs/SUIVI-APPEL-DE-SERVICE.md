@@ -15,7 +15,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
 | 4. Paiement et reversement de la course | ✅ fait — côté API |
-| 5. Écrans passager | ⬜ |
+| 5. Écrans passager | ✅ fait |
 | 6. Écrans chauffeur | ⬜ |
 | 7. Écrans administration (web) | ⬜ |
 
@@ -150,24 +150,45 @@ ne négocie pas.
 
 - [x] Commande de validation, pour débloquer le test de bout en bout
 - [x] Passager : entrée sur l'accueil et formulaire de demande
-- [ ] Passager : suivre, comparer les offres, payer — **bloqué par le contrat**
-
-### Le contrat de la demande est insuffisant pour l'écran de suivi
-
-Tenté le 17 août, puis retiré : l'écran était bâti sur des champs que la
-ressource ne renvoie pas. Il manque trois choses, toutes dans `ServiceRequest` et
-`Ride` côté API :
-
-| Manque | Pourquoi c'est bloquant |
-|---|---|
-| `origin.city_id` sans **nom de ville** | L'écran affiche « Bafang », pas « 27 ». Résoudre la ville côté mobile ferait une requête de plus pour une donnée que le serveur a déjà en main |
-| Aucun indicateur de **paiement** sur la course | L'écran doit savoir s'il faut proposer de payer ou afficher les coordonnées du chauffeur. Le déduire d'une liste de paiements ferait porter au mobile une règle qui est métier |
-| `offer.driver` **facultatif** | Une offre sans chauffeur n'existe pas ; le rendre optionnel oblige chaque écran à gérer un cas impossible |
-
-C'est ma ressource de l'étape 3 qui est en cause, pas l'écran. À corriger côté
-API — ressource, contrat, client régénéré — **avant** de reprendre l'écran.
+- [x] Passager : suivre, comparer les offres, payer, signaler une absence
 - [ ] Chauffeur : bascule, demandes ouvertes, offrir, conduire, revenus
 - [ ] Administration web : la vraie file de modération
+
+### Le contrat était insuffisant pour l'écran de suivi — corrigé
+
+Écran tenté le 17 août puis retiré : il était bâti sur des champs que la ressource
+ne renvoyait pas. Trois manques, tous côté API, tous corrigés avant de le
+reprendre (`67a9bad`).
+
+| Manque | Pourquoi c'était bloquant | Correction |
+|---|---|---|
+| `origin.city_id` sans **nom de ville** | L'écran affiche « Bafang », pas « 27 ». Résoudre la ville côté mobile ferait une requête de plus pour une donnée que le serveur a déjà en main | `ServiceRequestPlace.city`, chargé par `loadMissing` |
+| Aucun indicateur de **paiement** sur la course | L'écran doit savoir s'il faut proposer de payer ou afficher les coordonnées du chauffeur. Le déduire d'une liste de paiements ferait porter au mobile une règle qui est métier | `Ride.paid`, calculé par `Ride::isPaid()` |
+| `offer.driver` **facultatif** | Une offre sans chauffeur n'existe pas ; le rendre optionnel oblige chaque écran à gérer un cas impossible | Émis sans `whenLoaded`, et requis au contrat |
+
+Racine commune : `whenLoaded` décrit une relation *réellement* facultative. Sur une
+relation toujours présente, il rend le champ optionnel au contrat et le client se
+défend contre un état impossible.
+
+### L'écran de suivi
+
+Un seul écran pour toute la vie de la demande, parce que c'est une seule attente :
+le trajet en tête, puis ce que l'état permet — patienter, comparer, payer, signaler.
+
+| Choix | Raison |
+|---|---|
+| **Sondage à 10 s**, arrêté dès que rien ne peut plus arriver | Aucun canal temps réel. Une demande conclue interrogerait sinon le serveur indéfiniment, batterie et forfait compris |
+| **Offres masquées** dès qu'une est retenue | Les laisser à l'écran ferait croire qu'on peut encore changer |
+| **Téléphone du chauffeur révélé au paiement seulement** | C'est ce que le passager achète. Le livrer avant laisserait s'arranger hors plateforme, donc sans commission ni recours |
+| **Absence signalable** sur une course payée et pas encore partie | Avant paiement il n'y a rien à rembourser ; une fois partie, le chauffeur est venu |
+| **Clé d'idempotence neuve à chaque tentative** de paiement | Comme pour une réservation. Rejouer la clé après un code erroné renverrait le refus précédent au passager qui vient de saisir le bon — la description du contrat disait l'inverse, elle a été corrigée |
+
+### À corriger avant les écrans chauffeur
+
+`GET /v1/driver/requests` déclare un `200` **sans schéma de réponse**. Le client
+généré ne peut donc rien en typer, et la liste des demandes ouvertes est
+précisément le premier écran du chauffeur. Même nature que les trois manques
+ci-dessus : le contrat ne dit pas ce que l'écran doit lire.
 
 
 Détail dans [Appel de service](APPEL-DE-SERVICE.md). Rien avant que 1 et 2 ne

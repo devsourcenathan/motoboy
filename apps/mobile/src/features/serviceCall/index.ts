@@ -6,3 +6,4 @@
  * que c'est le même référentiel et le même geste.
  */
 export { ServiceCallScreen } from './ui/ServiceCallScreen'
+export { ServiceCallStatusScreen } from './ui/ServiceCallStatusScreen'
