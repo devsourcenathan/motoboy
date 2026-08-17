@@ -355,6 +355,48 @@ paths:
               schema: { $ref: '#/components/schemas/DriverProfile' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /v1/admin/settings:
+    get:
+      tags: [Administration]
+      summary: Parametres commerciaux de la plateforme
+      description: Reserve au super-administrateur.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformSettings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/admin/settings/ride-commission:
+    patch:
+      tags: [Administration]
+      summary: Regle le taux de commission d'une course
+      description: |
+        En points de base : 1000 vaut 10 %. Un taux unique s'applique a tous les
+        chauffeurs independants, contrairement aux conditions negociees d'une
+        agence. Plafonne, pour qu'un zero de trop ne prenne pas la course entiere.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commission_bps]
+              properties:
+                commission_bps: { type: integer, minimum: 0, maximum: 3000 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformSettings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /v1/admin/drivers:
     get:
       tags: [Administration]
@@ -3041,6 +3083,15 @@ components:
     SeatingMode:
       type: string
       enum: [SEATED, CAPACITY]
+
+    PlatformSettings:
+      type: object
+      required: [ride_commission_bps, ride_commission_max_bps]
+      properties:
+        ride_commission_bps:
+          type: integer
+          description: Points de base. 1000 vaut 10 %.
+        ride_commission_max_bps: { type: integer }
 
     ServiceRequestStatus:
       type: string

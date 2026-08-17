@@ -453,6 +453,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Parametres commerciaux de la plateforme
+         * @description Reserve au super-administrateur.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/settings/ride-commission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Regle le taux de commission d'une course
+         * @description En points de base : 1000 vaut 10 %. Un taux unique s'applique a tous les
+         *     chauffeurs independants, contrairement aux conditions negociees d'une
+         *     agence. Plafonne, pour qu'un zero de trop ne prenne pas la course entiere.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        commission_bps: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/admin/drivers": {
         parameters: {
             query?: never;
@@ -4603,6 +4695,11 @@ export interface components {
         ValidationMethod: "SCAN" | "MANUAL";
         /** @enum {string} */
         SeatingMode: "SEATED" | "CAPACITY";
+        PlatformSettings: {
+            /** @description Points de base. 1000 vaut 10 %. */
+            ride_commission_bps: number;
+            ride_commission_max_bps: number;
+        };
         /** @enum {string} */
         ServiceRequestStatus: "OPEN" | "OFFERED" | "MATCHED" | "CANCELLED" | "EXPIRED";
         /** @enum {string} */

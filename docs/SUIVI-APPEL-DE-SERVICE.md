@@ -98,11 +98,11 @@ réservation, commission lue sur la réservation. C'est un refactor de code
 d'argent du même ordre que le bénéficiaire de l'étape 1, et il mérite sa passe
 dédiée plutôt que la fin d'une longue session.
 
-**2. Le taux de commission d'une course.** Il n'existe pas. Les commissions
-actuelles viennent des conditions commerciales **d'une agence**, bornées par le
-super-administrateur ([B4](BRIEF.md)). Un chauffeur indépendant n'en a aucune, et
-en inventer un en silence reviendrait à fixer un prix de marché dans un
-commentaire de code. C'est une décision de la même nature que B4.
+**2. Le taux de commission d'une course** — ✅ **tranché : 10 %, réglable.**
+Stocké en base, modifiable depuis le dashboard par le super-administrateur, en
+points de base et plafonné à 30 %. Un taux unique s'applique : une agence négocie
+ses conditions parce qu'elle pèse dans la négociation, un chauffeur indépendant
+ne négocie pas.
 
 ## 5 à 7. Écrans
 

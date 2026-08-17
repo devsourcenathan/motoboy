@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Administration\Http\Controllers\AdminAgencyController;
 use App\Modules\Administration\Http\Controllers\AdminDashboardController;
 use App\Modules\Administration\Http\Controllers\AdminReferenceController;
+use App\Modules\Administration\Http\Controllers\PlatformSettingController;
 use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
 use App\Modules\Agencies\Http\Controllers\CancellationController;
 use App\Modules\Agencies\Http\Controllers\CounterSaleController;
@@ -238,6 +239,14 @@ Route::prefix('v1')->group(function (): void {
              * répondre d'un incident, cette file est la seule barrière entre la
              * plateforme et un chauffeur dont personne n'a vu le permis.
              */
+            /*
+             * Parametres commerciaux (E4 bis). Reserve au super-administrateur,
+             * comme les bornes de B4 : configurer la plateforme n'est pas une
+             * operation quotidienne (I4).
+             */
+            Route::get('settings', [PlatformSettingController::class, 'show']);
+            Route::patch('settings/ride-commission', [PlatformSettingController::class, 'updateRideCommission']);
+
             Route::get('drivers', [AdminDriverController::class, 'index']);
             Route::post('drivers/{driver}/approve', [AdminDriverController::class, 'approve']);
             Route::post('drivers/{driver}/reject', [AdminDriverController::class, 'reject']);

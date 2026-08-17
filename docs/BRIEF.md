@@ -2461,6 +2461,28 @@ comparé ; la demande expire de toute façon au bout de trente minutes.
 Imposer une fenêtre d'attente donnerait un meilleur prix en moyenne, au prix de
 faire patienter quelqu'un qui a peut-être déjà ce qu'il lui faut.
 
+### Commission : 10 %, réglable depuis le dashboard
+
+**Décision arrêtée — 17 août 2026.** Un **taux unique** pour tous les chauffeurs
+indépendants, à 1 000 points de base au lancement.
+
+Une agence négocie ses conditions ([B4](#b4--flux-financier-et-reversement-aux-agences))
+parce qu'elle pèse dans la négociation. Un chauffeur indépendant ne négocie pas :
+lui ouvrir des conditions individuelles créerait un travail de gestion pour un
+gain nul, et une inégalité invisible entre chauffeurs.
+
+Le taux vit **en base**, pas dans le code : il doit pouvoir bouger sans mise en
+production. Il est réservé au super-administrateur, comme les bornes de B4 — le
+partage posé en [I4](#i4--administrateur-vs-super-administrateur) place la
+configuration de la plateforme hors de l'exploitation quotidienne. Chaque
+changement est tracé au journal d'audit : un taux touche tout l'argent qui sortira
+ensuite.
+
+**Plafonné à 30 %.** Un taux saisi avec un zéro de trop prendrait la course
+entière, et rien ne le signalerait avant le premier reversement. La borne
+s'applique à la lecture autant qu'à l'écriture, pour couvrir les écritures qui ne
+passent pas par l'interface.
+
 ### Ce qui reste ouvert
 
 La **portée de « sa ville »** pour un chauffeur : l'égalité stricte avec la ville
