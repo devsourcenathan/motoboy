@@ -121,12 +121,30 @@ export function createApiClient(options: CreateApiClientOptions) {
       request.headers.set('Accept', 'application/json')
       return request
     },
+    /*
+     * ⚠️ **Ne rien renvoyer.** `openapi-fetch` interprète toute valeur rendue
+     * comme un *remplacement* de la réponse, et exige alors que ce soit une
+     * instance de `Response` — sinon il lève « onResponse must return new
+     * Response() when modifying the response ».
+     *
+     * Renvoyer la réponse reçue passait ce contrôle dans Node, où elle est bien
+     * une `Response` globale. Sur l'appareil, non : React Native fournit sa
+     * propre implémentation, étrangère au `Response` global qu'`openapi-fetch`
+     * teste. **Chaque requête levait donc cette erreur** — ni `ApiError` ni
+     * `NetworkError`, d'où « une erreur inattendue » sur tous les écrans, dont
+     * la connexion, l'inscription et la liste des villes. Le serveur, lui,
+     * répondait correctement : l'échec était entièrement au retour.
+     *
+     * Même famille que le piège `AbortSignal.timeout` documenté plus haut : les
+     * polyfills de React Native ne satisfont pas les contrôles d'identité du
+     * DOM. Invisible à la compilation, invisible en Node, visible sur appareil
+     * seulement.
+     */
     async onResponse({ response }) {
       // Purge immédiate : laisser un jeton mort en place ferait renvoyer 401
       // à chaque écran suivant, et l'application semblerait cassée plutôt que
       // déconnectée.
       if (response.status === 401) session?.expire()
-      return response
     },
   })
 

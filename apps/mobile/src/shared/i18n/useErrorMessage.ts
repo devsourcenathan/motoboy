@@ -29,6 +29,25 @@ export function useErrorMessage(): (error: unknown) => string {
     if (error instanceof ApiError) return errorLabel(error.code, locale)
     if (error instanceof NetworkError) return t('state.offline', { ns: 'common' })
 
+    /*
+     * **La branche de repli disait « une erreur inattendue » et rien d'autre.**
+     *
+     * C'est exactement la panne qu'on ne peut pas diagnostiquer : le message est
+     * correct pour l'utilisateur, et muet pour qui doit la corriger. Sur un
+     * téléphone il n'y a pas de console à portée, et j'ai perdu une heure à
+     * deviner ce que cette phrase cachait.
+     *
+     * En développement, la cause s'affiche donc à l'écran. En production, le
+     * message reste celui de l'utilisateur : lui montrer un nom de classe ne
+     * l'aide pas et le message d'origine n'est pas garanti dans sa langue.
+     */
+    if (__DEV__) {
+      const name = error instanceof Error ? error.name : typeof error
+      const detail = error instanceof Error ? error.message : String(error)
+
+      return `${t('state.unexpected', { ns: 'common' })}\n[dev] ${name}: ${detail}`
+    }
+
     return t('state.unexpected', { ns: 'common' })
   }
 }

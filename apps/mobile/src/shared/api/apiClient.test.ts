@@ -92,4 +92,48 @@ describe('createApiClient', () => {
 
     expect(result.data).toEqual({ data: [] })
   })
+
+  /**
+   * La réponse de l'appareil n'est pas une `Response` du DOM.
+   *
+   * **Ce test existe parce que rien ne l'attrapait.** L'intercepteur renvoyait la
+   * réponse reçue ; `openapi-fetch` y voit un *remplacement* et exige une
+   * instance de `Response`. Dans Node c'en est une, donc tout passait — en Jest,
+   * en typecheck, dans le bundle. Sur le téléphone, React Native fournit sa
+   * propre implémentation, étrangère au `Response` global : **chaque requête
+   * levait « onResponse must return new Response() »**, une erreur ni `ApiError`
+   * ni `NetworkError`, donc affichée « une erreur inattendue » sur la connexion,
+   * l'inscription et la liste des villes à la fois.
+   *
+   * On reproduit la condition en rendant une réponse d'une classe étrangère,
+   * comme sur l'appareil.
+   */
+  it('traverse un intercepteur même quand la réponse n’est pas une Response du DOM', async () => {
+    class ForeignResponse {
+      readonly status = 200
+
+      readonly ok = true
+
+      readonly headers = new Map([['content-type', 'application/json']])
+
+      json() {
+        return Promise.resolve({ data: [] })
+      }
+
+      clone() {
+        return this
+      }
+    }
+
+    const api = createApiClient({
+      baseUrl: base,
+      fetch: (() => Promise.resolve(new ForeignResponse())) as unknown as typeof fetch,
+    })
+
+    const result = await api.GET('/v1/places/autocomplete', {
+      params: { query: { q: 'do' } },
+    })
+
+    expect(result.data).toEqual({ data: [] })
+  })
 })
