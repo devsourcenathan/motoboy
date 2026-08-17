@@ -677,7 +677,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminDriverRow"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
                 };
                 401: components["responses"]["Unauthorized"];
                 403: components["responses"]["Forbidden"];
@@ -856,7 +861,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ServiceRequest"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
                 };
                 401: components["responses"]["Unauthorized"];
                 default: components["responses"]["DefaultError"];
@@ -1121,7 +1131,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ServiceRequest"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
                 };
                 401: components["responses"]["Unauthorized"];
                 default: components["responses"]["DefaultError"];
@@ -1157,7 +1172,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["RideOffer"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
                 };
                 401: components["responses"]["Unauthorized"];
                 default: components["responses"]["DefaultError"];
@@ -1193,7 +1213,12 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Ride"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
                 };
                 401: components["responses"]["Unauthorized"];
                 default: components["responses"]["DefaultError"];
@@ -4773,6 +4798,27 @@ export interface components {
             errors: {
                 [key: string]: string[];
             };
+        };
+        /**
+         * @description Une ligne de la file de moderation. Volontairement plus pauvre que le
+         *     dossier complet : cet ecran decide, il ne consulte pas.
+         */
+        AdminDriverRow: {
+            /** Format: int64 */
+            id: number;
+            status: components["schemas"]["DriverStatus"];
+            /** Format: date-time */
+            submitted_at: string | null;
+            driver: {
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
+            };
+            /** Format: int64 */
+            city_id: number;
+            vehicle_plate: string | null;
+            /** @description Types de pieces deja deposees, pour voir d'un coup ce qui manque. */
+            documents: components["schemas"]["DriverDocumentType"][];
         };
         PaginationMeta: {
             page: number;

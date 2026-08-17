@@ -17,6 +17,8 @@ use App\Modules\Rides\Models\RideOffer;
 use App\Modules\Rides\Models\ServiceRequest;
 use App\Support\Http\ApiException;
 use App\Support\Http\ErrorCode;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,6 +51,10 @@ final class DriverRideController
             // apparaitre, meme si le balayage n'est pas encore passe.
             ->where('expires_at', '>', now())
             ->where('origin_city_id', $driver->city_id)
+            // Les villes ici, faute de quoi la ressource les charge une par une :
+            // `loadMissing` est un garde-fou par enregistrement, pas une strategie
+            // de chargement pour une page de vingt.
+            ->with(['originCity', 'destinationCity'])
             ->orderBy('created_at')
             ->paginate(20);
 
@@ -56,7 +62,7 @@ final class DriverRideController
             'data' => $requests->getCollection()
                 ->map(fn (ServiceRequest $service) => (new ServiceRequestResource($service))->resolve())
                 ->all(),
-            'meta' => ['total' => $requests->total(), 'per_page' => $requests->perPage()],
+            'meta' => self::pageMeta($requests),
         ]);
     }
 
@@ -85,16 +91,25 @@ final class DriverRideController
         return response()->json((new RideOfferResource($offer))->resolve(), 201);
     }
 
+    /**
+     * Ses offres.
+     *
+     * Paginee comme le reste de l'API, et non plafonnee a cinquante : un plafond
+     * tronque en silence, et l'ecran ne peut pas savoir qu'il manque quelque chose.
+     */
     public function offers(Request $request): JsonResponse
     {
         $offers = RideOffer::query()
             ->where('driver_profile_id', $this->driver($request)->id)
+            ->with(['request.originCity', 'request.destinationCity'])
             ->latest('id')
-            ->limit(50)
-            ->get();
+            ->paginate(20);
 
         return response()->json([
-            'data' => $offers->map(fn (RideOffer $offer) => (new RideOfferResource($offer))->resolve())->all(),
+            'data' => $offers->getCollection()
+                ->map(fn (RideOffer $offer) => (new RideOfferResource($offer))->resolve())
+                ->all(),
+            'meta' => self::pageMeta($offers),
         ]);
     }
 
@@ -102,14 +117,36 @@ final class DriverRideController
     {
         $rides = Ride::query()
             ->where('driver_profile_id', $this->driver($request)->id)
-            ->with('request')
+            ->with(['request.originCity', 'request.destinationCity'])
             ->latest('id')
-            ->limit(50)
-            ->get();
+            ->paginate(20);
 
         return response()->json([
-            'data' => $rides->map(fn (Ride $ride) => (new RideResource($ride))->resolve())->all(),
+            'data' => $rides->getCollection()
+                ->map(fn (Ride $ride) => (new RideResource($ride))->resolve())
+                ->all(),
+            'meta' => self::pageMeta($rides),
         ]);
+    }
+
+    /**
+     * L'enveloppe de pagination de l'API, telle quelle.
+     *
+     * Quatre cles, pas deux : un ecran qui charge la suite a besoin de savoir ou il
+     * en est. Ces listes renvoyaient `total` et `per_page` seuls, une enveloppe a
+     * elles qui obligeait le client a distinguer les endpoints.
+     *
+     * @param  LengthAwarePaginator<int, covariant Model>  $page
+     * @return array<string, int>
+     */
+    private static function pageMeta(LengthAwarePaginator $page): array
+    {
+        return [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ];
     }
 
     public function start(Request $request, string $reference, AdvanceRide $advance): JsonResponse

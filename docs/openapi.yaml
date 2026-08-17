@@ -474,6 +474,16 @@ paths:
         default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminDriverRow' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
@@ -592,6 +602,16 @@ paths:
         default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceRequest' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/service-requests/{reference}:
@@ -703,6 +723,16 @@ paths:
         default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceRequest' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/driver/offers:
@@ -713,6 +743,16 @@ paths:
         default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/RideOffer' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/driver/rides:
@@ -723,6 +763,16 @@ paths:
         default: { $ref: '#/components/responses/DefaultError' }
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Ride' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/driver/rides/{reference}/start:
@@ -3088,6 +3138,30 @@ components:
           additionalProperties:
             type: array
             items: { type: string }
+
+    AdminDriverRow:
+      type: object
+      required: [id, status, submitted_at, driver, city_id, vehicle_plate, documents]
+      description: |
+        Une ligne de la file de moderation. Volontairement plus pauvre que le
+        dossier complet : cet ecran decide, il ne consulte pas.
+      properties:
+        id: { type: integer, format: int64 }
+        status: { $ref: '#/components/schemas/DriverStatus' }
+        submitted_at: { type: [string, 'null'], format: date-time }
+        driver:
+          type: object
+          required: [first_name, last_name, phone]
+          properties:
+            first_name: { type: [string, 'null'] }
+            last_name: { type: [string, 'null'] }
+            phone: { type: [string, 'null'] }
+        city_id: { type: integer, format: int64 }
+        vehicle_plate: { type: [string, 'null'] }
+        documents:
+          type: array
+          description: Types de pieces deja deposees, pour voir d'un coup ce qui manque.
+          items: { $ref: '#/components/schemas/DriverDocumentType' }
 
     PaginationMeta:
       type: object

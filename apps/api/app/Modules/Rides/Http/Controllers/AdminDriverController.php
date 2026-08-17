@@ -46,7 +46,12 @@ final class AdminDriverController
             'data' => $profiles->getCollection()
                 ->map(fn (DriverProfile $profile) => $this->row($profile))
                 ->all(),
-            'meta' => ['total' => $profiles->total(), 'per_page' => $profiles->perPage()],
+            'meta' => [
+                'page' => $profiles->currentPage(),
+                'per_page' => $profiles->perPage(),
+                'total' => $profiles->total(),
+                'last_page' => $profiles->lastPage(),
+            ],
         ]);
     }
 

@@ -56,7 +56,7 @@ final class ServiceRequestController
     {
         $requests = ServiceRequest::query()
             ->where('user_id', $this->passenger($request)->id)
-            ->with(['offers.driver.user', 'ride.driver.user'])
+            ->with(['offers.driver.user', 'ride.driver.user', 'originCity', 'destinationCity'])
             ->latest('id')
             ->paginate(20);
 
@@ -64,7 +64,12 @@ final class ServiceRequestController
             'data' => $requests->getCollection()
                 ->map(fn (ServiceRequest $service) => (new ServiceRequestResource($service))->resolve())
                 ->all(),
-            'meta' => ['total' => $requests->total(), 'per_page' => $requests->perPage()],
+            'meta' => [
+                'page' => $requests->currentPage(),
+                'per_page' => $requests->perPage(),
+                'total' => $requests->total(),
+                'last_page' => $requests->lastPage(),
+            ],
         ]);
     }
 
@@ -73,7 +78,9 @@ final class ServiceRequestController
         $service = $this->own($request, $reference);
 
         return response()->json(
-            (new ServiceRequestResource($service->load(['offers.driver.user', 'ride.driver.user'])))->resolve(),
+            (new ServiceRequestResource($service->load([
+                'offers.driver.user', 'ride.driver.user', 'originCity', 'destinationCity',
+            ])))->resolve(),
         );
     }
 
