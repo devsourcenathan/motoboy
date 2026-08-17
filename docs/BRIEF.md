@@ -2415,6 +2415,58 @@ Le seul point de sortie d'argent est indexé sur `agency_id`. Il faut le
 second grand livre : du code d'argent recopié diverge, et c'est celui dont la
 divergence coûte le plus cher.
 
+## E4 bis — Argent et annulation d'une course
+
+**Décisions arrêtées — 17 août 2026.** Quatre points qui décident tous de qui
+porte un risque, et qui étaient restés ouverts pendant la construction du module.
+
+### Encaissement : tout à l'acceptation, remboursable
+
+Le passager paie pour confirmer, comme pour une réservation de départ programmé
+([B2](#b2--réservation-et-tenue-des-places)). Un seul encaissement, et il
+réutilise les rails de paiement et de remboursement déjà éprouvés.
+
+**L'acompte suivi d'un solde a été écarté.** Plus équitable sur le papier, il
+double les chemins d'argent et impose un second encaissement au moment où le
+passager sort du véhicule — l'instant où un paiement échoue le plus. Le
+paiement à la fin l'a été aussi : sans garantie, un passager qui disparaît laisse
+le chauffeur impayé et la commission perdue.
+
+Le risque que le passager avance de l'argent est couvert par le remboursement,
+qui existe déjà.
+
+### Chauffeur absent : remboursement intégral, et une marque
+
+La plateforme détient l'argent, donc elle peut le rendre. La marque s'accumule
+sur le dossier et alimente une suspension ([E2](#e2--chauffeurs-indépendants)).
+
+Sans trace, un chauffeur peut recommencer indéfiniment — et faute d'agence
+derrière lui, c'est la réputation de MOTOBOY qui s'use, pas la sienne.
+
+### Annulation par le passager : gratuite avant le départ
+
+Tant que la course n'a pas démarré, remboursement intégral. Une fois démarrée,
+rien n'est rendu.
+
+La règle s'explique en une phrase et se vérifie sur les états qui existent déjà —
+`MATCHED` puis `IN_PROGRESS`. Une annulation toujours gratuite ne dédommagerait
+jamais le chauffeur qui a roulé pour rien, ce qui le dissuade de répondre et vide
+le produit de son offre.
+
+### Choix d'une offre : sans délai d'attente
+
+Chaque offre est retenable dès son arrivée. Le passager décide quand il a assez
+comparé ; la demande expire de toute façon au bout de trente minutes.
+
+Imposer une fenêtre d'attente donnerait un meilleur prix en moyenne, au prix de
+faire patienter quelqu'un qui a peut-être déjà ce qu'il lui faut.
+
+### Ce qui reste ouvert
+
+La **portée de « sa ville »** pour un chauffeur : l'égalité stricte avec la ville
+de départ est un défaut de construction, pas une décision. L'élargir demanderait
+une table de villes voisines, à décider quand le terrain le dira.
+
 ## E5 — Ce que l'extension ne fait pas
 
 À dire avant de montrer un écran, pas après :

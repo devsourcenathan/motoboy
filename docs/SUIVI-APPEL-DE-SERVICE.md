@@ -82,7 +82,9 @@ agence, se voit affecter des départs et porte un plan de sièges.
 
 ## 4. Paiement et reversement
 
-- [ ] Encaissement (dépend de la question ouverte n° 1)
+- [ ] Encaissement à l'acceptation
+- [ ] Remboursement : annulation avant départ, et chauffeur absent
+- [ ] Marque au dossier du chauffeur absent
 - [ ] Écriture au grand livre du chauffeur
 - [ ] Reversement sur son compte Mobile Money
 
@@ -93,19 +95,25 @@ tiennent : un écran de chauffeur sans chauffeur validé ne prouve rien.
 
 ---
 
-## Questions ouvertes
+## Questions tranchées
 
-Bloquantes pour les étapes indiquées. Aucune n'est technique.
+Toutes datées du 17 août 2026, détaillées en [E4 bis du brief](BRIEF.md).
 
-| # | Question | Bloque | État |
-|---|---|---|---|
-| 1 | Quand encaisse-t-on ? Acompte, solde, ou tout d'un coup | étape 4 | ⬜ à trancher |
-| 2 | Coût d'une annulation après acceptation | étapes 3, 5 | ⬜ à trancher |
-| 3 | Que faire si le chauffeur ne vient pas | étapes 3, 4 | ⬜ à trancher |
-| 4 | Combien d'offres attendre avant de laisser choisir | étape 5 | ⬜ à trancher |
-| 5 | Portée de « sa ville » pour un chauffeur | étape 3 | ⬜ à trancher |
+| # | Question | Décision |
+|---|---|---|
+| 1 | Quand encaisse-t-on ? | **Tout à l'acceptation, remboursable** |
+| 2 | Coût d'une annulation après acceptation | **Gratuite avant le départ, rien rendu après** |
+| 3 | Chauffeur absent | **Remboursement intégral et marque au dossier** |
+| 4 | Attente avant de choisir une offre | **Aucune : retenable dès l'arrivée** |
 
-Les étapes 1 et 2 n'en dépendent pas : c'est pourquoi elles passent d'abord.
+### Encore ouverte
+
+| # | Question | Défaut en place |
+|---|---|---|
+| 5 | Portée de « sa ville » | Égalité stricte avec la ville de départ |
+
+Ce défaut suffit au lancement. L'élargir demande une table de villes voisines,
+donc une décision produit et une migration — pas un réglage.
 
 ## Risques portés
 
@@ -124,3 +132,7 @@ Les étapes 1 et 2 n'en dépendent pas : c'est pourquoi elles passent d'abord.
 | 17 août 2026 | L'argent **passe par la plateforme**, puis est reversé au chauffeur |
 | 17 août 2026 | Le prix vient d'une **offre du chauffeur**, pas d'un barème |
 | 17 août 2026 | Une seule application mobile, onglets selon le rôle |
+| 17 août 2026 | Encaissement **intégral à l'acceptation**, remboursable |
+| 17 août 2026 | Annulation **gratuite avant le départ**, rien rendu après |
+| 17 août 2026 | Chauffeur absent : remboursement intégral **et marque au dossier** |
+| 17 août 2026 | Aucune fenêtre d'attente avant de retenir une offre |
