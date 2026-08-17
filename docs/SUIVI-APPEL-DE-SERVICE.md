@@ -244,14 +244,27 @@ dans `RideResource`, et deux tests l'y maintiennent.
 Le test du parcours nominal, lui, **ne payait jamais** : il conduisait une course
 entière sans qu'un franc ait bougé. Il paie désormais.
 
-### Encore ouverte : une course peut démarrer sans être payée
+### Une course impayée ne démarre plus — tranché le 17 août 2026
 
-`AdvanceRide::start()` accepte une course impayée, alors que la décision 1 d'E4 bis
-dit que tout se règle à l'acceptation. L'écran du chauffeur désactive le bouton
-dans ce cas — c'est le côté prudent, mais c'est une règle métier tenue par une
-interface, exactement ce qui vient d'être corrigé pour les téléphones.
+`AdvanceRide::start()` acceptait une course impayée, alors que la décision 1
+d'E4 bis règle tout à l'acceptation. Il refuse désormais en **409
+`RIDE_NOT_PAID`**, code dédié plutôt que `CONFLICT` générique : le client doit
+savoir quoi proposer sans lire un message dont la langue n'est pas garantie (I10).
 
-À trancher : `start()` doit-il refuser en 409 sur une course impayée ?
+Ce n'était pas seulement théorique. Sans cette garde, une course entière pouvait
+se dérouler sans qu'un franc ait bougé, **et le règlement de fin créditait alors
+le chauffeur d'un argent que la plateforme n'avait jamais encaissé**. C'est aussi
+ce qui donne son sens au remboursement pour absence : il n'y a de course à honorer
+que parce qu'elle est payée.
+
+Deux tests devenaient inatteignables par l'API, et gardaient leur valeur ailleurs :
+
+| Test | Ce qu'il devient |
+|---|---|
+| `test_an_unpaid_ride_credits_nothing` | État posé à la main, action de règlement appelée directement. C'est la deuxième ligne de défense, et la première tomberait sans bruit le jour où une reprise manuelle passerait à côté |
+| `test_a_started_ride_can_no_longer_be_paid` | Statut posé directement. Y passer par `start()` exigerait de payer d'abord, et la tentative suivante buterait sur « déjà payée » — le test passerait pour une autre raison que celle qu'il annonce |
+
+Un troisième s'est ajouté : `test_an_unpaid_ride_cannot_start`, la garde elle-même.
 
 
 Détail dans [Appel de service](APPEL-DE-SERVICE.md). Rien avant que 1 et 2 ne
@@ -303,3 +316,4 @@ donc une décision produit et une migration — pas un réglage.
 | 17 août 2026 | Entrée passager par un **bouton sur l'accueil** |
 | 17 août 2026 | Mode chauffeur par **bascule dans le profil** |
 | 17 août 2026 | Pas de maquettes : extrapolation du système établi |
+| 17 août 2026 | Une course **impayée ne démarre pas** — 409 `RIDE_NOT_PAID` |

@@ -579,6 +579,10 @@ En écrivant l'écran du chauffeur, une fuite : le téléphone du chauffeur part
 dans la réponse dès l'acceptation, la règle « seulement une fois payé » n'étant
 tenue que par l'écran. Elle est passée dans la ressource.
 
+Même nature, tranché ensuite : `start()` refuse une course impayée en 409
+`RIDE_NOT_PAID`. Une course pouvait se dérouler entièrement sans qu'un franc ait
+bougé, et le règlement de fin créditait le chauffeur d'un argent jamais encaissé.
+
 **Ce qui reste :** les revenus du chauffeur et son compte de reversement (C8, C9),
 qui n'ont aucun endpoint — les grands livres et comptes existent, mais sous
 `agency/`. Et toute l'administration web.

@@ -23,6 +23,7 @@ use App\Modules\Rides\Actions\PayForRide;
 use App\Modules\Rides\Actions\RecordRideSettlement;
 use App\Modules\Rides\Actions\RefundRide;
 use App\Modules\Rides\Enums\DriverStatus;
+use App\Modules\Rides\Enums\RideStatus;
 use App\Modules\Rides\Models\DriverProfile;
 use App\Modules\Rides\Models\Ride;
 use App\Modules\Rides\Models\ServiceRequest;
@@ -88,14 +89,43 @@ final class RideSettlementTest extends TestCase
     /**
      * L'erreur la plus chère du module : créditer un chauffeur pour un argent
      * que la plateforme n'a jamais encaissé.
+     *
+     * **L'état est construit à la main, faute de chemin qui y mène.** Depuis que
+     * `start()` refuse une course impayée, cette course ne peut plus exister par
+     * l'API. La garde du règlement reste pourtant nécessaire : c'est la deuxième
+     * ligne, et la première tomberait sans bruit le jour où une reprise manuelle
+     * ou une future transition passerait à côté.
      */
     public function test_an_unpaid_ride_credits_nothing(): void
     {
         $ride = $this->ride();
 
-        $this->complete($ride);
+        $ride->update([
+            'status' => RideStatus::Completed,
+            'started_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        app(RecordRideSettlement::class)->handle($ride->refresh());
 
         $this->assertSame(0, AgencyLedgerEntry::query()->count());
+    }
+
+    /**
+     * Et la première ligne : une course impayée ne démarre pas.
+     *
+     * Tout se règle à l'acceptation (E4 bis). Sans cette garde, une course
+     * entière pouvait se dérouler sans qu'un franc ait bougé — l'écran du
+     * chauffeur grisait le bouton, mais une règle d'argent tenue par une
+     * interface n'est pas tenue.
+     */
+    public function test_an_unpaid_ride_cannot_start(): void
+    {
+        $ride = $this->ride();
+
+        $this->expectException(ApiException::class);
+
+        app(AdvanceRide::class)->start($ride);
     }
 
     /**
@@ -113,11 +143,18 @@ final class RideSettlementTest extends TestCase
         $this->assertSame(2, AgencyLedgerEntry::query()->count());
     }
 
-    /** Le prix se règle à l'acceptation, pas une fois la course lancée. */
+    /**
+     * Le prix se règle à l'acceptation, pas une fois la course lancée.
+     *
+     * L'état est posé directement plutôt qu'atteint par `start()` : y passer
+     * exigerait de payer d'abord, et la tentative suivante buterait alors sur
+     * « déjà payée ». Le test passerait, mais pour une autre raison que celle
+     * qu'il prétend vérifier.
+     */
     public function test_a_started_ride_can_no_longer_be_paid(): void
     {
         $ride = $this->ride();
-        app(AdvanceRide::class)->start($ride);
+        $ride->update(['status' => RideStatus::InProgress, 'started_at' => now()]);
 
         $this->expectException(ApiException::class);
 

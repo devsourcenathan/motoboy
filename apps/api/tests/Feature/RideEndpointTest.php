@@ -6,15 +6,18 @@ namespace Tests\Feature;
 
 use App\Modules\Fleet\Enums\VehicleType;
 use App\Modules\Identity\Models\User;
+use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Places\Models\City;
 use App\Modules\Rides\Actions\ExpireServiceRequests;
+use App\Modules\Rides\Actions\PayForRide;
 use App\Modules\Rides\Enums\DriverStatus;
 use App\Modules\Rides\Enums\OfferStatus;
 use App\Modules\Rides\Enums\RideStatus;
 use App\Modules\Rides\Enums\ServiceRequestStatus;
 use App\Modules\Rides\Models\DriverProfile;
+use App\Modules\Rides\Models\Ride;
 use App\Modules\Rides\Models\RideOffer;
 use App\Modules\Rides\Models\ServiceRequest;
 use Carbon\CarbonImmutable;
@@ -137,6 +140,11 @@ final class RideEndpointTest extends TestCase
         $driver = $this->driver();
 
         $first = $this->ride($driver);
+
+        // Payée d'abord : `start()` refuse une course impayée, tout se réglant à
+        // l'acceptation (E4 bis).
+        $this->markPaid($first);
+
         $this->actingAs($this->userOf($driver))->postJson("/api/v1/driver/rides/{$first}/start")->assertOk();
         $this->actingAs($this->userOf($driver))->postJson("/api/v1/driver/rides/{$first}/complete")->assertOk();
 
@@ -340,6 +348,30 @@ final class RideEndpointTest extends TestCase
         $this->assertIsString($rideReference);
 
         return $rideReference;
+    }
+
+    /**
+     * Paie la course et confirme l'encaissement, comme le webhook le ferait.
+     *
+     * Le pilote factice n'encaisse jamais de facon synchrone : sans cette
+     * confirmation la course resterait `PENDING`, donc impayee.
+     */
+    private function markPaid(string $rideReference): void
+    {
+        $ride = Ride::query()->where('reference', $rideReference)->firstOrFail();
+
+        app(PayForRide::class)->handle(
+            $ride,
+            PaymentMethod::MobileMoney,
+            'MTN',
+            '+237690000001',
+            'cle-'.$rideReference,
+        );
+
+        Payment::query()->where('ride_id', $ride->id)->update([
+            'status' => PaymentStatus::Succeeded->value,
+            'paid_at' => now(),
+        ]);
     }
 
     /**

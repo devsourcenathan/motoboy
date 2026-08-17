@@ -1241,7 +1241,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Demarre la course */
+        /**
+         * Demarre la course
+         * @description Refuse en `RIDE_NOT_PAID` tant que le passager n'a pas paye : tout se
+         *     regle a l'acceptation (E4 bis). Sans ce controle une course entiere
+         *     pourrait se derouler sans qu'un franc ait bouge, et le reglement de fin
+         *     crediterait le chauffeur d'un argent jamais encaisse.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -4768,7 +4774,7 @@ export interface components {
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "SERVICE_REQUEST_ALREADY_OPEN" | "SERVICE_REQUEST_CLOSED" | "DRIVER_NOT_APPROVED" | "DRIVER_BUSY" | "OFFER_NOT_ACCEPTABLE" | "OFFER_ALREADY_TAKEN" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "SERVICE_REQUEST_ALREADY_OPEN" | "SERVICE_REQUEST_CLOSED" | "DRIVER_NOT_APPROVED" | "DRIVER_BUSY" | "OFFER_NOT_ACCEPTABLE" | "OFFER_ALREADY_TAKEN" | "RIDE_NOT_PAID" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
         Error: {
             code: components["schemas"]["ErrorCode"];
             /**

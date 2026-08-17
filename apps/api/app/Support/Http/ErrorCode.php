@@ -58,6 +58,7 @@ enum ErrorCode: string
     case DriverBusy = 'DRIVER_BUSY';
     case OfferNotAcceptable = 'OFFER_NOT_ACCEPTABLE';
     case OfferAlreadyTaken = 'OFFER_ALREADY_TAKEN';
+    case RideNotPaid = 'RIDE_NOT_PAID';
 
     case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
     case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';

@@ -779,6 +779,11 @@ paths:
     post:
       tags: [Rides]
       summary: Demarre la course
+      description: |
+        Refuse en `RIDE_NOT_PAID` tant que le passager n'a pas paye : tout se
+        regle a l'acceptation (E4 bis). Sans ce controle une course entiere
+        pourrait se derouler sans qu'un franc ait bouge, et le reglement de fin
+        crediterait le chauffeur d'un argent jamais encaisse.
       parameters:
         - name: reference
           in: path
@@ -3096,6 +3101,7 @@ components:
         - DRIVER_BUSY
         - OFFER_NOT_ACCEPTABLE
         - OFFER_ALREADY_TAKEN
+        - RIDE_NOT_PAID
         - PAYOUT_NOT_APPROVABLE
         - PAYOUT_NOT_SENDABLE
         - PAYOUT_ACCOUNT_UNVERIFIED

@@ -31,6 +31,26 @@ final class AdvanceRide
             throw ApiException::of(ErrorCode::OfferNotAcceptable, 'Cette course ne peut pas démarrer.');
         }
 
+        /*
+         * **Rien ne roule avant d'être payé** (E4 bis, décision 1 : tout se règle
+         * à l'acceptation).
+         *
+         * Sans ce contrôle, une course entière pouvait se dérouler sans qu'un
+         * franc ait bougé — et le règlement de fin de course créditait alors le
+         * chauffeur d'un argent que la plateforme n'avait jamais encaissé. C'est
+         * aussi ce qui donne son sens au remboursement pour absence : il n'y a de
+         * course à honorer que parce qu'elle est payée.
+         *
+         * L'écran du chauffeur grise déjà le bouton, mais une règle d'argent
+         * tenue par une interface n'est pas tenue.
+         */
+        if (!$ride->isPaid()) {
+            throw ApiException::of(
+                ErrorCode::RideNotPaid,
+                'Le passager n\'a pas encore payé cette course.',
+            );
+        }
+
         $ride->update(['status' => RideStatus::InProgress, 'started_at' => now()]);
 
         return $ride->refresh();
@@ -44,8 +64,7 @@ final class AdvanceRide
 
         /*
          * La course quitte ici l'état actif : l'index partiel libère le
-         * chauffeur, qui peut en accepter une autre. C'est aussi le point où le
-         * paiement s'accrochera (étape 4).
+         * chauffeur, qui peut en accepter une autre.
          */
         $ride->update(['status' => RideStatus::Completed, 'completed_at' => now()]);
 
