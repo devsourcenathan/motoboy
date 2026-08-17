@@ -6,12 +6,12 @@
  * Deux applications l'obligeraient à choisir un rôle à l'installation, alors que
  * le même téléphone sert aux deux.
  *
- * Ce que cette tranche ne couvre pas encore : ses revenus et son compte de
- * reversement (C8, C9). L'API n'expose rien pour un chauffeur — les
- * grands livres et comptes de versement existent, mais sous `agency/`. Construire
- * l'écran sans l'endpoint reviendrait à inventer un solde.
+ * Ses revenus et son compte de reversement vivent sur un seul écran : c'est la
+ * seule action que cet argent appelle, et la seule chose qui, non faite, empêche
+ * tout virement.
  */
 export { DriverHomeScreen } from './ui/DriverHomeScreen'
 export { DriverApplicationScreen } from './ui/DriverApplicationScreen'
 export { OpenRequestsScreen } from './ui/OpenRequestsScreen'
 export { DriverRidesScreen } from './ui/DriverRidesScreen'
+export { DriverEarningsScreen } from './ui/DriverEarningsScreen'

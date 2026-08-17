@@ -583,9 +583,30 @@ Même nature, tranché ensuite : `start()` refuse une course impayée en 409
 `RIDE_NOT_PAID`. Une course pouvait se dérouler entièrement sans qu'un franc ait
 bougé, et le règlement de fin créditait le chauffeur d'un argent jamais encaissé.
 
-**Ce qui reste :** les revenus du chauffeur et son compte de reversement (C8, C9),
-qui n'ont aucun endpoint — les grands livres et comptes existent, mais sous
-`agency/`. Et toute l'administration web.
+Ses revenus et son compte de reversement suivent : solde, reversable, détail des
+écritures, historique des virements, et la déclaration Mobile Money — inactive
+jusqu'à vérification par un administrateur. Le solde et le reversable sont deux
+nombres distincts à l'écran : une course terminée il y a une heure compte au
+premier et pas au second.
+
+### 9.6 Reversement du chauffeur — ✅ fait
+
+**24 h de délai, 5 000 F de minimum, réglables au dashboard** comme la commission
+(`RidePayoutTerms`). Une agence négocie ses conditions ; un chauffeur indépendant ne
+négocie pas, donc les valeurs valent pour tous.
+
+`BuildDriverPayout` est une action à part de `BuildPayout`, pour la même raison que
+`PayForRide` l'est d'`InitiatePayment` : réglages au lieu de conditions négociées,
+fin de course au lieu de départ programmé, relevé par course au lieu de réservation.
+
+Il a fallu finir la généralisation : `payouts.agency_id` devient nullable — `payee_id`
+existait déjà, c'est l'agence obligatoire qui bloquait — et `payout_lines` accepte une
+course, exclusive d'une réservation par contrainte de base.
+
+**Ce qui reste, et qui n'est plus cette extension :** l'application web n'existe pas
+— deux fichiers. La file de modération n'est pas un écran à ajouter mais une
+application à amorcer. Et aucun virement ne part réellement tant qu'une passerelle
+de versement n'est pas choisie.
 
 ### Ce qui n'en fait pas partie
 

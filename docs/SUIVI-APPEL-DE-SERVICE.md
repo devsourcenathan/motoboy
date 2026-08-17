@@ -14,9 +14,9 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 1. Bénéficiaire généralisé des reversements | ✅ fait — contraction à finir |
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
-| 4. Paiement et reversement de la course | ✅ fait — côté API |
+| 4. Paiement et reversement de la course | ✅ fait, reversement compris |
 | 5. Écrans passager | ✅ fait |
-| 6. Écrans chauffeur | 🔨 quatre écrans sur six — revenus et reversement sans API |
+| 6. Écrans chauffeur | ✅ fait |
 | 7. Écrans administration (web) | ⬜ |
 
 ---
@@ -94,7 +94,7 @@ agence, se voit affecter des départs et porte un plan de sièges.
 - [x] Grand livre et remboursements ouverts aux courses
 - [x] Contrat mis à jour, client typé régénéré
 - [x] Comptes de versement ouverts aux personnes — table et modèle renommés
-- [ ] **Une passe de reversement pour un chauffeur** — voir ci-dessous
+- [x] **Une passe de reversement pour un chauffeur** — `BuildDriverPayout`
 
 ### Ce qui reste avant qu'un chauffeur touche son argent
 
@@ -112,16 +112,37 @@ plomberie, contrairement à ce que j'avais annoncé.
 versement dans les `commercialTerms` de l'agence — conditions négociées, portées
 par B4. Un chauffeur indépendant n'en a aucune, et il ne négocie pas.
 
-Il faut donc trancher, avant d'écrire quoi que ce soit :
+**Tranché le 17 août 2026**, et construit :
 
-| Question | Enjeu |
+| Question | Décision |
 |---|---|
-| Quel **délai** avant qu'une course soit reversable ? | Zéro se défend — la course est finie, il n'y a aucun départ à attendre, contrairement à une réservation. Mais un délai court laisse le temps de traiter une réclamation avant que l'argent parte |
-| Quel **minimum** de versement ? | Verser 500 F coûte plus de frais qu'il n'en rapporte. Trop haut, un chauffeur occasionnel n'est jamais payé |
-| Ces valeurs sont-elles **réglables** comme la commission ? | Le même mécanisme de réglages existe déjà |
+| **Délai** avant qu'une course soit reversable | **24 h** — le même défaut que les agences. Zéro se défendait, la course étant finie, mais un remboursement demandé après le virement ne se récupère que par la bonne volonté du chauffeur |
+| **Minimum** de versement | **5 000 F**, environ une course. Verser 500 F coûte plus de frais qu'il n'en rapporte ; ce seuil reste atteignable en une journée |
+| **Réglables** comme la commission | **Oui** — `RidePayoutTerms`, sur le mécanisme `PlatformSetting`, plafonnés à 168 h et 100 000 F. Ces valeurs se corrigeront quand on saura ce que coûte réellement un virement, et un déploiement par ajustement ferait qu'on ne les ajusterait pas |
 
-Tant que ce n'est pas décidé, les écritures s'accumulent correctement et le solde
-se calcule — mais rien ne part.
+### Ce qu'il a fallu construire, et pourquoi ce n'était pas de la plomberie
+
+| Pièce | Raison |
+|---|---|
+| Migration `payouts.agency_id` nullable | `payee_id` existait depuis l'étape 1 ; c'est `agency_id`, obligatoire lui aussi, qui bloquait. Rien ne pouvait être versé à un chauffeur quel que soit son solde |
+| `payout_lines.ride_id` | Une ligne de relevé portait forcément une **réservation**. Un chauffeur n'en a aucune. Les deux cohabitent, exclusives, garanties par un CHECK — et l'unicité passe en index partiels, une colonne nulle échappant à l'unicité en SQL |
+| `EligibleRideBalance` | Une réservation devient éligible quand son **départ** est parti ; une course, quand elle est **terminée**. Filtrée sur `completed_at` et non sur le statut : une course annulée après coup garde son horodatage, et c'est le grand livre qui porte le solde réel |
+| `BuildDriverPayout`, action à part | Trois choses divergent de `BuildPayout` : réglages au lieu de conditions négociées, fin de course au lieu de départ, relevé par course au lieu de réservation. Les fondre aurait donné une action à deux jeux de gardes exclusifs — deux actions dans un fichier |
+| `motoboy:build-driver-payouts` | L'endpoint admin ne balaie que les agences, et personne ne peut encore l'appeler puisque le web n'existe pas. Même rôle que `motoboy:approve-driver` |
+
+**Un défaut trouvé en passant.** `ManagePayoutAccount::verify()` désactivait les
+comptes frères par `agency_id` — nul pour un chauffeur, et `agency_id = null` ne
+matche rien en SQL. Deux destinations vérifiées auraient coexisté, le reversement
+prenant la première venue. La portée passe par `payee_id`, propriétaire depuis
+l'étape 1 et valable pour les deux genres.
+
+### Ce qui reste, et qui n'est plus l'appel de service
+
+| Reste | Nature |
+|---|---|
+| `POST /v1/admin/payouts/build` ne balaie que les agences | Étendre sa portée changerait la forme de sa réponse. À faire avec l'écran qui l'appellera, pas avant |
+| File de modération web (étape 7) | **L'application web n'existe pas** — deux fichiers, `App.tsx` et `main.tsx`. Ce n'est pas un écran à ajouter mais une application à amorcer : routeur, session, mise en page, i18n, client d'API. C'est un chantier propre, pas la fin de celui-ci |
+| Passerelle de versement réelle | Le port `PayoutGateway` existe avec son pilote factice. Aucun virement ne part vraiment tant qu'un prestataire n'est pas choisi — même point ouvert que l'agrégateur de paiement |
 
 ### Deux préalables, tous deux hors du périmètre d'une passe rapide
 
@@ -153,7 +174,7 @@ ne négocie pas.
 - [x] Passager : entrée sur l'accueil et formulaire de demande
 - [x] Passager : suivre, comparer les offres, payer, signaler une absence
 - [x] Chauffeur : bascule, dossier, demandes ouvertes, offrir, conduire
-- [ ] Chauffeur : revenus et compte de reversement — **sans API**
+- [x] Chauffeur : revenus et compte de reversement
 - [ ] Administration web : la vraie file de modération
 
 ### Le contrat était insuffisant pour l'écran de suivi — corrigé
@@ -317,3 +338,4 @@ donc une décision produit et une migration — pas un réglage.
 | 17 août 2026 | Mode chauffeur par **bascule dans le profil** |
 | 17 août 2026 | Pas de maquettes : extrapolation du système établi |
 | 17 août 2026 | Une course **impayée ne démarre pas** — 409 `RIDE_NOT_PAID` |
+| 17 août 2026 | Reversement chauffeur : **24 h**, **5 000 F**, réglables au dashboard |

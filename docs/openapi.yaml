@@ -798,6 +798,75 @@ paths:
               schema: { $ref: '#/components/schemas/Ride' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /v1/driver/earnings:
+    get:
+      tags: [Rides]
+      summary: Son solde, son historique, ses reversements
+      description: |
+        Trois nombres et non un : le solde du compte courant, ce qui est
+        **reversable aujourd'hui**, et le minimum qui declenche un virement. Une
+        course terminee il y a une heure compte au solde sans etre encore
+        versable, et confondre les deux ferait attendre un virement qui ne peut
+        pas partir.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverEarnings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/DefaultError' }
+
+  /v1/driver/payout-accounts:
+    get:
+      tags: [Rides]
+      summary: Ses comptes de versement
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/PayoutAccountSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Rides]
+      summary: Declare ou remplace son compte de versement
+      description: |
+        Mobile Money seulement : un chauffeur independant n'a pas de compte
+        d'entreprise, et proposer un virement bancaire ferait saisir des
+        coordonnees qu'on ne saurait pas verifier.
+
+        Le compte reste **inactif jusqu'a verification** par un administrateur.
+        Une erreur de saisie envoie l'argent a un inconnu, sans recours.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, operator, account_number, account_name]
+              properties:
+                type: { type: string, enum: [MOBILE_MONEY] }
+                operator: { type: string, enum: [MTN, ORANGE] }
+                account_number: { type: string, maxLength: 50 }
+                account_name: { type: string, maxLength: 150 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Declare, en attente de verification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PayoutAccountSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /v1/driver/rides/{reference}/complete:
     post:
       tags: [Rides]
@@ -3168,6 +3237,60 @@ components:
           type: array
           description: Types de pieces deja deposees, pour voir d'un coup ce qui manque.
           items: { $ref: '#/components/schemas/DriverDocumentType' }
+
+    DriverEarnings:
+      type: object
+      required: [balance, payable, minimum, delay_hours, entries, payouts]
+      properties:
+        balance:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Le solde du compte courant, reversable ou non.
+        payable:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Ce qui pourrait partir aujourd'hui, delai ecoule.
+        minimum:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: En dessous, aucun virement n'est construit — les frais couteraient plus que le montant.
+        delay_hours:
+          type: integer
+          description: Delai apres la fin d'une course avant qu'elle devienne reversable.
+        entries:
+          type: array
+          items:
+            type: object
+            required: [type, amount, description, occurred_at]
+            properties:
+              type: { $ref: '#/components/schemas/LedgerEntryType' }
+              amount: { $ref: '#/components/schemas/Money' }
+              description: { type: [string, 'null'] }
+              occurred_at: { type: [string, 'null'], format: date-time }
+        payouts:
+          type: array
+          items:
+            type: object
+            required: [reference, status, net_amount, paid_at]
+            properties:
+              reference: { type: string }
+              status: { $ref: '#/components/schemas/PayoutStatus' }
+              net_amount: { $ref: '#/components/schemas/Money' }
+              paid_at: { type: [string, 'null'], format: date-time }
+
+    PayoutAccountSummary:
+      type: object
+      required: [id, type, operator, account_name, masked_number, verified]
+      description: |
+        Le numero est **tronque**, meme vers son proprietaire : un numero complet
+        dans une reponse d'API finit dans un journal ou un cache.
+      properties:
+        id: { type: integer, format: int64 }
+        type: { type: string }
+        operator: { type: [string, 'null'] }
+        account_name: { type: [string, 'null'] }
+        masked_number: { type: string }
+        verified: { type: boolean }
 
     PaginationMeta:
       type: object

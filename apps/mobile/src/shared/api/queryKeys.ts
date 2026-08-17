@@ -82,6 +82,8 @@ export const queryKeys = {
   driverRequests: () => [QUERY_ROOT.driver, 'requests'] as const,
   driverOffers: () => [QUERY_ROOT.driver, 'offers'] as const,
   driverRides: () => [QUERY_ROOT.driver, 'rides'] as const,
+  driverEarnings: () => [QUERY_ROOT.driver, 'earnings'] as const,
+  driverPayoutAccounts: () => [QUERY_ROOT.driver, 'payout-accounts'] as const,
 
   me: () => [QUERY_ROOT.me] as const,
 } as const

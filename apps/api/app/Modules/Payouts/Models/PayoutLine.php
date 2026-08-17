@@ -13,7 +13,7 @@ final class PayoutLine extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'payout_id', 'booking_id',
+        'payout_id', 'booking_id', 'ride_id',
         'gross_amount', 'commission_amount', 'refund_amount', 'net_amount',
     ];
 

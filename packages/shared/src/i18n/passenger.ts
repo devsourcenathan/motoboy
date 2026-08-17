@@ -394,6 +394,28 @@ export interface PassengerMessages {
     readonly rideStarted: string
     readonly rideDone: string
     readonly earned: string
+    readonly earnings: string
+    readonly balance: string
+    readonly balanceHint: string
+    readonly payable: string
+    readonly payableHint: string
+    readonly belowMinimum: string
+    readonly history: string
+    readonly historyEmpty: string
+    readonly payouts: string
+    readonly payoutsEmpty: string
+    readonly account: string
+    readonly accountNone: string
+    readonly accountPending: string
+    readonly accountVerified: string
+    readonly accountOperator: string
+    readonly accountNumber: string
+    readonly accountNumberHint: string
+    readonly accountName: string
+    readonly accountNameHint: string
+    readonly accountSubmit: string
+    readonly accountReplace: string
+    readonly accountIncomplete: string
   }
   readonly tabs: {
     readonly home: string
@@ -824,6 +846,28 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       rideStarted: 'Course démarrée',
       rideDone: 'Course terminée',
       earned: 'Vous touchez',
+      earnings: 'Mes revenus',
+      balance: 'Solde',
+      balanceHint: 'Tout ce qui vous est dû, reversable ou non.',
+      payable: 'Reversable',
+      payableHint: 'Une course devient reversable {{hours}} h après sa fin.',
+      belowMinimum: 'Le virement partira à partir de {{amount}}.',
+      history: 'Détail',
+      historyEmpty: 'Aucun mouvement pour l’instant.',
+      payouts: 'Reversements',
+      payoutsEmpty: 'Aucun virement encore.',
+      account: 'Compte de versement',
+      accountNone: 'Renseignez où verser votre argent.',
+      accountPending: 'En cours de vérification',
+      accountVerified: 'Vérifié',
+      accountOperator: 'Opérateur',
+      accountNumber: 'Numéro Mobile Money',
+      accountNumberHint: 'Le numéro qui recevra les virements.',
+      accountName: 'Nom du titulaire',
+      accountNameHint: 'Tel qu’il apparaît sur le compte.',
+      accountSubmit: 'Enregistrer',
+      accountReplace: 'Changer de compte',
+      accountIncomplete: 'Renseignez le numéro et le nom du titulaire.',
     },
     tabs: {
       home: 'Accueil',
@@ -1218,6 +1262,28 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       rideStarted: 'Ride started',
       rideDone: 'Ride completed',
       earned: 'You receive',
+      earnings: 'My earnings',
+      balance: 'Balance',
+      balanceHint: 'Everything owed to you, payable or not.',
+      payable: 'Payable',
+      payableHint: 'A ride becomes payable {{hours}} h after it ends.',
+      belowMinimum: 'A transfer goes out from {{amount}} upwards.',
+      history: 'Breakdown',
+      historyEmpty: 'No movement yet.',
+      payouts: 'Payouts',
+      payoutsEmpty: 'No transfer yet.',
+      account: 'Payout account',
+      accountNone: 'Tell us where to send your money.',
+      accountPending: 'Being verified',
+      accountVerified: 'Verified',
+      accountOperator: 'Operator',
+      accountNumber: 'Mobile Money number',
+      accountNumberHint: 'The number that will receive transfers.',
+      accountName: 'Account holder',
+      accountNameHint: 'As it appears on the account.',
+      accountSubmit: 'Save',
+      accountReplace: 'Change account',
+      accountIncomplete: 'Enter the number and the account holder.',
     },
     tabs: {
       home: 'Home',

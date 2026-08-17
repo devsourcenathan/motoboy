@@ -1278,6 +1278,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/driver/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Son solde, son historique, ses reversements
+         * @description Trois nombres et non un : le solde du compte courant, ce qui est
+         *     **reversable aujourd'hui**, et le minimum qui declenche un virement. Une
+         *     course terminee il y a une heure compte au solde sans etre encore
+         *     versable, et confondre les deux ferait attendre un virement qui ne peut
+         *     pas partir.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverEarnings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["DefaultError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/payout-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses comptes de versement */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["PayoutAccountSummary"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Declare ou remplace son compte de versement
+         * @description Mobile Money seulement : un chauffeur independant n'a pas de compte
+         *     d'entreprise, et proposer un virement bancaire ferait saisir des
+         *     coordonnees qu'on ne saurait pas verifier.
+         *
+         *     Le compte reste **inactif jusqu'a verification** par un administrateur.
+         *     Une erreur de saisie envoie l'argent a un inconnu, sans recours.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "MOBILE_MONEY";
+                        /** @enum {string} */
+                        operator: "MTN" | "ORANGE";
+                        account_number: string;
+                        account_name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Declare, en attente de verification */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutAccountSummary"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/driver/rides/{reference}/complete": {
         parameters: {
             query?: never;
@@ -4825,6 +4952,43 @@ export interface components {
             vehicle_plate: string | null;
             /** @description Types de pieces deja deposees, pour voir d'un coup ce qui manque. */
             documents: components["schemas"]["DriverDocumentType"][];
+        };
+        DriverEarnings: {
+            /** @description Le solde du compte courant, reversable ou non. */
+            balance: components["schemas"]["Money"];
+            /** @description Ce qui pourrait partir aujourd'hui, delai ecoule. */
+            payable: components["schemas"]["Money"];
+            /** @description En dessous, aucun virement n'est construit — les frais couteraient plus que le montant. */
+            minimum: components["schemas"]["Money"];
+            /** @description Delai apres la fin d'une course avant qu'elle devienne reversable. */
+            delay_hours: number;
+            entries: {
+                type: components["schemas"]["LedgerEntryType"];
+                amount: components["schemas"]["Money"];
+                description: string | null;
+                /** Format: date-time */
+                occurred_at: string | null;
+            }[];
+            payouts: {
+                reference: string;
+                status: components["schemas"]["PayoutStatus"];
+                net_amount: components["schemas"]["Money"];
+                /** Format: date-time */
+                paid_at: string | null;
+            }[];
+        };
+        /**
+         * @description Le numero est **tronque**, meme vers son proprietaire : un numero complet
+         *     dans une reponse d'API finit dans un journal ou un cache.
+         */
+        PayoutAccountSummary: {
+            /** Format: int64 */
+            id: number;
+            type: string;
+            operator: string | null;
+            account_name: string | null;
+            masked_number: string;
+            verified: boolean;
         };
         PaginationMeta: {
             page: number;

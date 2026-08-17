@@ -73,6 +73,7 @@ export function DriverHomeScreen() {
             profile={profile.data}
             onFix={() => router.push('/driver/apply')}
             onWork={() => router.push('/driver/requests')}
+            onEarnings={() => router.push('/driver/earnings')}
           />
         )}
       </ScrollView>
@@ -113,10 +114,12 @@ function Dossier({
   profile,
   onFix,
   onWork,
+  onEarnings,
 }: {
   profile: DriverProfile
   onFix: () => void
   onWork: () => void
+  onEarnings: () => void
 }) {
   const { t } = useTranslation()
 
@@ -188,6 +191,12 @@ function Dossier({
       {profile.can_drive ? (
         <Button label={t('driver.work')} onPress={onWork} />
       ) : null}
+
+      {/*
+        Ses revenus restent accessibles meme dossier suspendu : l'argent deja
+        gagne lui est du, et le lui cacher serait le pire moment pour le faire.
+      */}
+      <Button label={t('driver.earnings')} variant="secondary" onPress={onEarnings} />
 
       {profile.status === 'REJECTED' || profile.status === 'SUSPENDED' ? (
         <Button label={t('driver.resubmit')} variant="secondary" onPress={onFix} />

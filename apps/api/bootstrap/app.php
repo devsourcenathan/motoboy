@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Identity\Console\CreateAdminCommand;
 use App\Modules\Payments\Console\ConfirmPaymentCommand;
+use App\Modules\Payouts\Console\BuildDriverPayoutsCommand;
 use App\Modules\Rides\Console\ApproveDriverCommand;
 use App\Support\Http\RendersApiErrors;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         CreateAdminCommand::class,
         ConfirmPaymentCommand::class,
         ApproveDriverCommand::class,
+        BuildDriverPayoutsCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         /*

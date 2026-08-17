@@ -22,6 +22,7 @@ use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Rides\Http\Controllers\AdminDriverController;
 use App\Modules\Rides\Http\Controllers\DriverController;
+use App\Modules\Rides\Http\Controllers\DriverEarningsController;
 use App\Modules\Rides\Http\Controllers\DriverRideController;
 use App\Modules\Rides\Http\Controllers\ServiceRequestController;
 use App\Modules\Tickets\Http\Controllers\BoardingController;
@@ -119,6 +120,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('driver/rides', [DriverRideController::class, 'rides']);
         Route::post('driver/rides/{reference}/start', [DriverRideController::class, 'start']);
         Route::post('driver/rides/{reference}/complete', [DriverRideController::class, 'complete']);
+
+        /*
+         * Son argent (C8, C9). En lecture pour le solde et l'historique, en
+         * ecriture pour la seule chose qu'il declare : ou verser.
+         */
+        Route::get('driver/earnings', [DriverEarningsController::class, 'earnings']);
+        Route::get('driver/payout-accounts', [DriverEarningsController::class, 'payoutAccounts']);
+        Route::post('driver/payout-accounts', [DriverEarningsController::class, 'submitPayoutAccount']);
 
         // Réservation. La prise de places est l'opération atomique du produit :
         // elle tient les places avant même la saisie du paiement (B2).
