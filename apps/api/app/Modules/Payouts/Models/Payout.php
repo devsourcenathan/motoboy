@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 final class Payout extends Model
 {
     protected $fillable = [
-        'reference', 'agency_id', 'period_start', 'period_end',
+        'reference', 'agency_id', 'payee_id', 'period_start', 'period_end',
         'gross_amount', 'commission_amount', 'refund_amount', 'adjustment_amount',
         'net_amount', 'currency', 'payout_account_id', 'status',
         'approved_by', 'approved_at', 'provider_reference', 'paid_at', 'failure_reason',
@@ -40,6 +40,27 @@ final class Payout extends Model
         'approved_at' => 'immutable_datetime',
         'paid_at' => 'immutable_datetime',
     ];
+
+    /**
+     * Pont transitoire vers le bénéficiaire — voir `AgencyLedgerEntry`. À
+     * retirer quand les appelants le passeront eux-mêmes.
+     */
+    protected static function booted(): void
+    {
+        self::creating(function (self $payout): void {
+            // `agency_id` n'est pas nullable sur cette table : il y a
+            // toujours une agence dont dériver le bénéficiaire.
+            if ($payout->payee_id === null) {
+                $payout->payee()->associate(Payee::forAgency($payout->agency_id));
+            }
+        });
+    }
+
+    /** @return BelongsTo<Payee, $this> */
+    public function payee(): BelongsTo
+    {
+        return $this->belongsTo(Payee::class);
+    }
 
     /** @return BelongsTo<Agency, $this> */
     public function agency(): BelongsTo

@@ -31,7 +31,7 @@ final class AgencyLedgerEntry extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'agency_id', 'booking_id', 'type', 'amount', 'currency',
+        'agency_id', 'payee_id', 'booking_id', 'type', 'amount', 'currency',
         'reference_type', 'reference_id', 'description', 'created_by', 'occurred_at', 'created_at',
     ];
 
@@ -41,6 +41,35 @@ final class AgencyLedgerEntry extends Model
         'occurred_at' => 'immutable_datetime',
         'created_at' => 'immutable_datetime',
     ];
+
+    /**
+     * Pont transitoire vers le bénéficiaire.
+     *
+     * Les appelants renseignent encore `agency_id` seul ; `payee_id` est
+     * obligatoire en base depuis l'introduction des bénéficiaires. Le résoudre
+     * ici évite de modifier six actions d'un coup — donc de toucher au code qui
+     * compte l'argent en même temps qu'au schéma.
+     *
+     * **À retirer** quand les appelants passeront le bénéficiaire eux-mêmes :
+     * dériver une colonne en silence est acceptable le temps d'une migration,
+     * pas durablement.
+     */
+    protected static function booted(): void
+    {
+        self::creating(function (self $entry): void {
+            // `agency_id` n'est pas nullable sur cette table : il y a
+            // toujours une agence dont dériver le bénéficiaire.
+            if ($entry->payee_id === null) {
+                $entry->payee()->associate(Payee::forAgency($entry->agency_id));
+            }
+        });
+    }
+
+    /** @return BelongsTo<Payee, $this> */
+    public function payee(): BelongsTo
+    {
+        return $this->belongsTo(Payee::class);
+    }
 
     /** @return BelongsTo<Agency, $this> */
     public function agency(): BelongsTo

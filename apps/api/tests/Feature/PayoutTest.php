@@ -26,12 +26,14 @@ use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Enums\PayoutStatus;
 use App\Modules\Payouts\Gateways\FakePayoutGateway;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 use App\Modules\Payouts\Models\Payout;
 use App\Modules\Payouts\Support\EligibleBalance;
 use App\Modules\Trips\Models\Trip;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -504,5 +506,49 @@ final class PayoutTest extends TestCase
         ]);
 
         return $user;
+    }
+
+    /**
+     * Le grand livre pointe un beneficiaire, pas une agence.
+     *
+     * C'est ce qui permettra de payer un chauffeur independant (E4) sans
+     * retoucher le code qui compte l'argent. Le pont derive encore le
+     * beneficiaire de l'agence, et cette derivation doit tenir.
+     */
+    public function test_every_ledger_entry_carries_a_payee(): void
+    {
+        $this->paidBooking();
+
+        $entries = AgencyLedgerEntry::query()->get();
+
+        $this->assertNotEmpty($entries);
+        $this->assertTrue($entries->every(fn (AgencyLedgerEntry $entry) => $entry->payee_id !== null));
+
+        $payee = Payee::query()->where('agency_id', $this->agency->id)->firstOrFail();
+
+        $this->assertSame(Payee::KIND_AGENCY, $payee->kind);
+        $this->assertSame($payee->id, $entries->first()?->payee_id);
+    }
+
+    /**
+     * Une personne peut etre beneficiaire, et la contrainte de base refuse un
+     * beneficiaire qui melange les deux genres : sans elle, une ligne sans
+     * destinataire serait representable.
+     */
+    public function test_a_person_can_be_a_payee_and_the_kinds_do_not_mix(): void
+    {
+        $driver = User::factory()->create();
+
+        $payee = Payee::forUser($driver->id);
+
+        $this->assertSame(Payee::KIND_DRIVER, $payee->kind);
+        $this->assertNull($payee->agency_id);
+
+        $this->expectException(QueryException::class);
+
+        Payee::query()->create([
+            'kind' => Payee::KIND_DRIVER,
+            'agency_id' => $this->agency->id,
+        ]);
     }
 }
