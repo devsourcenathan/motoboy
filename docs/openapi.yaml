@@ -285,6 +285,171 @@ paths:
               schema: { $ref: '#/components/schemas/User' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /v1/driver:
+    get:
+      tags: [Rides]
+      summary: Son dossier de chauffeur
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Rides]
+      summary: Depose ou represente son dossier de chauffeur
+      description: |
+        Rejouable : un dossier refuse doit pouvoir etre corrige et represente.
+        Un nouveau depot repart en `PENDING` et efface la trace de
+        l'instruction precedente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [license_number, license_expires_at, vehicle_plate, vehicle_type, vehicle_seats, city_id]
+              properties:
+                license_number: { type: string, maxLength: 64 }
+                license_expires_at: { type: string, format: date }
+                vehicle_plate: { type: string, maxLength: 32 }
+                vehicle_type: { $ref: '#/components/schemas/VehicleType' }
+                vehicle_model: { type: [string, 'null'], maxLength: 120 }
+                vehicle_seats: { type: integer, minimum: 1, maximum: 20 }
+                city_id: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Depose
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/driver/documents:
+    post:
+      tags: [Rides]
+      summary: Depose une piece du dossier
+      description: |
+        Une piece par type : redeposer remplace la precedente. Le nom d'origine
+        du fichier n'est jamais repris.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, file]
+              properties:
+                type: { $ref: '#/components/schemas/DriverDocumentType' }
+                file: { type: string, format: binary }
+                expires_at: { type: [string, 'null'], format: date }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/admin/drivers:
+    get:
+      tags: [Administration]
+      summary: File des dossiers de chauffeur
+      description: Du plus ancien au plus recent. Par defaut, ce qui attend une decision.
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/DriverStatus' }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/admin/drivers/{driver}/approve:
+    post:
+      tags: [Administration]
+      summary: Valide un dossier de chauffeur
+      description: Refuse un dossier incomplet, les quatre pieces etant exigees.
+      parameters:
+        - name: driver
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/admin/drivers/{driver}/reject:
+    post:
+      tags: [Administration]
+      summary: Refuse un dossier de chauffeur
+      parameters:
+        - name: driver
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: string, minLength: 3, maxLength: 1000 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/admin/drivers/{driver}/suspend:
+    post:
+      tags: [Administration]
+      summary: Suspend un chauffeur valide
+      description: |
+        Distinct du refus, qui porte sur un dossier jamais accepte. Ne touche ni
+        a l'historique des courses ni aux reversements dus.
+      parameters:
+        - name: driver
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: { type: string, minLength: 3, maxLength: 1000 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /v1/auth/logout:
     post:
       tags: [Auth]
@@ -2664,6 +2829,37 @@ components:
     SeatingMode:
       type: string
       enum: [SEATED, CAPACITY]
+
+    DriverStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, SUSPENDED]
+
+    DriverDocumentType:
+      type: string
+      enum: [LICENSE, REGISTRATION, IDENTITY, INSURANCE]
+
+    DriverProfile:
+      type: object
+      required: [status, can_drive, license_number, license_expires_at, vehicle_plate, vehicle_type, vehicle_seats, city_id, documents]
+      properties:
+        status: { $ref: '#/components/schemas/DriverStatus' }
+        can_drive:
+          type: boolean
+          description: Dossier valide et permis non perime.
+        license_number: { type: string }
+        license_expires_at: { type: string, format: date }
+        vehicle_plate: { type: string }
+        vehicle_type: { $ref: '#/components/schemas/VehicleType' }
+        vehicle_model: { type: [string, 'null'] }
+        vehicle_seats: { type: integer }
+        city_id: { type: integer, format: int64 }
+        review_note:
+          type: [string, 'null']
+          description: Motif d'un refus ou d'une suspension, lisible par le chauffeur.
+        reviewed_at: { type: [string, 'null'], format: date-time }
+        documents:
+          type: array
+          items: { $ref: '#/components/schemas/DriverDocumentType' }
 
     VehicleType:
       type: string

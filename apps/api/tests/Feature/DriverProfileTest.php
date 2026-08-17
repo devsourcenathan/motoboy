@@ -53,10 +53,13 @@ final class DriverProfileTest extends TestCase
         $this->assertTrue($profile->canDrive());
 
         foreach ([DriverStatus::Pending, DriverStatus::Rejected, DriverStatus::Suspended] as $status) {
-            // Un refus exige son motif — c'est l'objet du test suivant.
+            // Refus et suspension exigent leur motif — c'est l'objet du test
+            // suivant.
+            $refusal = in_array($status, [DriverStatus::Rejected, DriverStatus::Suspended], true);
+
             $profile->update([
                 'status' => $status,
-                'rejection_reason' => $status === DriverStatus::Rejected ? 'Permis illisible' : null,
+                'review_note' => $refusal ? 'Permis illisible' : null,
             ]);
 
             $this->assertFalse($profile->refresh()->canDrive(), $status->value);
@@ -83,13 +86,27 @@ final class DriverProfileTest extends TestCase
      * corriger, et le support non plus. C'est la base qui l'exige, parce qu'un
      * refus peut aussi venir d'une commande ou d'une reprise de données.
      */
-    public function test_a_rejection_without_a_reason_is_refused_by_the_database(): void
+    public function test_a_refusal_without_a_reason_is_refused_by_the_database(): void
     {
         $profile = $this->profile();
 
         $this->expectException(QueryException::class);
 
         $profile->update(['status' => DriverStatus::Rejected]);
+    }
+
+    /**
+     * La suspension retire un droit accordé : elle exige son motif au même
+     * titre qu'un refus. Un chauffeur suspendu sans explication n'a aucun geste
+     * à faire, et le support non plus.
+     */
+    public function test_a_suspension_without_a_reason_is_refused_too(): void
+    {
+        $profile = $this->profile(['status' => DriverStatus::Approved]);
+
+        $this->expectException(QueryException::class);
+
+        $profile->update(['status' => DriverStatus::Suspended]);
     }
 
     public function test_a_person_holds_a_single_application(): void

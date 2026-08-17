@@ -19,6 +19,8 @@ use App\Modules\Payouts\Http\Controllers\AdminPayoutController;
 use App\Modules\Payouts\Http\Controllers\AgencyPayoutController;
 use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
+use App\Modules\Rides\Http\Controllers\AdminDriverController;
+use App\Modules\Rides\Http\Controllers\DriverController;
 use App\Modules\Tickets\Http\Controllers\BoardingController;
 use App\Modules\Tickets\Http\Controllers\TicketController;
 use App\Modules\Trips\Http\Controllers\SearchController;
@@ -72,6 +74,17 @@ Route::prefix('v1')->group(function (): void {
         Route::get('me', [AuthController::class, 'me']);
         Route::patch('me', [AuthController::class, 'updateMe']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+
+        /*
+         * Son propre dossier de chauffeur (E2).
+         *
+         * Aucune permission requise : le dossier est atteint par la session, pas
+         * par un identifiant d'URL, donc un chauffeur ne peut lire que le sien.
+         * C'est `canDrive()` qui décidera du droit de rouler, pas ces routes.
+         */
+        Route::get('driver', [DriverController::class, 'show']);
+        Route::post('driver', [DriverController::class, 'submit']);
+        Route::post('driver/documents', [DriverController::class, 'uploadDocument']);
 
         // Réservation. La prise de places est l'opération atomique du produit :
         // elle tient les places avant même la saisie du paiement (B2).
@@ -194,6 +207,16 @@ Route::prefix('v1')->group(function (): void {
             Route::post('payouts/{reference}/send', [AdminPayoutController::class, 'send']);
 
             Route::get('dashboard', AdminDashboardController::class);
+
+            /*
+             * Modération des dossiers chauffeur (A1-A3). Sans agence pour
+             * répondre d'un incident, cette file est la seule barrière entre la
+             * plateforme et un chauffeur dont personne n'a vu le permis.
+             */
+            Route::get('drivers', [AdminDriverController::class, 'index']);
+            Route::post('drivers/{driver}/approve', [AdminDriverController::class, 'approve']);
+            Route::post('drivers/{driver}/reject', [AdminDriverController::class, 'reject']);
+            Route::post('drivers/{driver}/suspend', [AdminDriverController::class, 'suspend']);
 
             /*
              * Validation des agences (§23).

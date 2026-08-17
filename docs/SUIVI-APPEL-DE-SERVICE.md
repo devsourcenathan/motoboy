@@ -12,7 +12,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 |---|---|
 | 0. Spécification | ✅ fait |
 | 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
-| 2. Compte chauffeur, dossier, modération | 🔨 en cours |
+| 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ⬜ |
 | 4. Paiement et reversement de la course | ⬜ |
 | 5. Écrans passager | ⬜ |
@@ -54,10 +54,11 @@ faut un, c'est que le comportement a bougé, et ce n'est pas ce qu'on veut.
 - [x] Rôle `DRIVER` — sans permission, comme le passager
 - [x] Schéma : `driver_profiles` et `driver_documents`
 - [x] Modèles, énumérations, garde-fous en base
-- [ ] Endpoints : dépôt du dossier, lecture de son statut
-- [ ] Dépôt et remplacement de pièces via `FileStorage`
-- [ ] File de modération, validation et refus **motivé**
-- [ ] Suspension sans perte d'historique ni de reversements dus
+- [x] Endpoints : dépôt du dossier, lecture de son statut
+- [x] Dépôt et remplacement de pièces via `FileStorage`
+- [x] File de modération, validation et refus **motivé**
+- [x] Suspension sans perte d'historique ni de reversements dus
+- [x] Contrat mis à jour, client typé régénéré
 
 **Où on en est.** Le dossier existe et porte ses invariants en base : un dossier
 par personne, une pièce par type, et **un refus sans motif est refusé par la

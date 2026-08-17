@@ -322,6 +322,321 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/driver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Son dossier de chauffeur */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Depose ou represente son dossier de chauffeur
+         * @description Rejouable : un dossier refuse doit pouvoir etre corrige et represente.
+         *     Un nouveau depot repart en `PENDING` et efface la trace de
+         *     l'instruction precedente.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        license_number: string;
+                        /** Format: date */
+                        license_expires_at: string;
+                        vehicle_plate: string;
+                        vehicle_type: components["schemas"]["VehicleType"];
+                        vehicle_model?: string | null;
+                        vehicle_seats: number;
+                        /** Format: int64 */
+                        city_id: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Depose */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Depose une piece du dossier
+         * @description Une piece par type : redeposer remplace la precedente. Le nom d'origine
+         *     du fichier n'est jamais repris.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        type: components["schemas"]["DriverDocumentType"];
+                        /** Format: binary */
+                        file: string;
+                        /** Format: date */
+                        expires_at?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * File des dossiers de chauffeur
+         * @description Du plus ancien au plus recent. Par defaut, ce qui attend une decision.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["DriverStatus"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valide un dossier de chauffeur
+         * @description Refuse un dossier incomplet, les quatre pieces etant exigees.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse un dossier de chauffeur */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspend un chauffeur valide
+         * @description Distinct du refus, qui porte sur un dossier jamais accepte. Ne touche ni
+         *     a l'historique des courses ni aux reversements dus.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -3832,6 +4147,29 @@ export interface components {
         ValidationMethod: "SCAN" | "MANUAL";
         /** @enum {string} */
         SeatingMode: "SEATED" | "CAPACITY";
+        /** @enum {string} */
+        DriverStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+        /** @enum {string} */
+        DriverDocumentType: "LICENSE" | "REGISTRATION" | "IDENTITY" | "INSURANCE";
+        DriverProfile: {
+            status: components["schemas"]["DriverStatus"];
+            /** @description Dossier valide et permis non perime. */
+            can_drive: boolean;
+            license_number: string;
+            /** Format: date */
+            license_expires_at: string;
+            vehicle_plate: string;
+            vehicle_type: components["schemas"]["VehicleType"];
+            vehicle_model?: string | null;
+            vehicle_seats: number;
+            /** Format: int64 */
+            city_id: number;
+            /** @description Motif d'un refus ou d'une suspension, lisible par le chauffeur. */
+            review_note?: string | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            documents: components["schemas"]["DriverDocumentType"][];
+        };
         /** @enum {string} */
         VehicleType: "BUS" | "CAR";
         User: {

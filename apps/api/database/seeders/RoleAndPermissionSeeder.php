@@ -46,6 +46,9 @@ final class RoleAndPermissionSeeder extends Seeder
         'commercial_terms.manage' => ['label' => 'Définir les conditions commerciales', 'group' => 'finance'],
 
         'staff.manage' => ['label' => 'Gérer les comptes de son personnel', 'group' => 'identity'],
+        // Distincte de `drivers.manage`, qui porte sur le personnel d'une
+        // agence : celle-ci instruit les dossiers de chauffeurs indépendants.
+        'independent_drivers.moderate' => ['label' => 'Modérer les chauffeurs indépendants', 'group' => 'identity'],
         'agencies.approve' => ['label' => 'Valider une agence', 'group' => 'identity'],
         'agencies.manage' => ['label' => 'Gérer les agences', 'group' => 'identity'],
         'users.manage' => ['label' => 'Gérer les comptes utilisateurs', 'group' => 'identity'],
@@ -94,6 +97,7 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view', 'bookings.view', 'payments.view',
             'refunds.manage', 'payouts.view', 'payouts.approve',
             'agencies.approve', 'agencies.manage',
+            'independent_drivers.moderate',
             'places.manage',
             'vehicles.view',
         ],
@@ -103,6 +107,7 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view', 'bookings.view', 'payments.view',
             'refunds.manage', 'payouts.view', 'payouts.approve',
             'agencies.approve', 'agencies.manage',
+            'independent_drivers.moderate',
             'places.manage',
             'vehicles.view',
             'users.manage', 'commercial_terms.manage',
