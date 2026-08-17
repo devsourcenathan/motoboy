@@ -47,6 +47,18 @@ enum ErrorCode: string
     case TicketWrongTrip = 'TICKET_WRONG_TRIP';
     case TicketCancelled = 'TICKET_CANCELLED';
 
+    /*
+     * Appel de service (E1). Chaque conflit a son code : un `CONFLICT`
+     * generique obligerait le client a lire le message pour savoir quoi
+     * proposer, et ce message n'est pas garanti dans sa langue (I10).
+     */
+    case ServiceRequestAlreadyOpen = 'SERVICE_REQUEST_ALREADY_OPEN';
+    case ServiceRequestClosed = 'SERVICE_REQUEST_CLOSED';
+    case DriverNotApproved = 'DRIVER_NOT_APPROVED';
+    case DriverBusy = 'DRIVER_BUSY';
+    case OfferNotAcceptable = 'OFFER_NOT_ACCEPTABLE';
+    case OfferAlreadyTaken = 'OFFER_ALREADY_TAKEN';
+
     case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
     case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';
     case PayoutAccountUnverified = 'PAYOUT_ACCOUNT_UNVERIFIED';
