@@ -11,8 +11,8 @@ use App\Modules\Agencies\Actions\UpdateCommercialTerms;
 use App\Modules\Agencies\Http\Requests\UpdateCommercialTermsRequest;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\AgencyDocument;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Payouts\Actions\AdjustLedger;
+use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -151,7 +151,7 @@ final class AdminAgencyController
     {
         $admin = $this->context->require($request, 'agencies.approve');
 
-        $account = AgencyPayoutAccount::query()->whereKey($id)->firstOrFail();
+        $account = PayoutAccount::query()->whereKey($id)->firstOrFail();
 
         return response()->json($this->account($accounts->verify($account, $admin->id)));
     }
@@ -178,7 +178,7 @@ final class AdminAgencyController
     }
 
     /** @return array<string, mixed> */
-    private function account(AgencyPayoutAccount $account): array
+    private function account(PayoutAccount $account): array
     {
         return [
             'id' => $account->id,

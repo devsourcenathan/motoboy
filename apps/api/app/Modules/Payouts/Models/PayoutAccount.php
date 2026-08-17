@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Agencies\Models;
+namespace App\Modules\Payouts\Models;
 
+use App\Modules\Agencies\Models\Agency;
 use App\Modules\Identity\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -17,10 +18,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * paie. Toute création ou modification passe par l'administration, est
  * journalisée et notifiée à l'agence (B4).
  */
-final class AgencyPayoutAccount extends Model
+final class PayoutAccount extends Model
 {
     protected $fillable = [
-        'agency_id', 'type', 'operator', 'account_number', 'account_name',
+        'payee_id', 'agency_id', 'type', 'operator', 'account_number', 'account_name',
         'verified_by', 'verified_at', 'is_active',
     ];
 
@@ -29,6 +30,32 @@ final class AgencyPayoutAccount extends Model
         'verified_at' => 'immutable_datetime',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Pont transitoire vers le beneficiaire — meme forme que dans le grand
+     * livre. Les appelants ne passent encore que l'agence, alors que `payee_id`
+     * est obligatoire depuis la generalisation.
+     *
+     * **A retirer** avec les autres ponts, quand les appelants passeront le
+     * beneficiaire eux-memes.
+     */
+    protected static function booted(): void
+    {
+        self::creating(function (self $account): void {
+            // Aucun appelant ne renseigne les deux : la presence d'une agence
+            // suffit a decider. Un compte de chauffeur arrive avec son
+            // beneficiaire et sans agence, et ne passe donc pas ici.
+            if ($account->agency_id !== null) {
+                $account->payee()->associate(Payee::forAgency($account->agency_id));
+            }
+        });
+    }
+
+    /** @return BelongsTo<Payee, $this> */
+    public function payee(): BelongsTo
+    {
+        return $this->belongsTo(Payee::class);
+    }
 
     /** @return BelongsTo<Agency, $this> */
     public function agency(): BelongsTo

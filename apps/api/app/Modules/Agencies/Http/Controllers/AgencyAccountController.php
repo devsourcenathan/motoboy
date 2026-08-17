@@ -8,10 +8,10 @@ use App\Modules\Administration\Contracts\FileStorage;
 use App\Modules\Agencies\Actions\ManagePayoutAccount;
 use App\Modules\Agencies\Actions\RegisterAgency;
 use App\Modules\Agencies\Models\AgencyDocument;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Agencies\Support\AgencyContext;
 use App\Modules\Identity\Enums\Locale;
 use App\Modules\Identity\Models\User;
+use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -129,7 +129,7 @@ final class AgencyAccountController
     }
 
     /** @return array<string, mixed> */
-    private function account(AgencyPayoutAccount $account): array
+    private function account(PayoutAccount $account): array
     {
         return [
             'id' => $account->id,

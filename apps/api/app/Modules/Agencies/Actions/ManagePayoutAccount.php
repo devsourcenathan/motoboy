@@ -6,11 +6,11 @@ namespace App\Modules\Agencies\Actions;
 
 use App\Modules\Administration\Actions\RecordAudit;
 use App\Modules\Agencies\Models\Agency;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Identity\Enums\Locale;
 use App\Modules\Notifications\Contracts\SmsSender;
 use App\Modules\Notifications\Data\SmsMessage;
 use App\Modules\Notifications\Models\Notification;
+use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,12 +41,12 @@ final class ManagePayoutAccount
         string $accountNumber,
         string $accountName,
         ?int $submittedBy,
-    ): AgencyPayoutAccount {
+    ): PayoutAccount {
         $current = $agency->payoutAccounts()->where('is_active', true)->first();
 
         $account = DB::transaction(function () use (
             $agency, $type, $operator, $accountNumber, $accountName, $submittedBy, $current,
-        ): AgencyPayoutAccount {
+        ): PayoutAccount {
             $account = $agency->payoutAccounts()->create([
                 'type' => $type,
                 'operator' => $operator,
@@ -82,10 +82,10 @@ final class ManagePayoutAccount
      * agence n'a qu'un compte actif, et en laisser deux rendrait le choix
      * implicite au moment du versement.
      */
-    public function verify(AgencyPayoutAccount $account, int $verifierId): AgencyPayoutAccount
+    public function verify(PayoutAccount $account, int $verifierId): PayoutAccount
     {
         DB::transaction(function () use ($account, $verifierId): void {
-            AgencyPayoutAccount::query()
+            PayoutAccount::query()
                 ->where('agency_id', $account->agency_id)
                 ->whereKeyNot($account->id)
                 ->update(['is_active' => false]);

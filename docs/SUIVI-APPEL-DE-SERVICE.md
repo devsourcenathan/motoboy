@@ -11,7 +11,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | Étape | État |
 |---|---|
 | 0. Spécification | ✅ fait |
-| 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
+| 1. Bénéficiaire généralisé des reversements | ✅ fait — contraction à finir |
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
 | 4. Paiement et reversement de la course | ✅ fait — côté API |
@@ -92,18 +92,21 @@ agence, se voit affecter des départs et porte un plan de sièges.
 - [x] Remboursement : annulation avant départ, et chauffeur absent
 - [x] Grand livre et remboursements ouverts aux courses
 - [x] Contrat mis à jour, client typé régénéré
-- [ ] **Décaissement effectif** — voir ci-dessous
+- [x] Comptes de versement ouverts aux personnes — table et modèle renommés
+- [ ] **Une passe de reversement pour un chauffeur** — voir ci-dessous
 
 ### Ce qui reste avant qu'un chauffeur touche son argent
 
-Les écritures existent, le solde se calcule, mais rien n'est encore **versé**.
-`BuildPayout` et `SendPayout` fonctionnent déjà sur des bénéficiaires — ce sont
-les comptes de versement qui restent liés aux agences : `payout_accounts` porte un
-`agency_id`. Il faut les ouvrir aux personnes, exactement comme le grand livre l'a
-été.
+Toute la chaîne est généralisée : écritures, remboursements, et désormais la
+destination du virement. `agency_payout_accounts` est devenue `payout_accounts`,
+et le modèle a quitté le module Agences pour Reversements — le renommer plutôt
+que le compléter, parce qu'un nom qui affirme le contraire de ce qu'il contient se
+propage au prochain lecteur.
 
-C'est un chantier nommé, pas un oubli : même forme que l'étape 1, et il vaut
-mieux le faire d'un geste propre que l'accrocher à la fin d'une passe.
+Reste à faire **fonctionner une passe de reversement pour un bénéficiaire
+personne** : `BuildPayout::verifiedAccount()` prend encore une `Agency` en
+paramètre, et `BuildDuePayouts` balaie les agences. C'est de la plomberie, sans
+question ouverte — mais c'est ce qui sépare un solde calculé d'un virement reçu.
 
 ### Deux préalables, tous deux hors du périmètre d'une passe rapide
 

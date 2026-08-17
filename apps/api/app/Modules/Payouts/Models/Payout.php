@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Payouts\Models;
 
 use App\Modules\Agencies\Models\Agency;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Identity\Models\User;
 use App\Modules\Payouts\Enums\PayoutStatus;
 use Illuminate\Database\Eloquent\Model;
@@ -68,10 +67,10 @@ final class Payout extends Model
         return $this->belongsTo(Agency::class);
     }
 
-    /** @return BelongsTo<AgencyPayoutAccount, $this> */
+    /** @return BelongsTo<PayoutAccount, $this> */
     public function account(): BelongsTo
     {
-        return $this->belongsTo(AgencyPayoutAccount::class, 'payout_account_id');
+        return $this->belongsTo(PayoutAccount::class, 'payout_account_id');
     }
 
     /** @return BelongsTo<User, $this> */

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Payouts\Actions;
 
 use App\Modules\Agencies\Models\Agency;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Enums\PayoutStatus;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Payout;
+use App\Modules\Payouts\Models\PayoutAccount;
 use App\Modules\Payouts\Support\EligibleBalance;
 use App\Support\Reference;
 use Illuminate\Database\Eloquent\Collection;
@@ -90,7 +90,7 @@ final class BuildPayout
      */
     private function write(
         Agency $agency,
-        AgencyPayoutAccount $account,
+        PayoutAccount $account,
         Collection $entries,
         int $balance,
     ): Payout {
@@ -220,11 +220,11 @@ final class BuildPayout
         };
     }
 
-    private function verifiedAccount(Agency $agency): ?AgencyPayoutAccount
+    private function verifiedAccount(Agency $agency): ?PayoutAccount
     {
         // Une erreur de saisie envoie l'argent à un inconnu, sans recours : le
         // compte doit avoir été vérifié à la validation de l'agence (B4).
-        return AgencyPayoutAccount::query()
+        return PayoutAccount::query()
             ->where('agency_id', $agency->id)
             ->where('is_active', true)
             ->whereNotNull('verified_at')
