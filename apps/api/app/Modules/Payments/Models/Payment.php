@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class Payment extends Model
 {
     protected $fillable = [
-        'reference', 'booking_id', 'amount', 'currency',
+        'reference', 'booking_id', 'ride_id', 'amount', 'currency',
         'method', 'operator', 'provider', 'provider_reference',
         'idempotency_key', 'status', 'failure_reason',
         'aggregator_fee_amount', 'paid_at',

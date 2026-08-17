@@ -35,7 +35,7 @@ final class DriverProfile extends Model
         'user_id', 'status',
         'license_number', 'license_expires_at',
         'vehicle_plate', 'vehicle_type', 'vehicle_model', 'vehicle_seats',
-        'city_id', 'reviewed_by', 'reviewed_at', 'review_note',
+        'city_id', 'reviewed_by', 'reviewed_at', 'review_note', 'no_show_count',
     ];
 
     /** @var array<string, string> */
