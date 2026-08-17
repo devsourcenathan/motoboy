@@ -288,6 +288,25 @@ export interface PassengerMessages {
     readonly details: string
     readonly payment: string
   }
+  readonly serviceCall: {
+    readonly entry: string
+    readonly entryHint: string
+    readonly title: string
+    readonly subtitle: string
+    readonly from: string
+    readonly to: string
+    readonly landmark: string
+    readonly landmarkHint: string
+    readonly landmarkOptional: string
+    readonly passengers: string
+    readonly note: string
+    readonly noteHint: string
+    readonly submit: string
+    readonly sameCity: string
+    readonly missingLandmark: string
+    readonly sent: string
+    readonly sentBody: string
+  }
   readonly tabs: {
     readonly home: string
     readonly trips: string
@@ -609,6 +628,27 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     steps: { seats: 'Places', details: 'Infos', payment: 'Paiement' },
+    serviceCall: {
+      entry: 'Besoin d’un véhicule ?',
+      entryHint: 'Un chauffeur vient vous chercher',
+      title: 'Appel de service',
+      subtitle: 'Dites où vous êtes et où vous allez. Des chauffeurs vous proposent un prix.',
+      from: 'Je suis à',
+      to: 'Je vais à',
+      landmark: 'Point de repère',
+      // Sans repère, un chauffeur qui accepte ne sait pas où se rendre : la
+      // ville ne suffit pas à se retrouver.
+      landmarkHint: 'Ex : carrefour Total, marché central',
+      landmarkOptional: 'Point de repère (facultatif)',
+      passengers: 'Voyageurs',
+      note: 'Précision pour le chauffeur',
+      noteHint: 'Bagages, heure souhaitée, autre chose à savoir',
+      submit: 'Envoyer la demande',
+      sameCity: 'Le départ et l’arrivée doivent être différents',
+      missingLandmark: 'Indiquez où vous attendre',
+      sent: 'Demande envoyée',
+      sentBody: 'Des chauffeurs de votre ville vont recevoir votre demande. Elle expire dans trente minutes.',
+    },
     tabs: {
       home: 'Accueil',
       trips: 'Mes voyages',
@@ -896,6 +936,25 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       },
     },
     steps: { seats: 'Seats', details: 'Details', payment: 'Payment' },
+    serviceCall: {
+      entry: 'Need a vehicle?',
+      entryHint: 'A driver comes to pick you up',
+      title: 'Service call',
+      subtitle: 'Say where you are and where you are going. Drivers quote you a price.',
+      from: 'I am at',
+      to: 'I am going to',
+      landmark: 'Landmark',
+      landmarkHint: 'e.g. Total junction, central market',
+      landmarkOptional: 'Landmark (optional)',
+      passengers: 'Travellers',
+      note: 'Anything the driver should know',
+      noteHint: 'Luggage, preferred time, anything else',
+      submit: 'Send the request',
+      sameCity: 'Origin and destination must differ',
+      missingLandmark: 'Say where to meet you',
+      sent: 'Request sent',
+      sentBody: 'Drivers in your city will see your request. It expires in thirty minutes.',
+    },
     tabs: {
       home: 'Home',
       trips: 'My trips',

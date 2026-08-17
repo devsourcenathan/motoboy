@@ -238,6 +238,27 @@ export function SearchScreen() {
         </View>
 
         {/*
+          L'appel de service vit ici, sous la recherche, et non dans un
+          cinquième onglet : c'est un besoin rare face à une recherche, et cinq
+          onglets serrent la barre tout en mettant un usage occasionnel au rang
+          du cœur du produit.
+        */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('serviceCall.entry')}
+          onPress={() => router.push('/service-call')}
+          style={({ pressed }) => [styles.call, pressed ? styles.callPressed : null]}
+        >
+          <View style={styles.callSeal}>
+            <PinIcon color={theme.text.inverse} size={20} />
+          </View>
+          <View style={styles.callText}>
+            <Text style={styles.callTitle}>{t('serviceCall.entry')}</Text>
+            <Text style={styles.callBody}>{t('serviceCall.entryHint')}</Text>
+          </View>
+        </Pressable>
+
+        {/*
           Les recherches récentes ne sont pas de la décoration : un passager fait
           souvent l'aller puis le retour du même trajet, et les retaper de zéro
           est le geste que cet écran doit éviter.
@@ -549,6 +570,39 @@ const styles = StyleSheet.create({
   error: {
     fontSize: fontSize.sm,
     color: theme.text.danger,
+  },
+  call: {
+    ...sharedStyles.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+  },
+  callPressed: {
+    backgroundColor: theme.surface.raised,
+  },
+  callSeal: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: theme.surface.brand,
+  },
+  callText: {
+    flex: 1,
+    gap: 1,
+  },
+  callTitle: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  callBody: {
+    fontSize: fontSize.sm,
+    color: theme.text.muted,
   },
   recent: {
     gap: spacing.base,

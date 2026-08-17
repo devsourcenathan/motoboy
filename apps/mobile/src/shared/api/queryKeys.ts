@@ -17,6 +17,7 @@ export const QUERY_ROOT = {
   bookings: 'bookings',
   tickets: 'tickets',
   payments: 'payments',
+  serviceRequests: 'service-requests',
   me: 'me',
 } as const
 
@@ -66,6 +67,10 @@ export const queryKeys = {
 
   tickets: () => [QUERY_ROOT.tickets] as const,
   ticket: (reference: string) => [QUERY_ROOT.tickets, reference] as const,
+
+  serviceRequests: () => [QUERY_ROOT.serviceRequests] as const,
+  serviceRequest: (reference: string) =>
+    [QUERY_ROOT.serviceRequests, reference] as const,
 
   me: () => [QUERY_ROOT.me] as const,
 } as const
