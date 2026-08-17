@@ -31,6 +31,16 @@ enum ErrorCode: string
     case OtpExpired = 'OTP_EXPIRED';
     case OtpTooManyAttempts = 'OTP_TOO_MANY_ATTEMPTS';
 
+    /*
+     * Se connecter avec un numero inconnu et se connecter avec un compte jamais
+     * confirme sont deux situations, pas une. `NOT_FOUND` les confondait sous
+     * « Element introuvable. » — un message qui ne dit ni de s'inscrire ni de
+     * reprendre la confirmation, sur le seul ecran ou l'utilisateur ne peut rien
+     * faire d'autre.
+     */
+    case AccountNotFound = 'ACCOUNT_NOT_FOUND';
+    case AccountNotVerified = 'ACCOUNT_NOT_VERIFIED';
+
     case SeatAlreadyHeld = 'SEAT_ALREADY_HELD';
     case TripFull = 'TRIP_FULL';
     case OnlineSalesClosed = 'ONLINE_SALES_CLOSED';
@@ -72,7 +82,13 @@ enum ErrorCode: string
             self::ValidationFailed => 422,
             self::Unauthenticated => 401,
             self::Forbidden => 403,
-            self::NotFound, self::TicketNotFound => 404,
+            self::NotFound, self::TicketNotFound, self::AccountNotFound => 404,
+            /*
+             * 409 et non 404 : le compte **existe**, c'est son état qui bloque.
+             * Le déclarer introuvable ferait proposer une inscription qui
+             * échouerait sur un numéro déjà pris.
+             */
+            self::AccountNotVerified => 409,
             self::RateLimited => 429,
             self::OtpInvalid, self::OtpExpired, self::OtpTooManyAttempts => 422,
             default => 409,

@@ -3151,6 +3151,8 @@ components:
         - OTP_INVALID
         - OTP_EXPIRED
         - OTP_TOO_MANY_ATTEMPTS
+        - ACCOUNT_NOT_FOUND
+        - ACCOUNT_NOT_VERIFIED
         - SEAT_ALREADY_HELD
         - TRIP_FULL
         - ONLINE_SALES_CLOSED

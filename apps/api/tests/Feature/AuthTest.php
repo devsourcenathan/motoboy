@@ -205,13 +205,28 @@ final class AuthTest extends TestCase
         $this->assertSame(3, $this->sms->count());
     }
 
-    public function test_login_requires_a_verified_account(): void
+    /**
+     * Inscrit mais jamais confirmé : un état à part, pas un « introuvable ».
+     *
+     * Les deux tombaient sous `NOT_FOUND`, dont le libellé — « Élément
+     * introuvable. » — ne dit ni de s'inscrire ni de reprendre la confirmation.
+     * C'est le seul écran où l'utilisateur ne peut rien faire d'autre, et il y
+     * restait bloqué : constaté en testant l'application sur un vrai téléphone.
+     */
+    public function test_login_says_an_account_exists_but_was_never_confirmed(): void
     {
         $this->register();
 
         $this->postJson('/api/v1/auth/login', ['phone' => self::PHONE])
+            ->assertStatus(409)
+            ->assertJson(['code' => 'ACCOUNT_NOT_VERIFIED']);
+    }
+
+    public function test_login_says_when_no_account_exists_at_all(): void
+    {
+        $this->postJson('/api/v1/auth/login', ['phone' => '+237699111222'])
             ->assertStatus(404)
-            ->assertJson(['code' => 'NOT_FOUND']);
+            ->assertJson(['code' => 'ACCOUNT_NOT_FOUND']);
     }
 
     public function test_me_and_logout_follow_the_token(): void

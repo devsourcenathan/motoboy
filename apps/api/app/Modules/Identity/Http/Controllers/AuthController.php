@@ -133,8 +133,21 @@ final class AuthController
     {
         $user = User::query()->where('phone', $phone)->first();
 
-        if ($user === null || $user->phone_verified_at === null) {
-            throw ApiException::of(ErrorCode::NotFound, 'Aucun compte vérifié pour ce numéro.');
+        if ($user === null) {
+            throw ApiException::of(ErrorCode::AccountNotFound, 'Aucun compte pour ce numéro.');
+        }
+
+        /*
+         * Inscrit mais jamais confirmé : le compte existe, l'inscription est à
+         * reprendre. Le renvoyer sur « introuvable » l'enfermait — il ne pouvait
+         * ni se connecter, ni comprendre qu'il devait se réinscrire pour recevoir
+         * un nouveau code.
+         */
+        if ($user->phone_verified_at === null) {
+            throw ApiException::of(
+                ErrorCode::AccountNotVerified,
+                'Ce numéro est inscrit mais jamais confirmé.',
+            );
         }
 
         if (!$user->is_active) {
