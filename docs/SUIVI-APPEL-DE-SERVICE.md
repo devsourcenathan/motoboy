@@ -139,6 +139,21 @@ ne négocie pas.
 
 ## 5 à 7. Écrans
 
+**Décisions du 17 août 2026.**
+
+| Point | Décision |
+|---|---|
+| Entrée passager | Un **bouton sur l'accueil**, « Besoin d'un véhicule ? ». Pas de cinquième onglet : un appel de service est rare face à une recherche |
+| Mode chauffeur | **Bascule dans le profil.** Un chauffeur reste un passager quand il voyage : il garde ses onglets et bascule quand il travaille |
+| Maquettes | **Aucune** pour ces écrans. J'extrapole la langue établie — orange pour agir, cartes, filets — en réutilisant les composants existants |
+| Validation d'un dossier pour tester | **`motoboy:approve-driver`** — l'espace web n'existe pas, et sans dossier validé aucun écran de chauffeur ne prouve rien |
+
+- [x] Commande de validation, pour débloquer le test de bout en bout
+- [ ] Passager : demander, suivre, comparer les offres, payer
+- [ ] Chauffeur : bascule, demandes ouvertes, offrir, conduire, revenus
+- [ ] Administration web : la vraie file de modération
+
+
 Détail dans [Appel de service](APPEL-DE-SERVICE.md). Rien avant que 1 et 2 ne
 tiennent : un écran de chauffeur sans chauffeur validé ne prouve rien.
 
@@ -185,3 +200,6 @@ donc une décision produit et une migration — pas un réglage.
 | 17 août 2026 | Annulation **gratuite avant le départ**, rien rendu après |
 | 17 août 2026 | Chauffeur absent : remboursement intégral **et marque au dossier** |
 | 17 août 2026 | Aucune fenêtre d'attente avant de retenir une offre |
+| 17 août 2026 | Entrée passager par un **bouton sur l'accueil** |
+| 17 août 2026 | Mode chauffeur par **bascule dans le profil** |
+| 17 août 2026 | Pas de maquettes : extrapolation du système établi |
