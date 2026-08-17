@@ -4808,6 +4808,12 @@ export interface components {
         ServiceRequestPlace: {
             /** Format: int64 */
             city_id: number;
+            /**
+             * @description Nom de la ville, pour l'affichage. Renvoye par le serveur plutot que
+             *     resolu par le client : celui-ci ferait une requete de plus pour une
+             *     donnee deja en main.
+             */
+            city: string | null;
             landmark: string | null;
         };
         ServiceRequest: {
@@ -4837,7 +4843,7 @@ export interface components {
              *     retenue : le livrer avec chaque offre publierait les numeros de tous
              *     les chauffeurs qui repondent.
              */
-            driver?: {
+            driver: {
                 first_name?: string | null;
                 vehicle_plate?: string | null;
                 vehicle_model?: string | null;
@@ -4848,12 +4854,18 @@ export interface components {
             reference: string;
             status: components["schemas"]["RideStatus"];
             price: components["schemas"]["Money"];
+            /**
+             * @description Calcule par le serveur. C'est cet etat qui decide si l'ecran propose
+             *     de payer ou revele le telephone du chauffeur ; le deduire cote client
+             *     y ferait porter une regle metier.
+             */
+            paid: boolean;
             /** Format: date-time */
             started_at?: string | null;
             /** Format: date-time */
             completed_at?: string | null;
             /** @description Le telephone apparait ici, la course etant conclue. */
-            driver?: {
+            driver: {
                 first_name?: string | null;
                 last_name?: string | null;
                 phone?: string | null;

@@ -17,9 +17,23 @@ final class ServiceRequestResource extends JsonResource
         return [
             'reference' => $this->reference,
             'status' => $this->status->value,
-            'origin' => ['city_id' => $this->origin_city_id, 'landmark' => $this->origin_landmark],
+            /*
+             * Le **nom** de la ville, pas seulement son identifiant : l'ecran
+             * affiche « Bafang », et le resoudre cote mobile serait une requete
+             * de plus pour une donnee que le serveur a deja en main.
+             *
+             * `loadMissing` plutot qu'un chargement suppose : `shouldBeStrict()`
+             * interdit le chargement paresseux, et une ressource ne doit pas
+             * dependre de ce que l'appelant a pense a charger.
+             */
+            'origin' => [
+                'city_id' => $this->origin_city_id,
+                'city' => $this->loadMissing('originCity')->originCity?->name,
+                'landmark' => $this->origin_landmark,
+            ],
             'destination' => [
                 'city_id' => $this->destination_city_id,
+                'city' => $this->loadMissing('destinationCity')->destinationCity?->name,
                 'landmark' => $this->destination_landmark,
             ],
             'passengers' => $this->passengers,

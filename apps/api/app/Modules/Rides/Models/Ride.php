@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Rides\Models;
 
 use App\Modules\Identity\Models\User;
+use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Models\Payment;
 use App\Modules\Rides\Enums\RideStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,6 +42,22 @@ final class Ride extends Model
         'completed_at' => 'immutable_datetime',
         'cancelled_at' => 'immutable_datetime',
     ];
+
+    /**
+     * La course a-t-elle ete payee.
+     *
+     * Calcule ici et non deduit cote client : c'est cet etat qui decide si
+     * l'ecran propose de payer ou revele le telephone du chauffeur. Laisser le
+     * mobile le deviner depuis une liste de paiements y ferait porter une regle
+     * metier.
+     */
+    public function isPaid(): bool
+    {
+        return Payment::query()
+            ->where('ride_id', $this->id)
+            ->where('status', PaymentStatus::Succeeded->value)
+            ->exists();
+    }
 
     /** @return BelongsTo<ServiceRequest, $this> */
     public function request(): BelongsTo

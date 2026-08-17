@@ -24,13 +24,14 @@ final class RideResource extends JsonResource
              * conclue, les deux parties doivent pouvoir se joindre. C'est tout
              * l'objet de l'appel de service.
              */
-            'driver' => $this->whenLoaded('driver', fn () => [
-                'first_name' => $this->driver?->user?->first_name,
+            'paid' => $this->isPaid(),
+            'driver' => (fn () => [
+                'first_name' => $this->loadMissing('driver.user')->driver?->user?->first_name,
                 'last_name' => $this->driver?->user?->last_name,
                 'phone' => $this->driver?->user?->phone,
                 'vehicle_plate' => $this->driver?->vehicle_plate,
                 'vehicle_model' => $this->driver?->vehicle_model,
-            ]),
+            ])(),
         ];
     }
 }

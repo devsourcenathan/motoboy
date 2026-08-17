@@ -3165,10 +3165,17 @@ components:
 
     ServiceRequestPlace:
       type: object
-      required: [city_id, landmark]
+      required: [city_id, city, landmark]
       properties:
         city_id: { type: integer, format: int64 }
+        city:
+          type: [string, 'null']
+          description: |
+            Nom de la ville, pour l'affichage. Renvoye par le serveur plutot que
+            resolu par le client : celui-ci ferait une requete de plus pour une
+            donnee deja en main.
         landmark: { type: [string, 'null'] }
+
 
     ServiceRequest:
       type: object
@@ -3192,7 +3199,7 @@ components:
 
     RideOffer:
       type: object
-      required: [id, status, price, eta_minutes, expires_at]
+      required: [id, status, price, eta_minutes, expires_at, driver]
       properties:
         id: { type: integer, format: int64 }
         status: { $ref: '#/components/schemas/OfferStatus' }
@@ -3213,11 +3220,17 @@ components:
 
     Ride:
       type: object
-      required: [reference, status, price]
+      required: [reference, status, price, paid, driver]
       properties:
         reference: { type: string }
         status: { $ref: '#/components/schemas/RideStatus' }
         price: { $ref: '#/components/schemas/Money' }
+        paid:
+          type: boolean
+          description: |
+            Calcule par le serveur. C'est cet etat qui decide si l'ecran propose
+            de payer ou revele le telephone du chauffeur ; le deduire cote client
+            y ferait porter une regle metier.
         started_at: { type: [string, 'null'], format: date-time }
         completed_at: { type: [string, 'null'], format: date-time }
         driver:

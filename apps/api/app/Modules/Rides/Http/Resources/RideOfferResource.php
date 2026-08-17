@@ -25,12 +25,17 @@ final class RideOfferResource extends JsonResource
              * offre reviendrait a publier les numeros de tous les chauffeurs qui
              * repondent.
              */
-            'driver' => $this->whenLoaded('driver', fn () => [
-                'first_name' => $this->driver?->user?->first_name,
+            /*
+             * Toujours present, jamais conditionnel : une offre sans chauffeur
+             * n'existe pas, et l'exposer comme facultatif obligerait chaque
+             * ecran a gerer un cas impossible.
+             */
+            'driver' => (fn () => [
+                'first_name' => $this->loadMissing('driver.user')->driver?->user?->first_name,
                 'vehicle_plate' => $this->driver?->vehicle_plate,
                 'vehicle_model' => $this->driver?->vehicle_model,
                 'vehicle_seats' => $this->driver?->vehicle_seats,
-            ]),
+            ])(),
         ];
     }
 }
