@@ -4905,24 +4905,45 @@ export interface components {
         Ride: {
             reference: string;
             status: components["schemas"]["RideStatus"];
+            /** @description Ce que paie le passager. */
             price: components["schemas"]["Money"];
             /**
+             * @description Prelevee par la plateforme, au taux courant du dashboard. Renvoyee
+             *     plutot que calculee par le client : un pourcentage en dur cote mobile
+             *     annoncerait un net faux le jour ou le taux change.
+             */
+            commission: components["schemas"]["Money"];
+            /** @description Ce que touche le chauffeur, prix moins commission. */
+            driver_amount: components["schemas"]["Money"];
+            /**
              * @description Calcule par le serveur. C'est cet etat qui decide si l'ecran propose
-             *     de payer ou revele le telephone du chauffeur ; le deduire cote client
-             *     y ferait porter une regle metier.
+             *     de payer, et c'est lui qui commande la presence des telephones.
              */
             paid: boolean;
             /** Format: date-time */
             started_at?: string | null;
             /** Format: date-time */
             completed_at?: string | null;
-            /** @description Le telephone apparait ici, la course etant conclue. */
+            /**
+             * @description Le vehicule est visible des l'acceptation ; le telephone n'arrive
+             *     qu'une fois `paid` vrai. C'est ce que le passager achete, et le
+             *     livrer avant laisserait s'arranger hors plateforme.
+             */
             driver: {
-                first_name?: string | null;
-                last_name?: string | null;
-                phone?: string | null;
-                vehicle_plate?: string | null;
-                vehicle_model?: string | null;
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
+                vehicle_plate: string | null;
+                vehicle_model: string | null;
+            };
+            /**
+             * @description Le miroir du bloc precedent, pour l'ecran du chauffeur. Meme regle :
+             *     le telephone n'apparait qu'une fois la course payee.
+             */
+            passenger: {
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
             };
         };
         /** @enum {string} */

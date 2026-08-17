@@ -117,7 +117,13 @@ final class DriverRideController
     {
         $rides = Ride::query()
             ->where('driver_profile_id', $this->driver($request)->id)
-            ->with(['request.originCity', 'request.destinationCity'])
+            // Le passager et le chauffeur : la ressource les resout par
+            // `loadMissing`, garde-fou par enregistrement et non strategie de
+            // chargement pour une page entiere.
+            ->with([
+                'request.originCity', 'request.destinationCity',
+                'request.passenger', 'driver.user',
+            ])
             ->latest('id')
             ->paginate(20);
 
@@ -127,26 +133,6 @@ final class DriverRideController
                 ->all(),
             'meta' => self::pageMeta($rides),
         ]);
-    }
-
-    /**
-     * L'enveloppe de pagination de l'API, telle quelle.
-     *
-     * Quatre cles, pas deux : un ecran qui charge la suite a besoin de savoir ou il
-     * en est. Ces listes renvoyaient `total` et `per_page` seuls, une enveloppe a
-     * elles qui obligeait le client a distinguer les endpoints.
-     *
-     * @param  LengthAwarePaginator<int, covariant Model>  $page
-     * @return array<string, int>
-     */
-    private static function pageMeta(LengthAwarePaginator $page): array
-    {
-        return [
-            'page' => $page->currentPage(),
-            'per_page' => $page->perPage(),
-            'total' => $page->total(),
-            'last_page' => $page->lastPage(),
-        ];
     }
 
     public function start(Request $request, string $reference, AdvanceRide $advance): JsonResponse
@@ -192,5 +178,25 @@ final class DriverRideController
         }
 
         return $driver;
+    }
+
+    /**
+     * L'enveloppe de pagination de l'API, telle quelle.
+     *
+     * Quatre cles, pas deux : un ecran qui charge la suite a besoin de savoir ou il
+     * en est. Ces listes renvoyaient `total` et `per_page` seuls, une enveloppe a
+     * elles qui obligeait le client a distinguer les endpoints.
+     *
+     * @param  LengthAwarePaginator<int, covariant Model>  $page
+     * @return array<string, int>
+     */
+    private static function pageMeta(LengthAwarePaginator $page): array
+    {
+        return [
+            'page' => $page->currentPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+            'last_page' => $page->lastPage(),
+        ];
     }
 }

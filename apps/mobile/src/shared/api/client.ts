@@ -29,7 +29,15 @@ function resolveBaseUrl(): string {
   return host ? `http://${host}:8000/api` : 'http://localhost:8000/api'
 }
 
+/**
+ * Exportée pour le seul cas que le client généré ne couvre pas : l'envoi d'un
+ * fichier en `multipart/form-data`. `FormData` de React Native porte des objets
+ * `{uri, name, type}` que `fetch` sait sérialiser et qu'`openapi-fetch` ne
+ * connaît pas — il les passerait à `JSON.stringify`.
+ */
+export const API_BASE_URL = resolveBaseUrl()
+
 export const api = createApiClient({
-  baseUrl: resolveBaseUrl(),
+  baseUrl: API_BASE_URL,
   session,
 })

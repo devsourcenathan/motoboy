@@ -16,7 +16,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
 | 4. Paiement et reversement de la course | ✅ fait — côté API |
 | 5. Écrans passager | ✅ fait |
-| 6. Écrans chauffeur | ⬜ |
+| 6. Écrans chauffeur | 🔨 quatre écrans sur six — revenus et reversement sans API |
 | 7. Écrans administration (web) | ⬜ |
 
 ---
@@ -73,12 +73,13 @@ agence, se voit affecter des départs et porte un plan de sièges.
 
 ## 3. Module `Rides`
 
-- [ ] `service_requests` — demande, expiration
-- [ ] `ride_offers` — prix ferme, délai annoncé, validité
-- [ ] `rides` — course acceptée
-- [ ] Index unique partiel : une course active par chauffeur
-- [ ] Index unique partiel : une offre acceptée par demande
-- [ ] Expiration des demandes sans offre
+- [x] `service_requests` — demande, expiration
+- [x] `ride_offers` — prix ferme, délai annoncé, validité
+- [x] `rides` — course acceptée
+- [x] Index unique partiel : une course active par chauffeur
+- [x] Index unique partiel : une offre acceptée par demande
+- [x] Expiration des demandes sans offre
+- [x] Onze endpoints, contrat et client typé régénéré
 
 ## 4. Paiement et reversement
 
@@ -151,7 +152,8 @@ ne négocie pas.
 - [x] Commande de validation, pour débloquer le test de bout en bout
 - [x] Passager : entrée sur l'accueil et formulaire de demande
 - [x] Passager : suivre, comparer les offres, payer, signaler une absence
-- [ ] Chauffeur : bascule, demandes ouvertes, offrir, conduire, revenus
+- [x] Chauffeur : bascule, dossier, demandes ouvertes, offrir, conduire
+- [ ] Chauffeur : revenus et compte de reversement — **sans API**
 - [ ] Administration web : la vraie file de modération
 
 ### Le contrat était insuffisant pour l'écran de suivi — corrigé
@@ -183,12 +185,73 @@ le trajet en tête, puis ce que l'état permet — patienter, comparer, payer, s
 | **Absence signalable** sur une course payée et pas encore partie | Avant paiement il n'y a rien à rembourser ; une fois partie, le chauffeur est venu |
 | **Clé d'idempotence neuve à chaque tentative** de paiement | Comme pour une réservation. Rejouer la clé après un code erroné renverrait le refus précédent au passager qui vient de saisir le bon — la description du contrat disait l'inverse, elle a été corrigée |
 
-### À corriger avant les écrans chauffeur
+### Cinq réponses muettes, corrigées
 
-`GET /v1/driver/requests` déclare un `200` **sans schéma de réponse**. Le client
-généré ne peut donc rien en typer, et la liste des demandes ouvertes est
-précisément le premier écran du chauffeur. Même nature que les trois manques
-ci-dessus : le contrat ne dit pas ce que l'écran doit lire.
+`GET /v1/driver/requests` déclarait un `200` **sans schéma**. En cherchant, quatre
+autres : `/v1/driver/offers`, `/v1/driver/rides`, `/v1/service-requests` et
+`/v1/admin/drivers` — toutes les listes de cette extension. Le client généré n'en
+typait rien.
+
+Deux défauts sont sortis avec :
+
+| Défaut | Correction |
+|---|---|
+| Enveloppe divergente : `{total, per_page}` contre les `{page, per_page, total, last_page}` des huit autres endpoints paginés | Les quatre clés partout, via `PaginationMeta` |
+| `driver/offers` et `driver/rides` plafonnés à 50 lignes sans pagination | Paginés. Un plafond tronque en silence : un chauffeur au-delà de cinquante courses perdait le reste sans que rien ne le dise |
+| Le nom de ville ajouté la veille coûtait un N+1 — `loadMissing` par enregistrement sur une page de vingt | Villes chargées par la requête ; `loadMissing` redevient un garde-fou |
+
+Garde-fou permanent : `OpenApiCoverageTest` exige désormais un corps sur toute
+réponse de succès autre que `204`. La couverture des chemins ne suffisait pas —
+les cinq figuraient bien au contrat.
+
+### Écrans chauffeur
+
+Quatre écrans pour les huit lignes de spec qui ont une API derrière elles.
+
+| Écran | Couvre |
+|---|---|
+| `/driver` | Devenir chauffeur, dossier, statut, pièces (C1–C3) |
+| `/driver/apply` | Le formulaire, en dépôt comme en correction (C2) |
+| `/driver/requests` | Demandes de sa ville, détail et offre (C4, C5) |
+| `/driver/rides` | Ses offres, ses courses, celle qu'il conduit (C6, C7) |
+
+| Choix | Raison |
+|---|---|
+| **Bascule dans le profil**, pas de cinquième onglet | Un chauffeur reste un passager quand il voyage ; un onglet permanent occuperait la barre de tous les autres |
+| **Détail et offre dans la liste** | Une demande porte cinq informations. Le chauffeur compare : le faire naviguer pour lire ce qui tenait à l'écran lui coûte le comparatif |
+| **Pas de sondage** sur les demandes (C4) | Il ouvre l'écran quand il cherche du travail. Interroger toutes les dix secondes consommerait son forfait pendant qu'il conduit — il tire pour rafraîchir |
+| **Le net affiché, pas le brut** | La commission est prélevée par la plateforme. Afficher le prix payé ferait croire à une retenue surprise au reversement |
+| **`expo-image-picker` ajouté** | Sans dépôt de pièces, aucun dossier ne peut être validé. Supporté par Expo Go |
+
+Le dépôt de fichier passe **hors du client généré** : `openapi-fetch` sérialise en
+JSON, et un fichier de React Native est un objet `{uri, name, type}` que seul
+`fetch` transforme en partie multipart.
+
+### Le contrat de la course était écrit du seul point de vue du passager
+
+`Ride` portait le chauffeur et rien du passager — inutilisable par l'écran du
+chauffeur, qui doit savoir qui aller chercher. Trois ajouts :
+`passenger`, `commission` et `driver_amount`. Le net vient du serveur : le taux se
+règle depuis le dashboard, et 10 % recopié dans le mobile annoncerait un montant
+faux le lendemain d'un changement.
+
+**Et une fuite, trouvée en écrivant l'écran.** La règle « le téléphone n'apparaît
+qu'une fois payé » était tenue par l'écran seul. Le numéro partait dans la réponse
+dès l'acceptation : il suffisait de lire le JSON pour l'avoir sans payer, donc pour
+s'arranger hors plateforme — sans commission et sans recours. La règle est passée
+dans `RideResource`, et deux tests l'y maintiennent.
+
+Le test du parcours nominal, lui, **ne payait jamais** : il conduisait une course
+entière sans qu'un franc ait bougé. Il paie désormais.
+
+### Encore ouverte : une course peut démarrer sans être payée
+
+`AdvanceRide::start()` accepte une course impayée, alors que la décision 1 d'E4 bis
+dit que tout se règle à l'acceptation. L'écran du chauffeur désactive le bouton
+dans ce cas — c'est le côté prudent, mais c'est une règle métier tenue par une
+interface, exactement ce qui vient d'être corrigé pour les téléphones.
+
+À trancher : `start()` doit-il refuser en 409 sur une course impayée ?
 
 
 Détail dans [Appel de service](APPEL-DE-SERVICE.md). Rien avant que 1 et 2 ne

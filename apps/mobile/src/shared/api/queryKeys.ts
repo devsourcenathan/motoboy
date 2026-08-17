@@ -18,6 +18,7 @@ export const QUERY_ROOT = {
   tickets: 'tickets',
   payments: 'payments',
   serviceRequests: 'service-requests',
+  driver: 'driver',
   me: 'me',
 } as const
 
@@ -71,6 +72,16 @@ export const queryKeys = {
   serviceRequests: () => [QUERY_ROOT.serviceRequests] as const,
   serviceRequest: (reference: string) =>
     [QUERY_ROOT.serviceRequests, reference] as const,
+
+  /*
+   * Le dossier, ses offres et ses courses partagent une racine : une offre
+   * acceptée crée une course, et invalider la racine rafraîchit les deux plutôt
+   * que d'obliger chaque mutation à énumérer ce qu'elle affecte.
+   */
+  driverProfile: () => [QUERY_ROOT.driver, 'profile'] as const,
+  driverRequests: () => [QUERY_ROOT.driver, 'requests'] as const,
+  driverOffers: () => [QUERY_ROOT.driver, 'offers'] as const,
+  driverRides: () => [QUERY_ROOT.driver, 'rides'] as const,
 
   me: () => [QUERY_ROOT.me] as const,
 } as const

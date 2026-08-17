@@ -326,6 +326,75 @@ export interface PassengerMessages {
     readonly inProgress: string
     readonly completed: string
   }
+  readonly driver: {
+    readonly title: string
+    readonly pitchTitle: string
+    readonly pitchBody: string
+    readonly requires: string
+    readonly requiresLicence: string
+    readonly requiresRegistration: string
+    readonly requiresIdentity: string
+    readonly requiresInsurance: string
+    readonly start: string
+    readonly resubmit: string
+    readonly statusPending: string
+    readonly statusPendingBody: string
+    readonly statusRejected: string
+    readonly statusSuspended: string
+    readonly statusApproved: string
+    readonly statusApprovedBody: string
+    readonly reviewNote: string
+    readonly licenceExpired: string
+    readonly missingDocuments: string
+    readonly documentsSent: string
+    readonly upload: string
+    readonly form: {
+      readonly licence: string
+      readonly licenceNumber: string
+      readonly licenceExpiry: string
+      readonly vehicle: string
+      readonly plate: string
+      readonly typeCar: string
+      readonly typeBus: string
+      readonly model: string
+      readonly seats: string
+      readonly city: string
+      readonly cityHint: string
+      readonly submit: string
+      readonly incomplete: string
+      readonly expiredLicence: string
+    }
+    readonly work: string
+    readonly openRequests: string
+    readonly openRequestsEmpty: string
+    readonly openRequestsEmptyBody: string
+    readonly outOfCity: string
+    readonly passengersCount: string
+    readonly takenAlready: string
+    readonly offer: string
+    readonly offerPrice: string
+    readonly offerPriceHint: string
+    readonly offerEta: string
+    readonly offerEtaHint: string
+    readonly offerSubmit: string
+    readonly offerDone: string
+    readonly offerInvalid: string
+    readonly myOffers: string
+    readonly myOffersEmpty: string
+    readonly offerPending: string
+    readonly offerAccepted: string
+    readonly offerLost: string
+    readonly offerExpired: string
+    readonly myRides: string
+    readonly myRidesEmpty: string
+    readonly currentRide: string
+    readonly awaitingPayment: string
+    readonly startRide: string
+    readonly completeRide: string
+    readonly rideStarted: string
+    readonly rideDone: string
+    readonly earned: string
+  }
   readonly tabs: {
     readonly home: string
     readonly trips: string
@@ -687,6 +756,75 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       inProgress: 'Course en cours',
       completed: 'Course terminée',
     },
+    driver: {
+      title: 'Mode chauffeur',
+      pitchTitle: 'Conduire avec MOTOBOY',
+      pitchBody: 'Vous voyez les demandes de votre ville, vous proposez votre prix. Le passager paie sur la plateforme, vous êtes reversé sur votre compte Mobile Money.',
+      requires: 'Ce qu’il faut fournir',
+      requiresLicence: 'Permis de conduire en cours de validité',
+      requiresRegistration: 'Carte grise du véhicule',
+      requiresIdentity: 'Pièce d’identité',
+      requiresInsurance: 'Attestation d’assurance',
+      start: 'Déposer mon dossier',
+      resubmit: 'Corriger et représenter',
+      statusPending: 'Dossier en cours d’examen',
+      statusPendingBody: 'Nous revenons vers vous dès qu’une décision est prise.',
+      statusRejected: 'Dossier refusé',
+      statusSuspended: 'Compte suspendu',
+      statusApproved: 'Dossier validé',
+      statusApprovedBody: 'Vous pouvez répondre aux demandes de votre ville.',
+      reviewNote: 'Motif',
+      licenceExpired: 'Votre permis est périmé. Redéposez-le pour reprendre les courses.',
+      missingDocuments: 'Pièces manquantes',
+      documentsSent: 'Pièces déposées',
+      upload: 'Déposer',
+      form: {
+        licence: 'Permis',
+        licenceNumber: 'Numéro de permis',
+        licenceExpiry: 'Expire le',
+        vehicle: 'Véhicule',
+        plate: 'Plaque',
+        typeCar: 'Voiture',
+        typeBus: 'Bus',
+        model: 'Modèle',
+        seats: 'Places',
+        city: 'Ville d’exercice',
+        cityHint: 'Vous verrez les demandes de cette ville.',
+        submit: 'Envoyer le dossier',
+        incomplete: 'Complétez les champs obligatoires.',
+        expiredLicence: 'La date d’expiration doit être à venir.',
+      },
+      work: 'Conduire',
+      openRequests: 'Demandes ouvertes',
+      openRequestsEmpty: 'Aucune demande pour l’instant',
+      openRequestsEmptyBody: 'Les demandes de votre ville apparaissent ici. Tirez pour rafraîchir.',
+      outOfCity: 'Aucune demande dans votre ville d’exercice.',
+      passengersCount: '{{count}} personne(s)',
+      takenAlready: 'Cette demande vient d’être pourvue.',
+      offer: 'Faire une offre',
+      offerPrice: 'Votre prix',
+      offerPriceHint: 'Ferme, pour la course entière.',
+      offerEta: 'Délai d’arrivée',
+      offerEtaHint: 'En minutes, depuis maintenant.',
+      offerSubmit: 'Envoyer l’offre',
+      offerDone: 'Offre envoyée',
+      offerInvalid: 'Renseignez un prix et un délai.',
+      myOffers: 'Mes offres',
+      myOffersEmpty: 'Vous n’avez encore rien proposé.',
+      offerPending: 'En attente',
+      offerAccepted: 'Acceptée',
+      offerLost: 'Non retenue',
+      offerExpired: 'Expirée',
+      myRides: 'Mes courses',
+      myRidesEmpty: 'Aucune course pour l’instant.',
+      currentRide: 'Course en cours',
+      awaitingPayment: 'En attente du paiement du passager',
+      startRide: 'Démarrer la course',
+      completeRide: 'Terminer la course',
+      rideStarted: 'Course démarrée',
+      rideDone: 'Course terminée',
+      earned: 'Vous touchez',
+    },
     tabs: {
       home: 'Accueil',
       trips: 'Mes voyages',
@@ -1011,6 +1149,75 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       cancelled: 'Request cancelled',
       inProgress: 'Ride in progress',
       completed: 'Ride completed',
+    },
+    driver: {
+      title: 'Driver mode',
+      pitchTitle: 'Drive with MOTOBOY',
+      pitchBody: 'You see the requests in your city and name your price. The passenger pays on the platform, and you are paid out to your Mobile Money account.',
+      requires: 'What you need to provide',
+      requiresLicence: 'A valid driving licence',
+      requiresRegistration: 'Vehicle registration',
+      requiresIdentity: 'Proof of identity',
+      requiresInsurance: 'Insurance certificate',
+      start: 'Submit my application',
+      resubmit: 'Fix and resubmit',
+      statusPending: 'Application under review',
+      statusPendingBody: 'We will get back to you as soon as a decision is made.',
+      statusRejected: 'Application rejected',
+      statusSuspended: 'Account suspended',
+      statusApproved: 'Application approved',
+      statusApprovedBody: 'You can now answer requests in your city.',
+      reviewNote: 'Reason',
+      licenceExpired: 'Your licence has expired. Submit a new one to take rides again.',
+      missingDocuments: 'Missing documents',
+      documentsSent: 'Documents provided',
+      upload: 'Upload',
+      form: {
+        licence: 'Licence',
+        licenceNumber: 'Licence number',
+        licenceExpiry: 'Expires on',
+        vehicle: 'Vehicle',
+        plate: 'Plate',
+        typeCar: 'Car',
+        typeBus: 'Bus',
+        model: 'Model',
+        seats: 'Seats',
+        city: 'City you work in',
+        cityHint: 'You will see requests from this city.',
+        submit: 'Send application',
+        incomplete: 'Fill in the required fields.',
+        expiredLicence: 'The expiry date must be in the future.',
+      },
+      work: 'Drive',
+      openRequests: 'Open requests',
+      openRequestsEmpty: 'No requests right now',
+      openRequestsEmptyBody: 'Requests from your city show up here. Pull to refresh.',
+      outOfCity: 'No requests in the city you work in.',
+      passengersCount: '{{count}} passenger(s)',
+      takenAlready: 'This request has just been taken.',
+      offer: 'Make an offer',
+      offerPrice: 'Your price',
+      offerPriceHint: 'Firm, for the whole ride.',
+      offerEta: 'Time to arrive',
+      offerEtaHint: 'In minutes, from now.',
+      offerSubmit: 'Send offer',
+      offerDone: 'Offer sent',
+      offerInvalid: 'Enter a price and a time.',
+      myOffers: 'My offers',
+      myOffersEmpty: 'You have not made any offer yet.',
+      offerPending: 'Pending',
+      offerAccepted: 'Accepted',
+      offerLost: 'Not taken',
+      offerExpired: 'Expired',
+      myRides: 'My rides',
+      myRidesEmpty: 'No rides yet.',
+      currentRide: 'Current ride',
+      awaitingPayment: 'Waiting for the passenger to pay',
+      startRide: 'Start the ride',
+      completeRide: 'Complete the ride',
+      rideStarted: 'Ride started',
+      rideDone: 'Ride completed',
+      earned: 'You receive',
     },
     tabs: {
       home: 'Home',

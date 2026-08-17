@@ -565,9 +565,23 @@ ville, l'état payé de la course, le chauffeur d'une offre. Corrigés côté AP
 d'écrire l'écran, plutôt que compensés côté mobile. Détail et suite dans
 [Suivi de l'appel de service](SUIVI-APPEL-DE-SERVICE.md).
 
-**Chauffeur et administration restent à faire.** Premier obstacle connu :
-`GET /v1/driver/requests` déclare un `200` sans schéma de réponse, donc rien à
-typer pour l'écran qui en dépend.
+**Chauffeur fait** (17 août 2026), sauf ses revenus : bascule depuis le profil,
+dossier avec dépôt des quatre pièces, demandes ouvertes de sa ville, offre à prix
+ferme, course à démarrer et terminer. Pas de sondage sur les demandes — il ouvre
+l'écran quand il cherche du travail, et tire pour rafraîchir.
+
+Les cinq réponses de liste de cette extension déclaraient un `200` sans schéma ;
+elles divergeaient aussi de l'enveloppe de pagination du reste de l'API et deux
+d'entre elles tronquaient à cinquante lignes en silence. Corrigé, et tenu par un
+test : toute réponse de succès autre que `204` doit déclarer un corps.
+
+En écrivant l'écran du chauffeur, une fuite : le téléphone du chauffeur partait
+dans la réponse dès l'acceptation, la règle « seulement une fois payé » n'étant
+tenue que par l'écran. Elle est passée dans la ressource.
+
+**Ce qui reste :** les revenus du chauffeur et son compte de reversement (C8, C9),
+qui n'ont aucun endpoint — les grands livres et comptes existent, mais sous
+`agency/`. Et toute l'administration web.
 
 ### Ce qui n'en fait pas partie
 

@@ -15,6 +15,7 @@ import {
   HistoryIcon,
   lineHeight,
   PersonIcon,
+  TargetIcon,
   radius,
   Screen,
   sharedStyles,
@@ -97,6 +98,18 @@ export function AccountScreen() {
             title={t('account.history')}
             hint={t('account.historyHint')}
             onPress={() => router.push('/tickets')}
+          />
+
+          {/*
+            La bascule vers le mode chauffeur (C1), ici et pas dans un cinquième
+            onglet : un chauffeur reste un passager quand il voyage, et un onglet
+            permanent occuperait la barre de tous les autres.
+          */}
+          <MenuRow
+            icon={<TargetIcon color={theme.text.brand} size={22} />}
+            title={t('driver.title')}
+            hint={t('driver.pitchTitle')}
+            onPress={() => router.push('/driver')}
           />
         </View>
 

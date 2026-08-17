@@ -3300,28 +3300,55 @@ components:
 
     Ride:
       type: object
-      required: [reference, status, price, paid, driver]
+      required: [reference, status, price, commission, driver_amount, paid, driver, passenger]
       properties:
         reference: { type: string }
         status: { $ref: '#/components/schemas/RideStatus' }
-        price: { $ref: '#/components/schemas/Money' }
+        price:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Ce que paie le passager.
+        commission:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: |
+            Prelevee par la plateforme, au taux courant du dashboard. Renvoyee
+            plutot que calculee par le client : un pourcentage en dur cote mobile
+            annoncerait un net faux le jour ou le taux change.
+        driver_amount:
+          allOf:
+            - $ref: '#/components/schemas/Money'
+          description: Ce que touche le chauffeur, prix moins commission.
         paid:
           type: boolean
           description: |
             Calcule par le serveur. C'est cet etat qui decide si l'ecran propose
-            de payer ou revele le telephone du chauffeur ; le deduire cote client
-            y ferait porter une regle metier.
+            de payer, et c'est lui qui commande la presence des telephones.
         started_at: { type: [string, 'null'], format: date-time }
         completed_at: { type: [string, 'null'], format: date-time }
         driver:
           type: object
-          description: Le telephone apparait ici, la course etant conclue.
+          required: [first_name, last_name, phone, vehicle_plate, vehicle_model]
+          description: |
+            Le vehicule est visible des l'acceptation ; le telephone n'arrive
+            qu'une fois `paid` vrai. C'est ce que le passager achete, et le
+            livrer avant laisserait s'arranger hors plateforme.
           properties:
             first_name: { type: [string, 'null'] }
             last_name: { type: [string, 'null'] }
             phone: { type: [string, 'null'] }
             vehicle_plate: { type: [string, 'null'] }
             vehicle_model: { type: [string, 'null'] }
+        passenger:
+          type: object
+          required: [first_name, last_name, phone]
+          description: |
+            Le miroir du bloc precedent, pour l'ecran du chauffeur. Meme regle :
+            le telephone n'apparait qu'une fois la course payee.
+          properties:
+            first_name: { type: [string, 'null'] }
+            last_name: { type: [string, 'null'] }
+            phone: { type: [string, 'null'] }
 
     DriverStatus:
       type: string

@@ -38,6 +38,14 @@ export const theme = {
     /** Éléments inertes : place occupée, bouton désactivé, puce terminée. */
     inert: colors.neutral[200],
     border: colors.neutral[300],
+    /**
+     * Voile derriere une feuille modale.
+     *
+     * Le seul endroit du systeme ou une couleur porte de la transparence : elle
+     * doit assombrir ce qui est derriere, pas le remplacer. Un gris opaque
+     * cacherait le contexte que la feuille est justement censee laisser voir.
+     */
+    scrim: 'rgba(16, 49, 79, 0.45)',
     brand: colors.brand[500],
     brandSoft: colors.brand[50],
     ink: colors.ink[700],
