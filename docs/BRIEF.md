@@ -2302,6 +2302,148 @@ Au lancement, avec une couverture encore faible, la recherche vide sera fréquen
 ---
 ---
 
+# Partie IV — Extensions post-MVP
+
+*Ce qui a été demandé après la validation du brief. Chaque extension y figure
+avec ce qu'elle change au produit, et surtout avec ce qu'elle ne fait pas — une
+fonctionnalité dont on n'a pas écrit les limites finit par se les voir prêter.*
+
+## E1 — Appel de service
+
+**Décision arrêtée — 17 août 2026 : un passager peut demander un véhicule à la
+demande, et des chauffeurs indépendants répondent par des offres.**
+
+« Je suis à Bafang et j'ai besoin d'un véhicule. » Le MVP ne sait pas répondre à
+cette phrase : il compare des **départs programmés**, avec un stock de places, un
+horaire et un prix connus d'avance. L'appel de service n'a rien de tout cela — pas
+de stock, pas d'horaire, pas de prix affiché. Le problème central passe de
+*comparer* à *apparier*.
+
+### Ce qui reste du produit
+
+**MOTOBOY compare, et continue de comparer.** Pour un départ programmé, il
+compare des agences ; pour un appel de service, il compare des **offres de
+chauffeurs**. C'est la même promesse faite au passager, appliquée à un autre
+inventaire.
+
+Ce n'est pas qu'une formule : c'est ce qui résout le prix sans barème
+kilométrique. Il n'existe aucune table de distances entre localités, et en
+construire une pour couvrir le Cameroun est un projet en soi. Le chauffeur
+propose son prix, le passager choisit — le marché fixe le tarif, comme il le fait
+déjà en gare routière.
+
+## E2 — Chauffeurs indépendants
+
+**Décision arrêtée — 17 août 2026 : les chauffeurs de l'appel de service sont des
+indépendants, sans agence.**
+
+C'est le choix le plus lourd de l'extension, et il faut en mesurer la portée.
+
+### Ce qui n'est pas réutilisable
+
+| Existant | Pourquoi il ne convient pas |
+|---|---|
+| `drivers` | Lié à `agency_id` : c'est du personnel, créé par un gestionnaire d'agence |
+| `vehicles` | Possédé par une agence, avec sa modération de documents |
+| `agency_ledger_entries` | Le grand livre ne connaît que des agences comme bénéficiaires ([B4](#b4--flux-financier-et-reversement-aux-agences)) |
+
+Fusionner les deux populations dans `drivers` imposerait un `agency_id` nullable
+et un « de quel genre est ce chauffeur ? » dans chaque requête d'agence. La
+première requête qui l'oublie fait apparaître un indépendant dans le planning
+d'une agence.
+
+### Ce qu'il faut créer
+
+Le chauffeur **n'est pas une nouvelle identité** : c'est un `User` portant le rôle
+`DRIVER`, qui se connecte par OTP comme tout le monde ([§8](#8-authentification)).
+S'y ajoute un profil chauffeur portant le permis, le véhicule, les documents et
+le compte de reversement.
+
+**Aucune course avant validation du dossier.** Permis, carte grise, pièce
+d'identité et assurance passent par la file de modération de l'espace
+administration, comme les gares le font déjà.
+
+### Le risque à porter au client
+
+Sans agence, **il n'y a plus de tiers responsable**. Aujourd'hui, un incident se
+règle avec le transporteur ; demain, le passager n'aura que MOTOBOY en face de
+lui. Transporter des personnes contre rémunération suppose par ailleurs des
+autorisations : mettre en relation des chauffeurs qui n'en disposent pas expose
+la plateforme.
+
+Ce point n'est pas technique et ne se tranche pas dans ce document. Il est écrit
+ici pour qu'il ne soit pas découvert après la mise en service.
+
+## E3 — Position déclarée, pas GPS
+
+**Décision arrêtée — 17 août 2026 : le passager déclare sa position ; aucune
+géolocalisation n'est captée.**
+
+Une ville prise dans le référentiel ([B1](#b1--référentiel-géographique)), plus un
+point de repère en texte libre — « Bafang, carrefour Total ». Le chauffeur
+répond sur cette base.
+
+Aucune coordonnée n'existe aujourd'hui : les villes n'en ont pas, et les huit
+gares ont leurs colonnes `latitude`/`longitude` vides. Passer au GPS ouvrirait la
+cartographie, les permissions de localisation, le calcul de distance et le suivi
+en arrière-plan — un chantier sans commune mesure, pour un gain qui reste à
+démontrer sur un trajet interurbain qui se compte en heures.
+
+## E4 — Flux financier
+
+**Décision arrêtée — 17 août 2026 : le passager paie la plateforme, qui reverse au
+chauffeur sur son compte Mobile Money.**
+
+C'est le même circuit que [B4](#b4--flux-financier-et-reversement-aux-agences),
+avec une personne comme bénéficiaire au lieu d'une agence. La commission reste
+prélevable, et le chauffeur reçoit bien son argent sur son compte.
+
+**L'alternative a été écartée.** Un paiement de la main à la main placerait la
+course entièrement hors de la plateforme : aucune commission ne serait
+prélevable, et les deux parties auraient intérêt à contourner l'application — le
+chauffeur garde tout, le passager obtient un rabais. La fonctionnalité
+deviendrait un tableau d'annonces qui coûte des SMS.
+
+### Conséquence sur le grand livre
+
+Le seul point de sortie d'argent est indexé sur `agency_id`. Il faut le
+**généraliser à un bénéficiaire**, agence ou personne, plutôt que dupliquer un
+second grand livre : du code d'argent recopié diverge, et c'est celui dont la
+divergence coûte le plus cher.
+
+## E5 — Ce que l'extension ne fait pas
+
+À dire avant de montrer un écran, pas après :
+
+- **Ce n'est pas du VTC temps réel.** Pas de carte, pas de véhicule « à trois
+  minutes », pas de suivi de la course. Le délai se compte en dizaines de
+  minutes.
+- **Pas de négociation.** Le chauffeur propose un prix ferme, le passager accepte
+  ou non. Un échange de messages demanderait une messagerie, sa modération et son
+  historique.
+- **Pas de notation.** Elle suppose un volume qui n'existera pas au lancement, et
+  une note bâtie sur trois avis nuit plus qu'elle n'informe.
+- **Pas de course immédiate garantie.** Une demande sans offre expire ; le
+  passager n'a alors rien, et l'écran doit le dire.
+
+## E6 — Conséquences sur l'existant
+
+| Chantier | Nature |
+|---|---|
+| Bénéficiaire généralisé dans les reversements | Refactor de code d'argent, couvert par les tests existants |
+| Rôle `DRIVER`, profil, dossier et modération | Ajouts, sans reprise de l'existant |
+| Module `Rides` | Contexte nouveau : demandes, offres, courses |
+| Mode chauffeur dans l'application mobile | Les onglets dépendent du rôle — pas de seconde application |
+| Notification des chauffeurs | Aucun push n'existe. En v1, le chauffeur consulte les demandes ouvertes de sa ville ; diffuser chaque demande par SMS coûterait trop cher |
+
+### Garde-fous de concurrence
+
+Deux index uniques partiels, sur le modèle de la double-vente de sièges
+([B2](#b2--réservation-et-tenue-des-places)) : **un chauffeur n'a qu'une course
+active**, et **une demande n'accepte qu'une offre**. Deux passagers qui acceptent
+le même chauffeur à la seconde près : c'est la base qui refuse le second, pas la
+logique applicative.
+
 # Annexe A — Vocabulaire
 
 Le mot « trajet » désigne deux choses différentes dans le document. À fixer pour éviter toute ambiguïté dans le code :

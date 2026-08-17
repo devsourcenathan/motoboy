@@ -480,7 +480,7 @@ Rien de tout cela ne bloque le chemin critique.
 
 ---
 
-## 6. Ce que « terminé » veut dire
+## 7. Ce que « terminé » veut dire
 
 Le MVP est prêt quand ces deux boucles tournent de bout en bout, sur des données
 réelles :
@@ -498,7 +498,7 @@ tous les écrans existent.
 
 ---
 
-## 7. Hors MVP
+## 8. Hors MVP
 
 La liste fait autorité et se trouve en [§31 du brief](BRIEF.md). Elle inclut
 notamment le wallet, les applications chauffeur et agence, le suivi GPS, la
@@ -506,3 +506,56 @@ réservation par tronçon, le transfert de réservation et l'alerte de
 disponibilité.
 
 Elle est là pour être respectée quand c'est tentant.
+
+**Une exception, assumée et datée.** L'appel de service (§9) rouvre le mode
+chauffeur — comme un jeu d'onglets dans l'application existante, pas comme une
+seconde application. Le **suivi GPS reste hors périmètre** : la position est
+déclarée, jamais captée. La distinction compte, parce que c'est elle qui fait la
+différence entre une extension et un second produit.
+
+## 9. Appel de service — extension post-MVP
+
+Décidée le 17 août 2026, spécifiée en [Partie IV du brief](BRIEF.md). Un passager
+demande un véhicule, des chauffeurs indépendants proposent leurs offres, il
+choisit.
+
+**L'ordre n'est pas négociable : rien n'a de sens sans chauffeur validé.**
+
+### 8.1 Bénéficiaire généralisé dans les reversements
+
+Le seul point de sortie d'argent est indexé sur `agency_id`. Le généraliser à un
+bénéficiaire — agence ou personne — **avant** d'en avoir besoin, plutôt que de
+dupliquer un second grand livre.
+
+D'abord parce que c'est le chantier le plus risqué du lot, et que les 177 tests
+existants sont le filet qui le rend sûr. Ensuite parce qu'un second grand livre
+écrit « en attendant » ne se fusionne jamais.
+
+### 8.2 Chauffeur : compte, dossier, modération
+
+Rôle `DRIVER` sur un `User` ordinaire — connexion par OTP, comme tout le monde.
+Profil portant permis, véhicule, documents et compte de reversement. File de
+modération dans l'espace administration, sur le modèle des gares.
+
+Aucune course tant que le dossier n'est pas validé.
+
+### 8.3 Module `Rides`
+
+Demandes, offres, courses. Deux index uniques partiels comme garde-fous : un
+chauffeur n'a qu'une course active, une demande n'accepte qu'une offre.
+
+### 8.4 Paiement et reversement de la course
+
+Réutilise Paiements ; le reversement passe par le bénéficiaire de 8.1.
+
+### 8.5 Écrans
+
+Côté passager : demander un véhicule, suivre ses offres, choisir. Côté chauffeur :
+demandes ouvertes de sa ville, ses courses, ses revenus. Les onglets dépendent du
+rôle.
+
+### Ce qui n'en fait pas partie
+
+Carte, suivi de course, négociation, notation, push. Le push est la seule
+infrastructure réellement neuve que cette extension appellera — plus tard, quand
+consulter la liste ne suffira plus.
