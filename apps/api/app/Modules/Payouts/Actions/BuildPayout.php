@@ -204,7 +204,10 @@ final class BuildPayout
     private function bucket(LedgerEntryType $type): string
     {
         return match ($type) {
-            LedgerEntryType::BookingCredit => 'gross',
+            // Une course d'appel de service est du chiffre brut, comme une
+            // reservation : c'est ce que le beneficiaire a fait entrer.
+            LedgerEntryType::BookingCredit,
+            LedgerEntryType::RideCredit => 'gross',
             LedgerEntryType::CommissionDebit,
             LedgerEntryType::CommissionReversalCredit,
             LedgerEntryType::CounterCommissionDebit,

@@ -14,7 +14,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
-| 4. Paiement et reversement de la course | 🔨 schéma fait, deux préalables |
+| 4. Paiement et reversement de la course | ✅ règlement fait, endpoints à venir |
 | 5. Écrans passager | ⬜ |
 | 6. Écrans chauffeur | ⬜ |
 | 7. Écrans administration (web) | ⬜ |
@@ -85,18 +85,21 @@ agence, se voit affecter des départs et porte un plan de sièges.
 - [x] Schéma : un paiement peut porter sur une course
 - [x] Contrainte : un paiement sans objet, ou rattaché aux deux, est refusé
 - [x] Compteur de non-présentations au dossier chauffeur
-- [ ] Encaissement à l'acceptation — **bloqué, voir ci-dessous**
+- [x] Encaissement à l'acceptation — `PayForRide`, avec rejeu par clé
+- [x] Écriture au grand livre du chauffeur — crédit et commission séparés
+- [x] Grand livre ouvert aux écritures sans agence
+- [ ] Endpoints HTTP de paiement et de signalement d'absence
 - [ ] Remboursement : annulation avant départ, et chauffeur absent
-- [ ] Écriture au grand livre du chauffeur
-- [ ] Reversement sur son compte Mobile Money
+- [ ] Reversement effectif sur le compte Mobile Money du chauffeur
 
 ### Deux préalables, tous deux hors du périmètre d'une passe rapide
 
-**1. Généraliser `InitiatePayment`.** L'action est façonnée pour une
-réservation de bout en bout : garde sur la réservation, détection de rejeu par
-réservation, commission lue sur la réservation. C'est un refactor de code
-d'argent du même ordre que le bénéficiaire de l'étape 1, et il mérite sa passe
-dédiée plutôt que la fin d'une longue session.
+**1. Généraliser `InitiatePayment`** — ✅ **écarté après examen.** Ses gardes sont
+entièrement propres à la réservation : tenue de places expirée, vente en ligne
+close, départ annulé. Aucune n'a de sens pour une course. Ne restait en commun que
+l'appel à la passerelle, qui est déjà un port. Les fondre aurait produit une
+action avec deux jeux de gardes exclusifs — deux actions dans un fichier. D'où
+`PayForRide`, à part.
 
 **2. Le taux de commission d'une course** — ✅ **tranché : 10 %, réglable.**
 Stocké en base, modifiable depuis le dashboard par le super-administrateur, en

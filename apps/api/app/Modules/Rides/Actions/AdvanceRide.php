@@ -23,6 +23,8 @@ use App\Support\Http\ErrorCode;
  */
 final class AdvanceRide
 {
+    public function __construct(private readonly RecordRideSettlement $settlement) {}
+
     public function start(Ride $ride): Ride
     {
         if ($ride->status !== RideStatus::Matched) {
@@ -46,6 +48,13 @@ final class AdvanceRide
          * paiement s'accrochera (étape 4).
          */
         $ride->update(['status' => RideStatus::Completed, 'completed_at' => now()]);
+
+        /*
+         * Le reglement suit immediatement la fin de course, et il est rejouable :
+         * terminer deux fois ne crediterait pas deux fois. Le differer aurait
+         * laisse une fenetre ou le chauffeur a roule sans que rien ne lui soit du.
+         */
+        $this->settlement->handle($ride->refresh());
 
         return $ride->refresh();
     }

@@ -66,6 +66,8 @@ return new class extends Migration
 
         // Les paiements de course doivent avoir disparu pour que la colonne
         // redevienne obligatoire.
-        DB::statement('alter table payments alter column booking_id set not null');
+        Schema::table('payments', function (Blueprint $table) {
+            $table->foreignId('booking_id')->nullable(false)->change();
+        });
     }
 };
