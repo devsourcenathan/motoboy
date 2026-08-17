@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class CancelServiceRequest
 {
+    public function __construct(private readonly RefundRide $refunds) {}
+
     public function handle(ServiceRequest $request, User $actor, ?string $reason = null): ServiceRequest
     {
         if ($request->status === ServiceRequestStatus::Cancelled) {
@@ -43,6 +45,17 @@ final class CancelServiceRequest
              * Une course déjà conclue s'annule avec la demande. L'index partiel
              * libère alors le chauffeur, qui peut reprendre une course.
              */
+            /*
+             * Rembourser **avant** de changer l'etat : la regle se lit sur le
+             * statut courant — gratuit tant que la course n'a pas demarre — et
+             * l'annuler d'abord effacerait l'information dont depend la decision.
+             */
+            $existing = $request->ride;
+
+            if ($existing !== null) {
+                $this->refunds->onCancellation($existing);
+            }
+
             $request->ride()->whereIn('status', [
                 RideStatus::Matched->value,
                 RideStatus::InProgress->value,

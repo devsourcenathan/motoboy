@@ -9,19 +9,23 @@ use App\Modules\Identity\Models\User;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
+use App\Modules\Payments\Models\Refund;
 use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Payee;
 use App\Modules\Places\Models\City;
 use App\Modules\Rides\Actions\AcceptOffer;
 use App\Modules\Rides\Actions\AdvanceRide;
+use App\Modules\Rides\Actions\CancelServiceRequest;
 use App\Modules\Rides\Actions\MakeOffer;
 use App\Modules\Rides\Actions\OpenServiceRequest;
 use App\Modules\Rides\Actions\PayForRide;
 use App\Modules\Rides\Actions\RecordRideSettlement;
+use App\Modules\Rides\Actions\RefundRide;
 use App\Modules\Rides\Enums\DriverStatus;
 use App\Modules\Rides\Models\DriverProfile;
 use App\Modules\Rides\Models\Ride;
+use App\Modules\Rides\Models\ServiceRequest;
 use App\Support\Http\ApiException;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CitySeeder;
@@ -133,6 +137,76 @@ final class RideSettlementTest extends TestCase
 
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Payment::query()->where('ride_id', $ride->id)->count());
+    }
+
+    /**
+     * Annuler avant le depart rend tout : le chauffeur n'a rien engage.
+     */
+    public function test_cancelling_before_departure_refunds_in_full(): void
+    {
+        $ride = $this->ride();
+        $this->pay($ride);
+        $this->settle($ride);
+
+        $this->cancel($ride, 'Changement de plan');
+
+        $this->assertSame(10_000, (int) Refund::query()->sum('amount'));
+        $this->assertSame(0, (int) Refund::query()->sum('fee_amount'));
+    }
+
+    /**
+     * Une fois la course demarree, rien n'est rendu : le chauffeur a roule.
+     */
+    public function test_cancelling_after_departure_refunds_nothing(): void
+    {
+        $ride = $this->ride();
+        $this->pay($ride);
+        $this->settle($ride);
+        app(AdvanceRide::class)->start($ride->refresh());
+
+        $this->cancel($ride, 'Trop tard');
+
+        $this->assertSame(0, Refund::query()->count());
+    }
+
+    /**
+     * L'absence rend tout **et** compte. Une marque qui ne s'accumule pas ne
+     * justifierait jamais une suspension.
+     */
+    public function test_a_no_show_refunds_in_full_and_marks_the_driver(): void
+    {
+        $ride = $this->ride();
+        $this->pay($ride);
+        $this->settle($ride);
+
+        app(RefundRide::class)->onDriverNoShow($ride->refresh());
+
+        $this->assertSame(10_000, (int) Refund::query()->sum('amount'));
+        $this->assertSame(1, $ride->driver?->refresh()->no_show_count);
+    }
+
+    /**
+     * Resout la demande et son passager explicitement.
+     *
+     * Passer par les relations donnerait des types nullables, et l'analyse
+     * statique a raison de le refuser : une course sans demande serait un
+     * invariant casse, pas un cas a gerer.
+     */
+    private function cancel(Ride $ride, string $reason): void
+    {
+        $service = ServiceRequest::query()->findOrFail($ride->service_request_id);
+        $passenger = User::query()->findOrFail($service->user_id);
+
+        app(CancelServiceRequest::class)->handle($service, $passenger, $reason);
+    }
+
+    /** Marque le paiement abouti sans avancer la course. */
+    private function settle(Ride $ride): void
+    {
+        Payment::query()->where('ride_id', $ride->id)->update([
+            'status' => PaymentStatus::Succeeded->value,
+            'paid_at' => now(),
+        ]);
     }
 
     private function pay(Ride $ride, string $key = 'cle-de-course'): Payment

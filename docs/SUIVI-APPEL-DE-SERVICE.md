@@ -14,7 +14,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 | 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
 | 2. Compte chauffeur, dossier, modération | ✅ fait — côté API |
 | 3. Module `Rides` — demandes, offres, courses | ✅ fait — côté API |
-| 4. Paiement et reversement de la course | ✅ règlement fait, endpoints à venir |
+| 4. Paiement et reversement de la course | ✅ fait — côté API |
 | 5. Écrans passager | ⬜ |
 | 6. Écrans chauffeur | ⬜ |
 | 7. Écrans administration (web) | ⬜ |
@@ -88,9 +88,22 @@ agence, se voit affecter des départs et porte un plan de sièges.
 - [x] Encaissement à l'acceptation — `PayForRide`, avec rejeu par clé
 - [x] Écriture au grand livre du chauffeur — crédit et commission séparés
 - [x] Grand livre ouvert aux écritures sans agence
-- [ ] Endpoints HTTP de paiement et de signalement d'absence
-- [ ] Remboursement : annulation avant départ, et chauffeur absent
-- [ ] Reversement effectif sur le compte Mobile Money du chauffeur
+- [x] Endpoints HTTP de paiement et de signalement d'absence
+- [x] Remboursement : annulation avant départ, et chauffeur absent
+- [x] Grand livre et remboursements ouverts aux courses
+- [x] Contrat mis à jour, client typé régénéré
+- [ ] **Décaissement effectif** — voir ci-dessous
+
+### Ce qui reste avant qu'un chauffeur touche son argent
+
+Les écritures existent, le solde se calcule, mais rien n'est encore **versé**.
+`BuildPayout` et `SendPayout` fonctionnent déjà sur des bénéficiaires — ce sont
+les comptes de versement qui restent liés aux agences : `payout_accounts` porte un
+`agency_id`. Il faut les ouvrir aux personnes, exactement comme le grand livre l'a
+été.
+
+C'est un chantier nommé, pas un oubli : même forme que l'étape 1, et il vaut
+mieux le faire d'un geste propre que l'accrocher à la fin d'une passe.
 
 ### Deux préalables, tous deux hors du périmètre d'une passe rapide
 

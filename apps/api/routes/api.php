@@ -99,6 +99,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('service-requests', [ServiceRequestController::class, 'index']);
         Route::get('service-requests/{reference}', [ServiceRequestController::class, 'show']);
         Route::post('service-requests/{reference}/cancel', [ServiceRequestController::class, 'cancel']);
+
+        /*
+         * L'argent d'une course (E4 bis). Le paiement se fait a l'acceptation ;
+         * l'absence du chauffeur est signalee par le passager, seul temoin
+         * possible faute de suivi de position.
+         */
+        Route::post('rides/{reference}/payments', [ServiceRequestController::class, 'pay']);
+        Route::post('rides/{reference}/no-show', [ServiceRequestController::class, 'reportNoShow']);
         Route::post('offers/{offer}/accept', [ServiceRequestController::class, 'accept']);
 
         /*

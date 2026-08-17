@@ -355,6 +355,64 @@ paths:
               schema: { $ref: '#/components/schemas/DriverProfile' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /v1/rides/{reference}/payments:
+    post:
+      tags: [Rides]
+      summary: Paie la course retenue
+      description: |
+        Le prix se regle a l'acceptation de l'offre. `Idempotency-Key` est
+        obligatoire et doit etre **conservee entre les tentatives** : la
+        regenerer reviendrait a ne pas avoir d'idempotence.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { $ref: '#/components/schemas/PaymentMethod' }
+                operator: { type: [string, 'null'] }
+                payer_phone: { type: [string, 'null'] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '202':
+          description: Encaissement engage
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/rides/{reference}/no-show:
+    post:
+      tags: [Rides]
+      summary: Signale que le chauffeur ne s'est pas presente
+      description: |
+        Signale par le passager, seul temoin possible faute de suivi de position.
+        Rembourse integralement et marque le dossier du chauffeur.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ride' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /v1/admin/settings:
     get:
       tags: [Administration]

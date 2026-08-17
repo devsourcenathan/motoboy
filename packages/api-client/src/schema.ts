@@ -453,6 +453,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/rides/{reference}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Paie la course retenue
+         * @description Le prix se regle a l'acceptation de l'offre. `Idempotency-Key` est
+         *     obligatoire et doit etre **conservee entre les tentatives** : la
+         *     regenerer reviendrait a ne pas avoir d'idempotence.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "Idempotency-Key": string;
+                };
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        method: components["schemas"]["PaymentMethod"];
+                        operator?: string | null;
+                        payer_phone?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Encaissement engage */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/rides/{reference}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signale que le chauffeur ne s'est pas presente
+         * @description Signale par le passager, seul temoin possible faute de suivi de position.
+         *     Rembourse integralement et marque le dossier du chauffeur.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ride"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/settings": {
         parameters: {
             query?: never;
@@ -5199,7 +5298,7 @@ export interface components {
             occurred_at: string;
         };
         /** @enum {string} */
-        LedgerEntryType: "BOOKING_CREDIT" | "COMMISSION_DEBIT" | "REFUND_DEBIT" | "COMMISSION_REVERSAL_CREDIT" | "AGGREGATOR_FEE_DEBIT" | "COUNTER_COMMISSION_DEBIT" | "COUNTER_COMMISSION_REVERSAL" | "ADJUSTMENT" | "PAYOUT_DEBIT" | "PAYOUT_REVERSAL_CREDIT";
+        LedgerEntryType: "BOOKING_CREDIT" | "RIDE_CREDIT" | "COMMISSION_DEBIT" | "REFUND_DEBIT" | "COMMISSION_REVERSAL_CREDIT" | "AGGREGATOR_FEE_DEBIT" | "COUNTER_COMMISSION_DEBIT" | "COUNTER_COMMISSION_REVERSAL" | "ADJUSTMENT" | "PAYOUT_DEBIT" | "PAYOUT_REVERSAL_CREDIT";
         BookingCancellation: {
             booking: components["schemas"]["Booking"];
             /**
