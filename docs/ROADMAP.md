@@ -515,9 +515,9 @@ différence entre une extension et un second produit.
 
 ## 9. Appel de service — extension post-MVP
 
-Décidée le 17 août 2026, spécifiée en [Partie IV du brief](BRIEF.md). Un passager
-demande un véhicule, des chauffeurs indépendants proposent leurs offres, il
-choisit.
+Décidée le 17 août 2026, spécifiée en [Partie IV du brief](BRIEF.md), détaillée
+écran par écran dans [Appel de service](APPEL-DE-SERVICE.md). Un passager demande
+un véhicule, des chauffeurs indépendants proposent leurs offres, il choisit.
 
 **L'ordre n'est pas négociable : rien n'a de sens sans chauffeur validé.**
 

@@ -2313,6 +2313,10 @@ fonctionnalité dont on n'a pas écrit les limites finit par se les voir prêter
 **Décision arrêtée — 17 août 2026 : un passager peut demander un véhicule à la
 demande, et des chauffeurs indépendants répondent par des offres.**
 
+Le détail des fonctionnalités et des écrans est dans un document à part :
+[Appel de service](APPEL-DE-SERVICE.md). Ce qui suit fixe les décisions ; ce
+document-là décrit ce qu'on en fait.
+
 « Je suis à Bafang et j'ai besoin d'un véhicule. » Le MVP ne sait pas répondre à
 cette phrase : il compare des **départs programmés**, avec un stock de places, un
 horaire et un prix connus d'avance. L'appel de service n'a rien de tout cela — pas
