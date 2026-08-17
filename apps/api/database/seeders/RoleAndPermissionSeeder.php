@@ -60,6 +60,11 @@ final class RoleAndPermissionSeeder extends Seeder
         // possession de ses propres réservations, pas du RBAC.
         Role::Passenger->value => [],
 
+        // Comme le passager : ses droits découlent de ce qu'il possède — son
+        // dossier, ses offres, ses courses — et non du RBAC. Le rôle sert à
+        // savoir quels onglets lui montrer et qui peut offrir sur une demande.
+        Role::Driver->value => [],
+
         Role::Agency->value => [
             'trips.view', 'trips.manage', 'trips.cancel', 'schedules.manage',
             'vehicles.view', 'vehicles.manage', 'drivers.manage',
@@ -105,15 +110,27 @@ final class RoleAndPermissionSeeder extends Seeder
         ],
     ];
 
-    /** @var array<string, string> */
-    private const ROLE_LABELS = [
-        Role::Passenger->value => 'Passager',
-        Role::Agency->value => 'Agence',
-        Role::Agent->value => 'Agent d\'embarquement',
-        Role::Owner->value => 'Propriétaire de véhicule',
-        Role::Admin->value => 'Administrateur',
-        Role::SuperAdmin->value => 'Super administrateur',
-    ];
+    /**
+     * Le libellé d'un rôle.
+     *
+     * **Un `match` exhaustif, pas un tableau.** Cette liste était indexée par
+     * rôle : ajouter un cas à l'énumération sans l'y ajouter ne se voyait qu'à
+     * l'exécution — et s'est vu par cent-une erreurs « Undefined array key » au
+     * moment d'introduire `DRIVER`. Sans branche par défaut, l'analyse statique
+     * refuse désormais un cas oublié avant que le premier test ne tourne.
+     */
+    private function labelOf(Role $role): string
+    {
+        return match ($role) {
+            Role::Passenger => 'Passager',
+            Role::Driver => 'Chauffeur indépendant',
+            Role::Agency => 'Agence',
+            Role::Agent => "Agent d'embarquement",
+            Role::Owner => 'Propriétaire de véhicule',
+            Role::Admin => 'Administrateur',
+            Role::SuperAdmin => 'Super administrateur',
+        };
+    }
 
     public function run(): void
     {
@@ -145,7 +162,7 @@ final class RoleAndPermissionSeeder extends Seeder
             DB::table('roles')->upsert(
                 [[
                     'name' => $role->value,
-                    'label' => self::ROLE_LABELS[$role->value],
+                    'label' => $this->labelOf($role),
                     'is_system' => true,
                     'created_at' => now(),
                     'updated_at' => now(),

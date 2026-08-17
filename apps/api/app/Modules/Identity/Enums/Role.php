@@ -13,6 +13,16 @@ enum Role: string
     /** Embarquement. Rôle fonctionnel, non lié à un métier — un chauffeur peut le porter (B3). */
     case Agent = 'AGENT';
 
+    /**
+     * Chauffeur indépendant de l'appel de service (E2).
+     *
+     * Porté par un compte passager ordinaire : un chauffeur reste un passager
+     * quand il voyage, et lui imposer un second compte le ferait ressaisir son
+     * numéro pour la même personne. Il n'est **pas** rattaché à une agence —
+     * c'est ce qui le distingue du chauffeur salarié de `drivers`.
+     */
+    case Driver = 'DRIVER';
+
     case Owner = 'OWNER';
     case Admin = 'ADMIN';
     case SuperAdmin = 'SUPER_ADMIN';

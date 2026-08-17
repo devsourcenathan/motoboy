@@ -12,7 +12,7 @@ construction en [§9 de la roadmap](ROADMAP.md).*
 |---|---|
 | 0. Spécification | ✅ fait |
 | 1. Bénéficiaire généralisé des reversements | 🔨 en cours |
-| 2. Compte chauffeur, dossier, modération | ⬜ |
+| 2. Compte chauffeur, dossier, modération | 🔨 en cours |
 | 3. Module `Rides` — demandes, offres, courses | ⬜ |
 | 4. Paiement et reversement de la course | ⬜ |
 | 5. Écrans passager | ⬜ |
@@ -51,11 +51,24 @@ faut un, c'est que le comportement a bougé, et ce n'est pas ce qu'on veut.
 
 ## 2. Compte chauffeur
 
-- [ ] Rôle `DRIVER`
-- [ ] Profil : permis, véhicule, documents
-- [ ] Dépôt et remplacement de pièces
+- [x] Rôle `DRIVER` — sans permission, comme le passager
+- [x] Schéma : `driver_profiles` et `driver_documents`
+- [x] Modèles, énumérations, garde-fous en base
+- [ ] Endpoints : dépôt du dossier, lecture de son statut
+- [ ] Dépôt et remplacement de pièces via `FileStorage`
 - [ ] File de modération, validation et refus **motivé**
 - [ ] Suspension sans perte d'historique ni de reversements dus
+
+**Où on en est.** Le dossier existe et porte ses invariants en base : un dossier
+par personne, une pièce par type, et **un refus sans motif est refusé par la
+base** — un chauffeur qui ne sait pas quoi corriger est un chauffeur perdu.
+
+`canDrive()` exige un dossier validé **et** un permis non périmé : la date est
+saisie au dépôt et personne ne repasse derrière, donc sans ce contrôle une
+validation d'il y a deux ans laisserait rouler indéfiniment.
+
+Le véhicule vit sur le dossier, pas dans `vehicles` : celui-là appartient à une
+agence, se voit affecter des départs et porte un plan de sièges.
 
 ## 3. Module `Rides`
 
