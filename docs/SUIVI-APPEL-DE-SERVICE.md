@@ -136,6 +136,31 @@ matche rien en SQL. Deux destinations vérifiées auraient coexisté, le reverse
 prenant la première venue. La portée passe par `payee_id`, propriétaire depuis
 l'étape 1 et valable pour les deux genres.
 
+### Trouvé en testant : le paiement d'une course n'était jamais confirmé
+
+`ConfirmPayment::recordSuccess()` sortait par un `return` muet quand le paiement
+n'avait pas de réservation — un `return` écrit quand seules les réservations
+existaient. Le webhook renvoyait 200 et **ne touchait rien** : l'argent partait
+chez l'agrégateur, le paiement restait `PROCESSING` pour toujours, `paid` ne
+basculait jamais, le téléphone du chauffeur n'apparaissait pas et la course ne
+pouvait pas démarrer.
+
+**Tout le circuit d'argent de l'appel de service était mort de bout en bout**, et
+les 240 tests n'en disaient rien : chacun d'eux marquait le paiement `SUCCEEDED`
+directement en base au lieu de passer par le webhook. C'est le raccourci qui
+cachait le trou.
+
+Deux autres manques du même coup, tous deux dans ce qui remonte d'un paiement vers
+son objet :
+
+| Manque | Effet |
+|---|---|
+| `Payment::ride()` n'existait pas | Rien ne pouvait aller d'un paiement à sa course |
+| `motoboy:confirm-payment` ne résolvait qu'une réservation | Le circuit était intestable en local, donc jamais exercé |
+
+Verrouillé par `test_the_webhook_confirms_a_ride_payment`, qui passe **par le
+webhook** et non par un `update` en base.
+
 ### Ce qui reste, et qui n'est plus l'appel de service
 
 | Reste | Nature |
@@ -339,3 +364,4 @@ donc une décision produit et une migration — pas un réglage.
 | 17 août 2026 | Pas de maquettes : extrapolation du système établi |
 | 17 août 2026 | Une course **impayée ne démarre pas** — 409 `RIDE_NOT_PAID` |
 | 17 août 2026 | Reversement chauffeur : **24 h**, **5 000 F**, réglables au dashboard |
+| 17 août 2026 | Le webhook confirme aussi un paiement de course — il l'ignorait |

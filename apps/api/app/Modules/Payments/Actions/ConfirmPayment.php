@@ -81,8 +81,34 @@ final class ConfirmPayment
 
         $booking = $payment->booking;
 
+        /*
+         * **Un paiement de course s'arrête ici** (E4 bis).
+         *
+         * Il n'y a ni place tenue à confirmer, ni billet à émettre : le passager
+         * achète la venue d'un chauffeur, et c'est `paid` qui la débloque. Le
+         * règlement au grand livre, lui, suit la fin de course et non
+         * l'encaissement — un chauffeur payé avant d'avoir roulé serait à
+         * recouvrer si la course n'a pas lieu.
+         *
+         * Sans cette branche, le webhook renvoyait 200 et **ne touchait rien** :
+         * l'argent partait chez l'agrégateur, le paiement restait `PROCESSING`
+         * pour toujours, le téléphone du chauffeur n'apparaissait jamais et la
+         * course ne pouvait pas démarrer. Le `return` muet ci-dessous a été écrit
+         * quand seules les réservations existaient.
+         */
         if ($booking === null) {
-            return $payment;
+            if ($payment->ride_id === null) {
+                return $payment;
+            }
+
+            $payment->update([
+                'status' => PaymentStatus::Succeeded,
+                'provider_reference' => $event->providerReference,
+                'aggregator_fee_amount' => $event->feeAmount,
+                'paid_at' => now(),
+            ]);
+
+            return $payment->refresh();
         }
 
         /*

@@ -8,6 +8,8 @@ use App\Modules\Administration\Support\RidePayoutTerms;
 use App\Modules\Agencies\Actions\ManagePayoutAccount;
 use App\Modules\Fleet\Enums\VehicleType;
 use App\Modules\Identity\Models\User;
+use App\Modules\Payments\Actions\ConfirmPayment;
+use App\Modules\Payments\Data\WebhookEvent;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
@@ -244,6 +246,63 @@ final class DriverPayoutTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->getJson('/api/v1/driver/earnings')
             ->assertNotFound();
+    }
+
+    /**
+     * Le webhook confirme aussi un paiement de course.
+     *
+     * **Il ne le faisait pas.** `ConfirmPayment::recordSuccess()` sortait par un
+     * `return` muet quand le paiement n'avait pas de reservation — un `return`
+     * ecrit quand seules les reservations existaient. Le webhook renvoyait 200 et
+     * ne touchait rien : l'argent partait chez l'agregateur, le paiement restait
+     * `PROCESSING` pour toujours, le telephone du chauffeur n'apparaissait jamais
+     * et la course ne pouvait pas demarrer. Tout le circuit d'argent de l'appel de
+     * service etait mort de bout en bout, et aucun test ne le disait.
+     */
+    public function test_the_webhook_confirms_a_ride_payment(): void
+    {
+        $driver = $this->driver();
+        $passenger = User::factory()->create();
+
+        $service = app(OpenServiceRequest::class)->handle($passenger, [
+            'origin_city_id' => $this->origin->id,
+            'origin_landmark' => 'Carrefour Total',
+            'destination_city_id' => $this->destination->id,
+            'destination_landmark' => null,
+            'passengers' => 2,
+            'note' => null,
+        ]);
+
+        $offer = app(MakeOffer::class)->handle($service, $driver, 6_000, 15);
+        $ride = app(AcceptOffer::class)->handle($offer);
+
+        $payment = app(PayForRide::class)->handle(
+            $ride,
+            PaymentMethod::MobileMoney,
+            'MTN',
+            '+237690000001',
+            'cle-webhook',
+        );
+
+        // L'encaissement n'est jamais synchrone : c'est le webhook qui tranche.
+        $this->assertNotSame(PaymentStatus::Succeeded, $payment->status);
+
+        app(ConfirmPayment::class)->handle(new WebhookEvent(
+            eventId: 'evt-test-1',
+            providerReference: (string) $payment->provider_reference,
+            status: PaymentStatus::Succeeded,
+            feeAmount: 0,
+            failureReason: null,
+        ));
+
+        $this->assertSame(
+            PaymentStatus::Succeeded,
+            $payment->refresh()->status,
+        );
+        $this->assertTrue($ride->refresh()->isPaid());
+
+        // Payee, donc conduisible : c'est ce que la garde de `start()` verifie.
+        $this->assertSame('IN_PROGRESS', app(AdvanceRide::class)->start($ride)->status->value);
     }
 
     /** Recule la fin de course au-delà du délai de reversement. */
