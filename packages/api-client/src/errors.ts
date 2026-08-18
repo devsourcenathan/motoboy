@@ -72,6 +72,7 @@ interface RawErrorBody {
   code?: unknown
   message?: unknown
   details?: unknown
+  errors?: unknown
 }
 
 /**
@@ -107,10 +108,22 @@ export function toApiError(body: unknown, status: number): ApiError {
     typeof parsed.message === 'string'
       ? parsed.message
       : `Réponse ${status} sans corps exploitable.`
+  /*
+   * **Deux formes, toutes deux lues.**
+   *
+   * L'API émet `details` sur ses erreurs métier et `errors` sur les échecs de
+   * validation — deux chemins distincts dans `RendersApiErrors`. Le client ne
+   * lisait que `details`, si bien que **tout 422 arrivait sans le moindre indice
+   * sur le champ fautif** : « corps de requête invalide » et rien d'autre, alors
+   * que le serveur avait nommé le champ et la règle.
+   *
+   * Les deux sont acceptées plutôt que d'en imposer une : renommer côté serveur
+   * casserait les clients déjà déployés, et il n'y a rien à gagner à choisir
+   * quand accepter les deux coûte une ligne.
+   */
+  const raw = parsed.details ?? parsed.errors
   const details =
-    typeof parsed.details === 'object' && parsed.details !== null
-      ? (parsed.details as Record<string, unknown>)
-      : {}
+    typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
 
   return new ApiError(code, diagnostic, status, details)
 }

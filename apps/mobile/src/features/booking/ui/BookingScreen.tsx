@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
@@ -26,10 +26,15 @@ import { HoldBanner, Stepper, useHoldCountdown } from '../../../shared/booking'
 import { useCreateBooking } from '../api/useCreateBooking'
 import {
   emptyForm,
+  prefill,
   setPassenger,
   validate,
   type BookingForm,
 } from '../model/passengerForm'
+import { IdDocumentField } from './IdDocumentField'
+import { useIdDocumentPolicy } from '../api/useIdDocumentPolicy'
+import { readMainPassenger, rememberMainPassenger } from '../model/mainPassenger'
+import { useCurrentUser } from '../../account'
 
 /**
  * Saisie des passagers, puis prise des places.
@@ -70,15 +75,84 @@ export function BookingScreen() {
     ),
   )
 
+  /*
+   * Deux sources, dans cet ordre : **le compte d'abord**, la mémoire de
+   * l'appareil ensuite. Un compte connecté est plus à jour qu'un cache local, et
+   * un passager qui vient de corriger son nom dans ses réglages ne doit pas le
+   * revoir périmé au moment de réserver.
+   *
+   * `prefill` ignore les champs déjà saisis, donc l'ordre d'arrivée des deux
+   * sources n'a pas d'importance et aucune course n'est possible.
+   */
+  const me = useCurrentUser()
+
+  useEffect(() => {
+    const user = me.data
+
+    if (user === undefined || user === null) return
+
+    setForm((current) =>
+      prefill(current, {
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+      }),
+    )
+  }, [me.data])
+
+  useEffect(() => {
+    let cancelled = false
+
+    void readMainPassenger().then((known) => {
+      if (cancelled || known === null) return
+
+      setForm((current) => prefill(current, known))
+    })
+
+    // L'écran peut être quitté avant que le coffre réponde : écrire dans un
+    // composant démonté n'a aucun effet utile et déclenche un avertissement.
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const policy = useIdDocumentPolicy()
   const create = useCreateBooking(reference)
   const countdown = useHoldCountdown(create.data?.expires_at)
-  const error = validate(form)
+  const error = validate(
+    form,
+    policy.data === undefined
+      ? undefined
+      : {
+          mode: policy.data.id_document_mode,
+          required: policy.data.id_document_required,
+        },
+  )
 
   function submit() {
     if (error !== null) return
 
     create.mutate(form, {
       onSuccess: (booking) => {
+        /*
+         * Retenu **après** que la réservation a abouti, pas au fil de la frappe :
+         * mémoriser pendant la saisie enregistrerait des noms à moitié tapés,
+         * puis les proposerait à la réservation suivante.
+         *
+         * Sans `await` : le passager n'a pas à attendre le coffre pour être
+         * emmené au paiement, et un échec d'écriture ne coûte qu'une ressaisie
+         * la prochaine fois.
+         */
+        const first = form.passengers[0]
+
+        if (first !== undefined) {
+          void rememberMainPassenger({
+            firstName: first.firstName,
+            lastName: first.lastName,
+            phone: form.contactPhone,
+          })
+        }
+
         router.replace({
           pathname: '/payment',
           params: { reference: booking.reference },
@@ -161,6 +235,27 @@ export function BookingScreen() {
               keyboardType="phone-pad"
               textContentType="telephoneNumber"
             />
+
+            {/*
+              La pièce du voyageur principal se saisit ici, sous le contact,
+              plutôt que dans le bloc du premier passager : c'est une formalité
+              unique, et la placer au milieu d'une liste de noms laisserait croire
+              qu'il en faut une par personne.
+
+              Rien tant que la politique n'est pas connue : afficher un champ puis
+              le remplacer par l'autre sous les doigts est pire que d'attendre une
+              réponse qui arrive en une fraction de seconde.
+            */}
+            {policy.data === undefined ? null : (
+              <IdDocumentField
+                mode={policy.data.id_document_mode}
+                required={policy.data.id_document_required}
+                number={form.idNumber}
+                path={form.idPath}
+                onChangeNumber={(idNumber) => setForm((f) => ({ ...f, idNumber }))}
+                onChangePath={(idPath) => setForm((f) => ({ ...f, idPath }))}
+              />
+            )}
           </View>
 
           {create.error ? (
@@ -257,7 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.surface.inert,
   },
   rankFirst: {
-    backgroundColor: theme.surface.accent,
+    backgroundColor: theme.surface.brandSoft,
   },
   rankLabel: {
     fontSize: fontSize.sm,
@@ -265,7 +360,7 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
   },
   rankLabelFirst: {
-    color: theme.text.accent,
+    color: theme.text.brand,
   },
   groupTitle: {
     flex: 1,

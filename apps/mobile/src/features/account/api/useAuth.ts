@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { unwrap, type OtpChallenge, type User } from '@motoboy/api-client'
+import type { Locale } from '@motoboy/shared'
 import { api } from '../../../shared/api/client'
 import { queryKeys } from '../../../shared/api/queryKeys'
 import { session } from '../../../shared/session/session'
+import { forgetMainPassenger } from '../../booking/model/mainPassenger'
 import { deviceLocale } from '../../../shared/i18n'
 import { normalisePhone, type CredentialsForm } from '../model/auth'
 
@@ -57,6 +59,9 @@ export function useRequestOtp() {
                 phone,
                 first_name: form.firstName.trim(),
                 last_name: form.lastName.trim(),
+                // Omis plutôt qu'envoyé vide : une chaîne vide serait stockée
+                // comme une adresse, et le serveur la refuserait au format.
+                ...(form.email.trim() === '' ? {} : { email: form.email.trim() }),
                 locale: deviceLocale(),
               },
             })
@@ -136,7 +141,41 @@ export function useSignOut() {
     },
     onSettled: async () => {
       await session.end()
+
+      /*
+       * **Le voyageur principal s'oublie avec la session.**
+       *
+       * Le laisser préremplirait le formulaire du suivant avec le nom et le
+       * numéro du précédent — sur un téléphone partagé, ce qui est courant ici,
+       * c'est une fuite et une confusion qui se termine par un billet au mauvais
+       * nom.
+       */
+      await forgetMainPassenger()
+
       queryClient.clear()
+    },
+  })
+}
+
+/**
+ * Modifie son propre profil.
+ *
+ * Utilisé pour l'instant par le seul réglage de langue, et c'est ce qui lui
+ * donne son intérêt : `users.locale` décide de la langue des **SMS**. Sans cet
+ * appel, basculer l'application en anglais laissait arriver les billets en
+ * français — l'incohérence que l'écran de réglages portait jusqu'ici.
+ */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (changes: { locale?: Locale }) => {
+      const response = await api.PATCH('/v1/me', { body: changes })
+
+      return unwrap(response)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.me() })
     },
   })
 }

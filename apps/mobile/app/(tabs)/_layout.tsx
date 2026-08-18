@@ -1,23 +1,20 @@
 import { Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import {
-  fontSize,
-  radius,
-  spacing,
-  TabIcon,
-  theme,
-  TOUCH_TARGET,
-  type TabName,
-} from '../../src/shared/ui'
+import { fontSize, spacing, TabIcon, theme, TOUCH_TARGET, type TabName } from '../../src/shared/ui'
 
 /**
  * Les trois racines du parcours passager.
  *
- * **Accueil, ses billets, son profil.** Ce sont trois destinations, pas trois
- * étapes : un passager en gare ouvre l'application pour montrer son billet, pas
- * pour refaire une recherche. Les empiler dans une même pile obligeait à revenir
- * en arrière écran par écran — et rien n'indiquait que « Mes billets » existait.
+ * **Accueil, ses voyages, ses billets, son profil.** Ce sont quatre
+ * destinations, pas quatre étapes : un passager en gare ouvre l'application pour
+ * montrer son billet, pas pour refaire une recherche.
+ *
+ * Voyages et billets sont **séparés à dessein** : une réservation de trois
+ * places donne trois billets. La réservation porte le paiement et l'annulation,
+ * le billet porte le code qu'on présente. Les fondre en un seul onglet
+ * obligerait à choisir laquelle des deux questions on n'a pas le droit de
+ * poser.
  *
  * Le reste du parcours — résultats, départ, réservation, paiement — **passe
  * par-dessus** la barre plutôt qu'à l'intérieur. Pouvoir basculer d'onglet au
@@ -47,6 +44,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="trips"
+        options={{
+          title: t('tabs.trips'),
+          tabBarIcon: ({ focused }) => (
+            <Pill name="trips" label={t('tabs.trips')} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="tickets"
         options={{
           title: t('tabs.tickets'),
@@ -69,11 +75,11 @@ export default function TabsLayout() {
 }
 
 /**
- * L'onglet courant est un **aplat bleu**, pas une teinte d'icône.
+ * L'onglet courant se marque en **orange, glyphe plein**.
  *
- * Une simple couleur d'icône se perd sur une dalle bon marché en plein soleil,
- * précisément là où le produit s'utilise. La pastille reste lisible même quand
- * les couleurs délavent.
+ * La couleur seule se perd sur une dalle bon marché en plein soleil ; le
+ * remplissage du glyphe la double, si bien que la position reste lisible même
+ * quand les teintes délavent.
  */
 function Pill({
   name,
@@ -85,11 +91,11 @@ function Pill({
   focused: boolean
 }) {
   return (
-    <View style={[styles.pill, focused ? styles.pillActive : null]}>
+    <View style={styles.pill}>
       <TabIcon
         name={name}
         filled={focused}
-        color={focused ? theme.text.inverse : theme.text.secondary}
+        color={focused ? theme.text.brand : theme.text.muted}
       />
       <Text
         style={[styles.label, focused ? styles.labelActive : null]}
@@ -110,23 +116,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
   },
   pill: {
-    minWidth: 88,
+    minWidth: 72,
     alignItems: 'center',
     gap: 2,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
-    borderRadius: radius.lg,
-  },
-  pillActive: {
-    backgroundColor: theme.surface.brand,
   },
   label: {
     fontSize: fontSize.xs,
     fontWeight: '600',
-    color: theme.text.secondary,
+    color: theme.text.muted,
   },
   labelActive: {
-    color: theme.text.inverse,
+    color: theme.text.brand,
     fontWeight: '700',
   },
 })

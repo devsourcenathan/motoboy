@@ -31,7 +31,7 @@ use Illuminate\Http\Request;
 final class ConfirmPaymentCommand extends Command
 {
     protected $signature = 'motoboy:confirm-payment
-        {booking? : Référence de réservation — à défaut, le dernier paiement en attente}
+        {subject? : Référence de réservation (BKG-) ou de course (RID-) — à défaut, le dernier paiement en attente}
         {--fail= : Joue un échec avec ce motif, au lieu d\'un succès}
         {--fee=0 : Frais retenus par l\'agrégateur, en centimes}';
 
@@ -101,7 +101,7 @@ final class ConfirmPaymentCommand extends Command
     /** Le paiement visé, ou `null` avec l'explication déjà affichée. */
     private function locate(): ?Payment
     {
-        $reference = $this->argument('booking');
+        $reference = $this->argument('subject');
 
         $query = Payment::query()
             ->whereIn('status', [PaymentStatus::Pending->value, PaymentStatus::Processing->value])
@@ -109,7 +109,17 @@ final class ConfirmPaymentCommand extends Command
             ->latest('id');
 
         if (is_string($reference) && $reference !== '') {
-            $query->whereHas('booking', fn ($booking) => $booking->where('reference', $reference));
+            /*
+             * Réservation **ou** course : un paiement porte l'une ou l'autre, jamais
+             * les deux (contrainte de base). Ne chercher que du côté réservation
+             * rendait tout le circuit d'argent d'un appel de service impossible à
+             * confirmer en local — donc impossible à exercer.
+             */
+            $query->where(function ($outer) use ($reference): void {
+                $outer
+                    ->whereHas('booking', fn ($booking) => $booking->where('reference', $reference))
+                    ->orWhereHas('ride', fn ($ride) => $ride->where('reference', $reference));
+            });
         }
 
         $payment = $query->first();
@@ -130,7 +140,7 @@ final class ConfirmPaymentCommand extends Command
     /** Relit depuis la base : ce qui compte est ce que le webhook a écrit. */
     private function report(Payment $payment): int
     {
-        $fresh = Payment::query()->with('booking')->find($payment->id);
+        $fresh = Payment::query()->with(['booking', 'ride'])->find($payment->id);
 
         if ($fresh === null) {
             $this->error('Paiement introuvable après traitement.');
@@ -144,6 +154,12 @@ final class ConfirmPaymentCommand extends Command
 
         if ($booking !== null) {
             $this->line("Réservation {$booking->reference} : {$booking->status->value}");
+        }
+
+        $ride = $fresh->ride;
+
+        if ($ride !== null) {
+            $this->line("Course {$ride->reference} : {$ride->status->value}");
         }
 
         if ($fresh->status === PaymentStatus::Failed) {

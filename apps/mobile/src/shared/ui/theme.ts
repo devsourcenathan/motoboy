@@ -20,15 +20,17 @@ export const theme = {
     secondary: colors.neutral[700],
     muted: colors.neutral[500],
     inverse: colors.neutral[0],
-    brand: colors.brand[600],
-    /** Titres de section, en capitales — « TRAJETS À VENIR ». */
-    accent: colors.accent[700],
+    /** Orange : les actions et les prix, rien d'autre. */
+    brand: colors.brand[500],
+    /** Marine : l'identité et les titres de section. */
+    ink: colors.ink[700],
+    /** Vert : ce qui est acquis — places libres, paiement abouti. */
+    success: colors.success[700],
     danger: colors.status.danger,
     onDangerSoft: colors.status.onDangerSoft,
   },
   surface: {
     page: colors.page,
-    /** Cartes : blanc pur sur le lavande de la page. */
     card: colors.neutral[0],
     /** Bandeau d'en-tête de carte, ligne encastrée date/heure. */
     raised: colors.neutral[50],
@@ -36,28 +38,39 @@ export const theme = {
     /** Éléments inertes : place occupée, bouton désactivé, puce terminée. */
     inert: colors.neutral[200],
     border: colors.neutral[300],
-    brand: colors.brand[600],
+    /**
+     * Voile derriere une feuille modale.
+     *
+     * Le seul endroit du systeme ou une couleur porte de la transparence : elle
+     * doit assombrir ce qui est derriere, pas le remplacer. Un gris opaque
+     * cacherait le contexte que la feuille est justement censee laisser voir.
+     */
+    scrim: 'rgba(16, 49, 79, 0.45)',
+    brand: colors.brand[500],
     brandSoft: colors.brand[50],
-    accent: colors.accent[300],
-    accentSoft: colors.accent[100],
+    ink: colors.ink[700],
+    inkSoft: colors.ink[50],
+    success: colors.success[500],
+    successSoft: colors.success[50],
     dangerSoft: colors.status.dangerSoft,
   },
   seat: {
     available: colors.status.available,
+    availableSoft: colors.status.availableSoft,
     held: colors.status.held,
     taken: colors.status.taken,
-    chosen: colors.brand[600],
+    chosen: colors.brand[500],
   },
   /**
    * Repères d'un trajet.
    *
-   * Or au départ, bleu à l'arrivée — la même paire sur la carte de résultat, le
-   * billet et la liste. C'est ce qui permet de lire un trajet sans lire les
-   * libellés, ce qui compte quand on regarde son téléphone en marchant.
+   * La même paire sur la carte de résultat, le billet et la liste : c'est ce
+   * qui permet de lire un trajet sans lire les libellés, ce qui compte quand on
+   * regarde son téléphone en marchant.
    */
   route: {
-    origin: colors.accent[500],
-    destination: colors.brand[600],
+    origin: colors.brand[500],
+    destination: colors.ink[700],
   },
 } as const
 
@@ -114,13 +127,13 @@ export const sharedStyles = StyleSheet.create({
     borderColor: theme.surface.border,
     ...elevation.card,
   },
-  /** Titre de section en capitales, or. */
+  /** Titre de section, en capitales. */
   sectionLabel: {
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: theme.text.accent,
+    color: theme.text.muted,
   },
 })

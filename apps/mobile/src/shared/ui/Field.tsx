@@ -10,6 +10,13 @@ export interface FieldProps {
   onPress: () => void
   /** Glyphe à gauche — cible au départ, épingle à l'arrivée. */
   icon?: ReactNode
+  /**
+   * Sans cadre ni fond.
+   *
+   * Pour les champs posés **dans** un panneau qui porte déjà sa bordure : deux
+   * cadres imbriqués font lire deux niveaux là où il n'y en a qu'un.
+   */
+  bare?: boolean
   /** Ajouté à l'annonce vocale — « Départ, Douala, bouton ». */
   hint?: string
 }
@@ -24,7 +31,15 @@ export interface FieldProps {
  * Rayon 8 et non capsule : le système réserve l'arrondi prononcé aux actions,
  * et garde les champs « structurés et professionnels ».
  */
-export function Field({ label, value, placeholder, onPress, icon, hint }: FieldProps) {
+export function Field({
+  label,
+  value,
+  placeholder,
+  onPress,
+  icon,
+  hint,
+  bare = false,
+}: FieldProps) {
   const filled = value !== null && value !== ''
 
   return (
@@ -33,7 +48,11 @@ export function Field({ label, value, placeholder, onPress, icon, hint }: FieldP
       accessibilityLabel={`${label}, ${filled ? value : placeholder}`}
       accessibilityHint={hint}
       onPress={onPress}
-      style={({ pressed }) => [styles.field, pressed ? styles.pressed : null]}
+      style={({ pressed }) => [
+        styles.field,
+        bare ? styles.bare : null,
+        pressed ? styles.pressed : null,
+      ]}
     >
       {icon === undefined ? null : <View style={styles.icon}>{icon}</View>}
 
@@ -66,6 +85,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: theme.surface.border,
+  },
+  bare: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderRadius: 0,
   },
   icon: {
     width: 24,

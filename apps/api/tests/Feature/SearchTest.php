@@ -220,4 +220,35 @@ final class SearchTest extends TestCase
             ]);
         }
     }
+
+    /**
+     * `true` en toutes lettres, pas seulement `1`.
+     *
+     * Le contrat déclare un booléen, et c'est ainsi qu'un client généré depuis
+     * la spec le sérialise. La règle `boolean` de Laravel ne reconnaissant que
+     * `1` et `0`, le serveur répondait 422 sur sa propre forme canonique — et le
+     * test existant, écrit avec `=1`, ne pouvait pas s'en apercevoir.
+     */
+    public function test_only_available_accepts_the_canonical_boolean(): void
+    {
+        $url = $this->searchUrl('douala', 'bafoussam');
+
+        $this->getJson($url.'&only_available=true')->assertOk();
+        $this->getJson($url.'&only_available=false')->assertOk();
+    }
+
+    /**
+     * Une borne haute seule est légitime — c'est même la recherche la plus
+     * courante, « moins de X ». La règle `gte:price_min` la refusait en 422 dès
+     * que la borne basse manquait, alors que le contrat déclare les deux bornes
+     * indépendantes. Une fourchette inversée, elle, reste refusée.
+     */
+    public function test_the_upper_price_bound_works_on_its_own(): void
+    {
+        $url = $this->searchUrl('douala', 'bafoussam');
+
+        $this->getJson($url.'&price_max=100000')->assertOk();
+        $this->getJson($url.'&price_min=1000')->assertOk();
+        $this->getJson($url.'&price_min=5000&price_max=4000')->assertStatus(422);
+    }
 }

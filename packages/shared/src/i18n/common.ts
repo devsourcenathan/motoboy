@@ -23,6 +23,7 @@ export interface CommonMessages {
     readonly back: string
     readonly cancel: string
     readonly close: string
+    readonly delete: string
     readonly confirm: string
     readonly continue: string
     readonly retry: string
@@ -74,6 +75,7 @@ export const commonMessages: Record<Locale, CommonMessages> = {
       back: 'Retour',
       cancel: 'Annuler',
       close: 'Fermer',
+      delete: 'Effacer',
       confirm: 'Confirmer',
       continue: 'Continuer',
       retry: 'Réessayer',
@@ -105,6 +107,7 @@ export const commonMessages: Record<Locale, CommonMessages> = {
       back: 'Back',
       cancel: 'Cancel',
       close: 'Close',
+      delete: 'Delete',
       confirm: 'Confirm',
       continue: 'Continue',
       retry: 'Try again',

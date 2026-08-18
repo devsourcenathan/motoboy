@@ -52,6 +52,7 @@ final class ConfirmPayout
                 // apparaîtrait payée alors qu'elle ne l'est pas, et le solde lui
                 // serait retiré sans qu'elle l'ait jamais reçu.
                 AgencyLedgerEntry::query()->create([
+                    'payee_id' => $payout->payee_id,
                     'agency_id' => $payout->agency_id,
                     'booking_id' => null,
                     'type' => LedgerEntryType::PayoutReversalCredit,

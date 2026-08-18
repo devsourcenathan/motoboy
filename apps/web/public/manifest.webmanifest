@@ -1,0 +1,14 @@
+{
+  "name": "MOTOBOY — Embarquement",
+  "short_name": "Embarquement",
+  "description": "Valider les billets sur le quai, avec ou sans réseau.",
+  "start_url": "/boarding",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10314f",
+  "theme_color": "#10314f",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

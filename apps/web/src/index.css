@@ -5,26 +5,53 @@
  *
  * Seuls les **jetons** voyagent entre les deux clients, jamais les composants :
  * shadcn repose sur Radix et le DOM (§6 du brief). Les valeurs ci-dessous
- * reflètent `@motoboy/shared/tokens`, qui reste la référence.
+ * reflètent `@motoboy/shared/tokens`, qui reste la référence — elles avaient
+ * divergé, restées sur l'ancien bleu quand le mobile est passé au système
+ * orange. Un fichier qui se dit le reflet d'un autre et ne l'est plus est pire
+ * qu'un fichier sans commentaire.
+ *
+ * Orange = action. Marine = identité. Vert = acquis. La règle vaut ici aussi,
+ * même si le back-office ne se lit pas en gare : un administrateur qui passe du
+ * téléphone à l'écran ne doit pas réapprendre les couleurs.
  */
 @theme {
-  --color-brand-50: #eef7ff;
-  --color-brand-100: #d9ecff;
-  --color-brand-500: #1f7ae0;
-  --color-brand-600: #1662bb;
-  --color-brand-700: #124e96;
+  --color-brand-50: #fff1e8;
+  --color-brand-100: #ffd9c0;
+  --color-brand-500: #f4661b;
+  --color-brand-600: #e05610;
+  --color-brand-700: #b6430a;
+
+  --color-ink-50: #eef2f7;
+  --color-ink-500: #1d4b73;
+  --color-ink-700: #10314f;
+  --color-ink-900: #0a2138;
+
+  --color-success-50: #e8f7ef;
+  --color-success-500: #22a45d;
+  --color-success-700: #177a44;
 
   --color-neutral-0: #ffffff;
   --color-neutral-50: #f7f8fa;
-  --color-neutral-100: #eceef2;
-  --color-neutral-300: #c6cbd4;
-  --color-neutral-500: #7b8494;
-  --color-neutral-700: #414956;
-  --color-neutral-900: #181c23;
+  --color-neutral-100: #f1f3f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d7dbe0;
+  --color-neutral-500: #8b93a1;
+  --color-neutral-700: #4b5563;
+  --color-neutral-900: #1a1d21;
+
+  /* Fond de page, pour que les cartes blanches ressortent. */
+  --color-page: #f5f6f8;
 
   /* États métier — mêmes valeurs que côté mobile. */
-  --color-seat-available: #1a9e5c;
-  --color-seat-held: #e0a02a;
-  --color-seat-taken: #b4b9c2;
-  --color-danger: #d1453b;
+  --color-seat-available: #22a45d;
+  --color-seat-held: #8b93a1;
+  --color-seat-taken: #e5e7eb;
+  --color-danger: #d1443c;
+  --color-danger-soft: #fdeceb;
+  --color-danger-strong: #8f2820;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-neutral-900);
 }

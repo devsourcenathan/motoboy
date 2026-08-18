@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { formatDate, formatTime, ticketStatusLabels } from '@motoboy/shared'
 import {
   Button,
@@ -11,6 +11,7 @@ import {
   RouteDot,
   Screen,
   sharedStyles,
+  SkeletonList,
   spacing,
   theme,
 } from '../../../shared/ui'
@@ -46,8 +47,8 @@ export function TicketScreen() {
   if (ticket.isPending) {
     return (
       <Screen title={t('ticket.title')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={2} variant="card" />
         </View>
       </Screen>
     )
@@ -96,7 +97,25 @@ export function TicketScreen() {
         )}
 
         <View style={styles.card}>
+          {/*
+            Bandeau marine et villes en capitales espacées : c'est ce qui fait
+            reconnaître un billet à un mètre, quand un contrôleur passe dans
+            l'allée et ne lit rien d'autre.
+          */}
           <View style={styles.cardHeader}>
+            <Text style={styles.cardWordmark}>MOTOBOY</Text>
+            <View style={styles.cardRoute}>
+              <Text style={styles.cardCity} numberOfLines={1}>
+                {data.trip.origin_station.city.toUpperCase()}
+              </Text>
+              <Text style={styles.cardArrow}>→</Text>
+              <Text style={styles.cardCity} numberOfLines={1}>
+                {data.trip.destination_station.city.toUpperCase()}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.who}>
             <View style={styles.headerCell}>
               <Text style={styles.headerLabel}>{t('ticket.agency')}</Text>
               <Text style={styles.headerValue} numberOfLines={1}>
@@ -217,6 +236,11 @@ function Detail({
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   content: {
     padding: spacing.md,
     gap: spacing.md,
@@ -270,6 +294,37 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardHeader: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: theme.surface.ink,
+  },
+  cardWordmark: {
+    fontSize: fontSize.sm,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: theme.text.inverse,
+  },
+  cardRoute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  cardCity: {
+    flexShrink: 1,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: theme.text.inverse,
+  },
+  cardArrow: {
+    fontSize: fontSize.base,
+    color: theme.text.inverse,
+    opacity: 0.7,
+  },
+  who: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,

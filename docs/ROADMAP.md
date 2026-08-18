@@ -480,7 +480,7 @@ Rien de tout cela ne bloque le chemin critique.
 
 ---
 
-## 6. Ce que « terminé » veut dire
+## 7. Ce que « terminé » veut dire
 
 Le MVP est prêt quand ces deux boucles tournent de bout en bout, sur des données
 réelles :
@@ -498,7 +498,7 @@ tous les écrans existent.
 
 ---
 
-## 7. Hors MVP
+## 8. Hors MVP
 
 La liste fait autorité et se trouve en [§31 du brief](BRIEF.md). Elle inclut
 notamment le wallet, les applications chauffeur et agence, le suivi GPS, la
@@ -506,3 +506,110 @@ réservation par tronçon, le transfert de réservation et l'alerte de
 disponibilité.
 
 Elle est là pour être respectée quand c'est tentant.
+
+**Une exception, assumée et datée.** L'appel de service (§9) rouvre le mode
+chauffeur — comme un jeu d'onglets dans l'application existante, pas comme une
+seconde application. Le **suivi GPS reste hors périmètre** : la position est
+déclarée, jamais captée. La distinction compte, parce que c'est elle qui fait la
+différence entre une extension et un second produit.
+
+## 9. Appel de service — extension post-MVP
+
+Décidée le 17 août 2026, spécifiée en [Partie IV du brief](BRIEF.md), détaillée
+écran par écran dans [Appel de service](APPEL-DE-SERVICE.md). Un passager demande
+un véhicule, des chauffeurs indépendants proposent leurs offres, il choisit.
+
+**L'ordre n'est pas négociable : rien n'a de sens sans chauffeur validé.**
+
+### 9.1 Bénéficiaire généralisé dans les reversements
+
+Le seul point de sortie d'argent est indexé sur `agency_id`. Le généraliser à un
+bénéficiaire — agence ou personne — **avant** d'en avoir besoin, plutôt que de
+dupliquer un second grand livre.
+
+D'abord parce que c'est le chantier le plus risqué du lot, et que les 177 tests
+existants sont le filet qui le rend sûr. Ensuite parce qu'un second grand livre
+écrit « en attendant » ne se fusionne jamais.
+
+### 9.2 Chauffeur : compte, dossier, modération
+
+Rôle `DRIVER` sur un `User` ordinaire — connexion par OTP, comme tout le monde.
+Profil portant permis, véhicule, documents et compte de reversement. File de
+modération dans l'espace administration, sur le modèle des gares.
+
+Aucune course tant que le dossier n'est pas validé.
+
+### 9.3 Module `Rides`
+
+Demandes, offres, courses. Deux index uniques partiels comme garde-fous : un
+chauffeur n'a qu'une course active, une demande n'accepte qu'une offre.
+
+### 9.4 Paiement et reversement de la course
+
+Réutilise Paiements ; le reversement passe par le bénéficiaire de 9.1.
+
+### 9.5 Écrans
+
+Côté passager : demander un véhicule, suivre ses offres, choisir. Côté chauffeur :
+demandes ouvertes de sa ville, ses courses, ses revenus. Les onglets dépendent du
+rôle.
+
+**Passager fait** (17 août 2026) : entrée « Besoin d'un véhicule ? » sur l'accueil,
+formulaire de demande — ville du référentiel plus point de repère en texte libre —
+et un écran de suivi unique qui couvre toute la vie de la demande : attente,
+comparaison des offres, paiement, absence du chauffeur. Sondage à dix secondes,
+arrêté dès que plus rien ne peut arriver ; pas de canal temps réel à ce stade.
+
+Trois champs manquaient au contrat pour que cet écran ne devine rien — le nom de la
+ville, l'état payé de la course, le chauffeur d'une offre. Corrigés côté API avant
+d'écrire l'écran, plutôt que compensés côté mobile. Détail et suite dans
+[Suivi de l'appel de service](SUIVI-APPEL-DE-SERVICE.md).
+
+**Chauffeur fait** (17 août 2026), sauf ses revenus : bascule depuis le profil,
+dossier avec dépôt des quatre pièces, demandes ouvertes de sa ville, offre à prix
+ferme, course à démarrer et terminer. Pas de sondage sur les demandes — il ouvre
+l'écran quand il cherche du travail, et tire pour rafraîchir.
+
+Les cinq réponses de liste de cette extension déclaraient un `200` sans schéma ;
+elles divergeaient aussi de l'enveloppe de pagination du reste de l'API et deux
+d'entre elles tronquaient à cinquante lignes en silence. Corrigé, et tenu par un
+test : toute réponse de succès autre que `204` doit déclarer un corps.
+
+En écrivant l'écran du chauffeur, une fuite : le téléphone du chauffeur partait
+dans la réponse dès l'acceptation, la règle « seulement une fois payé » n'étant
+tenue que par l'écran. Elle est passée dans la ressource.
+
+Même nature, tranché ensuite : `start()` refuse une course impayée en 409
+`RIDE_NOT_PAID`. Une course pouvait se dérouler entièrement sans qu'un franc ait
+bougé, et le règlement de fin créditait le chauffeur d'un argent jamais encaissé.
+
+Ses revenus et son compte de reversement suivent : solde, reversable, détail des
+écritures, historique des virements, et la déclaration Mobile Money — inactive
+jusqu'à vérification par un administrateur. Le solde et le reversable sont deux
+nombres distincts à l'écran : une course terminée il y a une heure compte au
+premier et pas au second.
+
+### 9.6 Reversement du chauffeur — ✅ fait
+
+**24 h de délai, 5 000 F de minimum, réglables au dashboard** comme la commission
+(`RidePayoutTerms`). Une agence négocie ses conditions ; un chauffeur indépendant ne
+négocie pas, donc les valeurs valent pour tous.
+
+`BuildDriverPayout` est une action à part de `BuildPayout`, pour la même raison que
+`PayForRide` l'est d'`InitiatePayment` : réglages au lieu de conditions négociées,
+fin de course au lieu de départ programmé, relevé par course au lieu de réservation.
+
+Il a fallu finir la généralisation : `payouts.agency_id` devient nullable — `payee_id`
+existait déjà, c'est l'agence obligatoire qui bloquait — et `payout_lines` accepte une
+course, exclusive d'une réservation par contrainte de base.
+
+**Ce qui reste, et qui n'est plus cette extension :** l'application web n'existe pas
+— deux fichiers. La file de modération n'est pas un écran à ajouter mais une
+application à amorcer. Et aucun virement ne part réellement tant qu'une passerelle
+de versement n'est pas choisie.
+
+### Ce qui n'en fait pas partie
+
+Carte, suivi de course, négociation, notation, push. Le push est la seule
+infrastructure réellement neuve que cette extension appellera — plus tard, quand
+consulter la liste ne suffira plus.

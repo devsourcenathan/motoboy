@@ -146,13 +146,21 @@ export function VerifyOtpScreen() {
           }
           style={styles.resend}
         >
-          {wait > 0 ? <TimerIcon color={theme.text.accent} size={18} /> : null}
+          {wait > 0 ? <TimerIcon color={theme.text.muted} size={18} /> : null}
           <Text style={wait > 0 ? styles.resendWaiting : styles.resendLabel}>
             {wait > 0
-              ? t('account.otp.resendIn', { seconds: wait })
+              ? t('account.otp.resendIn', { seconds: countdown(wait) })
               : t('account.otp.resend')}
           </Text>
         </Pressable>
+        <Keypad
+          onDigit={(digit) =>
+            setCode((current) =>
+              current.length >= OTP_LENGTH ? current : current + digit,
+            )
+          }
+          onDelete={() => setCode((current) => current.slice(0, -1))}
+        />
       </ScrollView>
 
       <View style={styles.footer}>
@@ -164,6 +172,68 @@ export function VerifyOtpScreen() {
         />
       </View>
     </Screen>
+  )
+}
+
+/** `45` devient `00:45` : un décompte se lit d'un coup d'œil, pas en secondes. */
+function countdown(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+}
+
+/**
+ * Le pavé numérique de l'écran.
+ *
+ * **Un pavé à nous plutôt que le clavier du système.** Le code ne contient que
+ * des chiffres ; ouvrir un clavier complet expose des touches inutiles et, sur
+ * les surcouches Android bon marché, met parfois une seconde à apparaître —
+ * juste après un SMS, c'est une seconde où l'écran paraît figé. Les touches sont
+ * ici, tout de suite, et assez grandes pour un pouce.
+ */
+function Keypad({
+  onDigit,
+  onDelete,
+}: {
+  onDigit: (digit: string) => void
+  onDelete: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <View style={styles.keypad}>
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+        <Key key={digit} label={digit} onPress={() => onDigit(digit)} />
+      ))}
+      <View style={styles.key} />
+      <Key label="0" onPress={() => onDigit('0')} />
+      <Key
+        label="⌫"
+        accessibilityLabel={t('action.delete', { ns: 'common' })}
+        onPress={onDelete}
+      />
+    </View>
+  )
+}
+
+function Key({
+  label,
+  accessibilityLabel,
+  onPress,
+}: {
+  label: string
+  accessibilityLabel?: string
+  onPress: () => void
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.key, pressed ? styles.keyPressed : null]}
+    >
+      <Text style={styles.keyLabel}>{label}</Text>
+    </Pressable>
   )
 }
 
@@ -216,6 +286,13 @@ function CodeBoxes({
         autoComplete="sms-otp"
         maxLength={OTP_LENGTH}
         autoFocus
+        /*
+         * Le champ reste monté et focalisé — c'est lui que le remplissage
+         * automatique d'Android vise quand le SMS arrive — mais le clavier
+         * système ne s'ouvre pas : la saisie passe par le pavé ci-dessous, et
+         * deux claviers superposés rendraient l'écran inutilisable.
+         */
+        showSoftInputOnFocus={false}
         style={styles.hiddenInput}
         // `caretHidden` plutôt qu'une opacité nulle seule : sur Android le
         // curseur reste peint par-dessus les cases.
@@ -294,7 +371,33 @@ const styles = StyleSheet.create({
   resendWaiting: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: theme.text.accent,
+    color: theme.text.muted,
+  },
+  keypad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    gap: spacing.base,
+    marginTop: spacing.base,
+  },
+  key: {
+    // Trois par rangée, marges comprises.
+    width: '30%',
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    backgroundColor: theme.surface.card,
+  },
+  keyPressed: {
+    backgroundColor: theme.surface.inert,
+  },
+  keyLabel: {
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
+    fontWeight: '700',
+    color: theme.text.primary,
   },
   footer: {
     padding: spacing.md,

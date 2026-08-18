@@ -7,6 +7,7 @@ namespace App\Modules\Agencies\Models;
 use App\Modules\Fleet\Models\Driver;
 use App\Modules\Fleet\Models\Vehicle;
 use App\Modules\Identity\Enums\Locale;
+use App\Modules\Payouts\Models\PayoutAccount;
 use App\Modules\Places\Models\Station;
 use App\Modules\Routing\Models\Route;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,10 +42,10 @@ final class Agency extends Model
         return $this->hasOne(AgencyCommercialTerms::class);
     }
 
-    /** @return HasMany<AgencyPayoutAccount, $this> */
+    /** @return HasMany<PayoutAccount, $this> */
     public function payoutAccounts(): HasMany
     {
-        return $this->hasMany(AgencyPayoutAccount::class);
+        return $this->hasMany(PayoutAccount::class);
     }
 
     /** @return HasMany<AgencyDocument, $this> */

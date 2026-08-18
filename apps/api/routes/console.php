@@ -6,6 +6,7 @@ use App\Modules\Bookings\Actions\ReleaseExpiredHolds;
 use App\Modules\Payments\Actions\ReconcilePayments;
 use App\Modules\Payments\Actions\RetryFailedRefunds;
 use App\Modules\Payouts\Actions\BuildDuePayouts;
+use App\Modules\Rides\Actions\ExpireServiceRequests;
 use App\Modules\Trips\Actions\GenerateTrips;
 use Illuminate\Support\Facades\Schedule;
 
@@ -24,6 +25,19 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::call(fn (ReleaseExpiredHolds $action) => $action->handle())
     // `name` doit précéder `withoutOverlapping` : le verrou est posé sous ce nom.
     ->name('bookings:release-expired-holds')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+/*
+ * Fermeture des appels de service perimes (E1).
+ *
+ * L'expiration est deja vraie sans ecriture : une demande perimee n'accepte plus
+ * d'offre avant meme ce balayage. Celui-ci rend l'etat **lisible** — un passager
+ * doit voir « personne n'est venu » plutot qu'une demande eternellement en
+ * attente. D'ou la minute : c'est un ecran qu'on regarde en attendant.
+ */
+Schedule::call(fn (ExpireServiceRequests $action) => $action->handle())
+    ->name('rides:expire-service-requests')
     ->everyMinute()
     ->withoutOverlapping();
 

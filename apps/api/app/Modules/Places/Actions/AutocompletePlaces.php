@@ -29,8 +29,17 @@ final class AutocompletePlaces
     {
         $needle = self::normalize($query);
 
+        /*
+         * **Sans recherche, les villes les plus utiles.**
+         *
+         * Rendre une liste vide etait exact et inutilisable : le selecteur
+         * s'ouvrait sur rien, et un passager qui ne sait pas quoi taper ne
+         * decouvrait jamais ce que la plateforme dessert. Une liste de depart
+         * repond aussi a la question « ou allez-vous ? » pour la majorite des
+         * trajets, le pays n'ayant qu'une poignee d'axes frequentes.
+         */
         if ($needle === '') {
-            return [];
+            return $this->defaultCities($limit);
         }
 
         $cities = $this->matchCities($needle, $limit);
@@ -41,6 +50,33 @@ final class AutocompletePlaces
         $stations = $remaining > 0 ? $this->matchStations($query, $remaining) : [];
 
         return [...$cities, ...$stations];
+    }
+
+    /**
+     * Les villes proposees quand rien n'est saisi.
+     *
+     * Par ordre alphabetique, faute de mieux : classer par frequentation
+     * demanderait de compter les recherches, ce que la plateforme ne fait pas
+     * encore. L'alphabetique a au moins le merite d'etre stable et previsible —
+     * un ordre qui change a chaque ouverture desoriente plus qu'il n'aide.
+     *
+     * @return list<PlaceSuggestion>
+     */
+    private function defaultCities(int $limit): array
+    {
+        $cities = City::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
+
+        $suggestions = [];
+
+        foreach ($cities as $city) {
+            $suggestions[] = PlaceSuggestion::city($city->id, $city->name);
+        }
+
+        return $suggestions;
     }
 
     /** Minuscules, sans accent — la forme stockée dans `city_aliases.normalized`. */

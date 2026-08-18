@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import type { Seat } from '@motoboy/api-client/types'
 import { formatMoney, formatTime } from '@motoboy/shared'
-import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
+import { Button, fontSize, Screen, SkeletonList, spacing, theme } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useCurrentUser } from '../../account'
@@ -45,6 +45,11 @@ export function TripScreen() {
   function toggle(seat: Seat) {
     setSelected((current) => toggleSeat(current, seat, passengers))
   }
+
+  /** Les numéros des places choisies, dans l'ordre du plan. */
+  const chosenLabels = (seats.data?.seats ?? [])
+    .filter((seat) => selected.includes(seat.id))
+    .map((seat) => seat.label)
 
   /*
    * Les places partent appariées `identifiant:numéro`.
@@ -92,8 +97,8 @@ export function TripScreen() {
   if (trip.isPending) {
     return (
       <Screen>
-        <View style={styles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={3} variant="card" />
         </View>
       </Screen>
     )
@@ -157,11 +162,37 @@ export function TripScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {/*
+          Ce qu'on emporte et ce que ça coûte, avant d'appuyer. Le total se
+          recalcule à chaque place : découvrir le montant à l'écran suivant est
+          exactement ce qu'un pied de page existe pour éviter.
+        */}
         {seated ? (
-          <Text style={styles.count}>
-            {t('trip.seatsChosen', { chosen: selected.length, total: passengers })}
-          </Text>
+          <View style={styles.chosen}>
+            <Text style={styles.chosenLabel}>{t('trip.selectedSeats')}</Text>
+            <Text style={styles.chosenValue}>
+              {selected.length === 0
+                ? t('trip.seatsChosen', { chosen: 0, total: passengers })
+                : chosenLabels.join(' · ')}
+            </Text>
+          </View>
         ) : null}
+
+        {trip.data === undefined ? null : (
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>{t('trip.total')}</Text>
+            <Text style={styles.totalValue}>
+              {formatMoney(
+                {
+                  amount: trip.data.price.amount * Math.max(1, selected.length || passengers),
+                  currency: trip.data.price.currency,
+                },
+                locale,
+              )}
+            </Text>
+          </View>
+        )}
+
         <Button label={t('trip.continue')} onPress={goToBooking} disabled={!ready} />
       </View>
     </Screen>
@@ -169,6 +200,11 @@ export function TripScreen() {
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   body: {
     padding: spacing.lg,
     gap: spacing.lg,
@@ -208,15 +244,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    padding: spacing.lg,
-    gap: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.base,
+    backgroundColor: theme.surface.card,
     borderTopWidth: 1,
     borderTopColor: theme.surface.border,
   },
-  count: {
+  chosen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  chosenLabel: {
+    flex: 1,
     fontSize: fontSize.sm,
-    color: theme.text.muted,
-    textAlign: 'center',
+    color: theme.text.secondary,
+  },
+  chosenValue: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  totalLabel: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: theme.text.primary,
+  },
+  totalValue: {
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+    color: theme.text.brand,
   },
   error: {
     fontSize: fontSize.base,

@@ -61,6 +61,55 @@ final class OpenApiCoverageTest extends TestCase
         ));
     }
 
+    /**
+     * Une réponse déclarée sans corps ne dit rien au client généré.
+     *
+     * La couverture des chemins ne suffit pas : cinq endpoints de l'extension
+     * « appel de service » figuraient bien au contrat, avec un `200` nu. Le client
+     * TypeScript n'en tirait donc aucun type, et l'écran qui en dépendait ne
+     * pouvait rien lire — un chemin présent et muet coûte autant qu'un chemin
+     * absent, en se voyant moins.
+     */
+    public function test_every_success_response_declares_a_body(): void
+    {
+        /** @var array{paths: array<string, array<string, mixed>>} $spec */
+        $spec = Yaml::parseFile(base_path('../../docs/openapi.yaml'));
+
+        $mute = [];
+
+        foreach ($spec['paths'] as $path => $operations) {
+            foreach ($operations as $verb => $operation) {
+                if (!in_array($verb, ['get', 'post', 'put', 'patch', 'delete'], true)) {
+                    continue;
+                }
+
+                // Rien n'est supposé de la forme du YAML : c'est un fichier
+                // externe, et un test qui affirme sa structure passerait à côté
+                // d'une malformation au lieu de la signaler.
+                $responses = is_array($operation) && is_array($operation['responses'] ?? null)
+                    ? $operation['responses']
+                    : [];
+
+                foreach ($responses as $code => $response) {
+                    // `204` est justement la réponse qui n'a pas de corps.
+                    if (!str_starts_with((string) $code, '2') || (string) $code === '204') {
+                        continue;
+                    }
+
+                    if (!is_array($response) || !isset($response['content'])) {
+                        $mute[] = strtoupper($verb).' '.$path.' → '.$code;
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $mute, sprintf(
+            "Ces réponses de succès ne déclarent aucun corps :\n  %s\n".
+            'Déclarer le schéma : sans lui, le client généré ne peut rien en typer.',
+            implode("\n  ", $mute),
+        ));
+    }
+
     public function test_the_pending_list_does_not_outlive_its_purpose(): void
     {
         // Un chemin listé en attente puis implémenté doit sortir de la liste,

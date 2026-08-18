@@ -17,6 +17,7 @@ use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Commission;
+use App\Modules\Payouts\Models\Payee;
 use App\Modules\Tickets\Actions\IssueTickets;
 use App\Modules\Tickets\Models\Ticket;
 use App\Modules\Trips\Models\Trip;
@@ -195,6 +196,7 @@ final class CreateCounterSale
         ]);
 
         AgencyLedgerEntry::query()->create([
+            'payee_id' => Payee::forAgency($booking->agency_id)->id,
             'agency_id' => $booking->agency_id,
             'booking_id' => $booking->id,
             'type' => 'COUNTER_COMMISSION_DEBIT',

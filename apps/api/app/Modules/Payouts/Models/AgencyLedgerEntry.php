@@ -31,7 +31,7 @@ final class AgencyLedgerEntry extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'agency_id', 'booking_id', 'type', 'amount', 'currency',
+        'agency_id', 'payee_id', 'booking_id', 'type', 'amount', 'currency',
         'reference_type', 'reference_id', 'description', 'created_by', 'occurred_at', 'created_at',
     ];
 
@@ -41,6 +41,12 @@ final class AgencyLedgerEntry extends Model
         'occurred_at' => 'immutable_datetime',
         'created_at' => 'immutable_datetime',
     ];
+
+    /** @return BelongsTo<Payee, $this> */
+    public function payee(): BelongsTo
+    {
+        return $this->belongsTo(Payee::class);
+    }
 
     /** @return BelongsTo<Agency, $this> */
     public function agency(): BelongsTo

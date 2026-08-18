@@ -92,7 +92,7 @@ export function Button({
 function labelColor(variant: Variant): string {
   if (variant === 'primary') return theme.text.inverse
 
-  return variant === 'secondary' ? theme.text.accent : theme.text.brand
+  return variant === 'secondary' ? theme.text.ink : theme.text.brand
 }
 
 const styles = StyleSheet.create({
@@ -115,10 +115,10 @@ const styles = StyleSheet.create({
   primary: {
     backgroundColor: theme.surface.brand,
   },
-  /** Contour or — l'action présente mais non prioritaire. */
+  /** Contour neutre — l'action présente mais non prioritaire. */
   secondary: {
-    backgroundColor: 'transparent',
-    borderColor: theme.surface.accent,
+    backgroundColor: theme.surface.card,
+    borderColor: theme.surface.border,
   },
   ghost: {
     backgroundColor: 'transparent',

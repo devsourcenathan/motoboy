@@ -6,11 +6,12 @@ namespace App\Modules\Agencies\Actions;
 
 use App\Modules\Administration\Actions\RecordAudit;
 use App\Modules\Agencies\Models\Agency;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Identity\Enums\Locale;
 use App\Modules\Notifications\Contracts\SmsSender;
 use App\Modules\Notifications\Data\SmsMessage;
 use App\Modules\Notifications\Models\Notification;
+use App\Modules\Payouts\Models\Payee;
+use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,12 +42,12 @@ final class ManagePayoutAccount
         string $accountNumber,
         string $accountName,
         ?int $submittedBy,
-    ): AgencyPayoutAccount {
+    ): PayoutAccount {
         $current = $agency->payoutAccounts()->where('is_active', true)->first();
 
         $account = DB::transaction(function () use (
             $agency, $type, $operator, $accountNumber, $accountName, $submittedBy, $current,
-        ): AgencyPayoutAccount {
+        ): PayoutAccount {
             $account = $agency->payoutAccounts()->create([
                 'type' => $type,
                 'operator' => $operator,
@@ -82,11 +83,71 @@ final class ManagePayoutAccount
      * agence n'a qu'un compte actif, et en laisser deux rendrait le choix
      * implicite au moment du versement.
      */
-    public function verify(AgencyPayoutAccount $account, int $verifierId): AgencyPayoutAccount
+    /**
+     * Le meme depot, pour un beneficiaire sans agence.
+     *
+     * Deuxieme point d'entree plutot que parametre facultatif : un chauffeur n'a
+     * pas de contact d'agence a prevenir, et la politique — inactif jusqu'a
+     * verification, trace d'audit sur un numero masque — est identique. La fondre
+     * dans `submit()` aurait donne une methode dont la moitie des branches ne
+     * s'applique jamais a l'appelant qui la lit.
+     */
+    public function submitForPayee(
+        Payee $payee,
+        string $type,
+        ?string $operator,
+        string $accountNumber,
+        string $accountName,
+        ?int $submittedBy,
+    ): PayoutAccount {
+        $current = PayoutAccount::query()
+            ->where('payee_id', $payee->id)
+            ->where('is_active', true)
+            ->first();
+
+        return DB::transaction(function () use (
+            $payee, $type, $operator, $accountNumber, $accountName, $submittedBy, $current,
+        ): PayoutAccount {
+            $account = PayoutAccount::query()->create([
+                'payee_id' => $payee->id,
+                'agency_id' => null,
+                'type' => $type,
+                'operator' => $operator,
+                'account_number' => $accountNumber,
+                'account_name' => $accountName,
+                // Inactif jusqu'a verification : une saisie non controlee ne doit
+                // pas devenir la destination d'un virement.
+                'is_active' => false,
+                'verified_at' => null,
+            ]);
+
+            $this->audit->handle(
+                action: 'payout_account.submitted',
+                subject: $account,
+                userId: $submittedBy,
+                old: $current === null ? null : ['masked' => self::mask($current->account_number)],
+                new: ['masked' => self::mask($accountNumber), 'type' => $type],
+            );
+
+            return $account;
+        });
+    }
+
+    public function verify(PayoutAccount $account, int $verifierId): PayoutAccount
     {
         DB::transaction(function () use ($account, $verifierId): void {
-            AgencyPayoutAccount::query()
-                ->where('agency_id', $account->agency_id)
+            /*
+             * Portee par le **beneficiaire**, non par l'agence.
+             *
+             * `agency_id` est nul pour un chauffeur, et `where('agency_id', null)`
+             * s'ecrit `= null` en SQL : il ne matche rien. Les comptes precedents
+             * d'un chauffeur seraient donc restes actifs, deux destinations
+             * verifiees en meme temps, et le reversement aurait pris la premiere
+             * venue. `payee_id` est le proprietaire depuis l'etape 1, et il vaut
+             * pour les deux genres.
+             */
+            PayoutAccount::query()
+                ->where('payee_id', $account->payee_id)
                 ->whereKeyNot($account->id)
                 ->update(['is_active' => false]);
 

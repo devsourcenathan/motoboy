@@ -1,4 +1,10 @@
-import { normaliseCode, normalisePhone, validate } from './auth'
+import {
+  normaliseCode,
+  normalisePhone,
+  toInternational,
+  validate,
+  type CredentialsForm,
+} from './auth'
 
 describe('normalisePhone', () => {
   /**
@@ -17,6 +23,15 @@ describe('normalisePhone', () => {
 })
 
 describe('validate', () => {
+  /** Ajouter un champ au formulaire ne doit pas faire réécrire chaque cas. */
+  const form = (over: Partial<CredentialsForm>): CredentialsForm => ({
+    phone: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    ...over,
+  })
+
   const phone = '+237690000001'
 
   /**
@@ -25,30 +40,30 @@ describe('validate', () => {
    * qui n'arrivera jamais.
    */
   it('exige le format international', () => {
-    expect(validate({ phone: '690000001', firstName: '', lastName: '' }, 'signIn')).toBe(
+    expect(validate(form({ phone: '690000001' }), 'signIn')).toBe(
       'PHONE_INVALID',
     )
     expect(
-      validate({ phone: '00237690000001', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '00237690000001' }), 'signIn'),
     ).toBe('PHONE_INVALID')
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signIn')).toBeNull()
+    expect(validate(form({ phone }), 'signIn')).toBeNull()
   })
 
   it('accepte un numéro saisi avec des espaces', () => {
     expect(
-      validate({ phone: '+237 690 00 00 01', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+237 690 00 00 01' }), 'signIn'),
     ).toBeNull()
   })
 
   it('n’exige les noms qu’à l’inscription', () => {
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signIn')).toBeNull()
-    expect(validate({ phone, firstName: '', lastName: '' }, 'signUp')).toBe(
+    expect(validate(form({ phone }), 'signIn')).toBeNull()
+    expect(validate(form({ phone }), 'signUp')).toBe(
       'NAME_MISSING',
     )
-    expect(validate({ phone, firstName: 'Awa', lastName: '  ' }, 'signUp')).toBe(
+    expect(validate(form({ phone, firstName: 'Awa', lastName: '  ' }), 'signUp')).toBe(
       'NAME_MISSING',
     )
-    expect(validate({ phone, firstName: 'Awa', lastName: 'Nkeng' }, 'signUp')).toBeNull()
+    expect(validate(form({ phone, firstName: 'Awa', lastName: 'Nkeng' }), 'signUp')).toBeNull()
   })
 
   /**
@@ -57,10 +72,10 @@ describe('validate', () => {
    */
   it('accepte d’autres indicatifs que le Cameroun', () => {
     expect(
-      validate({ phone: '+33612345678', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+33612345678' }), 'signIn'),
     ).toBeNull()
     expect(
-      validate({ phone: '+15551234567', firstName: '', lastName: '' }, 'signIn'),
+      validate(form({ phone: '+15551234567' }), 'signIn'),
     ).toBeNull()
   })
 })
@@ -69,5 +84,24 @@ describe('normaliseCode', () => {
   it('ne garde que les chiffres', () => {
     expect(normaliseCode('12 34 56')).toBe('123456')
     expect(normaliseCode('a1b2c3')).toBe('123')
+  })
+})
+
+describe('toInternational', () => {
+  /**
+   * L'écran affiche « +237 » à côté du champ : le passager tape la suite. Mais
+   * il colle aussi des numéros pris dans ses contacts, et écrit parfois le
+   * format national avec son zéro. Les trois doivent aboutir au même numéro,
+   * sans quoi le code part nulle part et personne ne sait pourquoi.
+   */
+  it('compose le même numéro depuis les trois saisies courantes', () => {
+    expect(toInternational('690000001')).toBe('+237690000001')
+    expect(toInternational('0690000001')).toBe('+237690000001')
+    expect(toInternational('+237690000001')).toBe('+237690000001')
+  })
+
+  it('tolère les espaces et les tirets de la saisie', () => {
+    expect(toInternational('6 90 00 00 01')).toBe('+237690000001')
+    expect(toInternational('690-000-001')).toBe('+237690000001')
   })
 })

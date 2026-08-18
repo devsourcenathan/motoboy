@@ -32,7 +32,7 @@ final class BoardingController
      */
     public function trips(Request $request): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->require($request, 'tickets.validate');
 
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
 

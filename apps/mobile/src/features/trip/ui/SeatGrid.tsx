@@ -110,8 +110,9 @@ const styles = StyleSheet.create({
   labelChosen: {
     color: theme.text.inverse,
   },
+  /** Vert tendre : « libre » se lit comme un acquis, pas comme une action. */
   available: {
-    backgroundColor: theme.surface.card,
+    backgroundColor: theme.seat.availableSoft,
     borderColor: theme.seat.available,
   },
   chosen: {
@@ -119,8 +120,8 @@ const styles = StyleSheet.create({
     borderColor: theme.seat.chosen,
   },
   /**
-   * Tenue par quelqu'un d'autre : contour or **tireté**, et non un aplat.
-   * Elle peut se libérer, ce qui explique au passager pourquoi le plan a changé
+   * Tenue par quelqu'un d'autre : contour **tireté**, et non un aplat. Elle
+   * peut se libérer, ce qui explique au passager pourquoi le plan a changé
    * quand il y revient (B2) — un aplat identique à « prise » ne le dirait pas.
    */
   held: {

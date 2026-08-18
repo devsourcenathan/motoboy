@@ -20,18 +20,25 @@ use App\Modules\Payments\Data\WebhookEvent;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Gateways\FakePaymentGateway;
+use App\Modules\Payouts\Actions\AdjustLedger;
+use App\Modules\Payouts\Actions\ApprovePayout;
 use App\Modules\Payouts\Actions\BuildDuePayouts;
 use App\Modules\Payouts\Actions\BuildPayout;
+use App\Modules\Payouts\Actions\ConfirmPayout;
+use App\Modules\Payouts\Actions\SendPayout;
+use App\Modules\Payouts\Data\DisbursementEvent;
 use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Enums\PayoutStatus;
 use App\Modules\Payouts\Gateways\FakePayoutGateway;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 use App\Modules\Payouts\Models\Payout;
 use App\Modules\Payouts\Support\EligibleBalance;
 use App\Modules\Trips\Models\Trip;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -504,5 +511,113 @@ final class PayoutTest extends TestCase
         ]);
 
         return $user;
+    }
+
+    /**
+     * Le grand livre pointe un beneficiaire, pas une agence.
+     *
+     * C'est ce qui permettra de payer un chauffeur independant (E4) sans
+     * retoucher le code qui compte l'argent. Le pont derive encore le
+     * beneficiaire de l'agence, et cette derivation doit tenir.
+     */
+    public function test_every_ledger_entry_carries_a_payee(): void
+    {
+        $this->paidBooking();
+
+        $entries = AgencyLedgerEntry::query()->get();
+
+        $this->assertNotEmpty($entries);
+        $this->assertTrue($entries->every(fn (AgencyLedgerEntry $entry) => $entry->payee_id !== null));
+
+        $payee = Payee::query()->where('agency_id', $this->agency->id)->firstOrFail();
+
+        $this->assertSame(Payee::KIND_AGENCY, $payee->kind);
+        $this->assertSame($payee->id, $entries->first()?->payee_id);
+    }
+
+    /**
+     * Les deux ecritures qu'aucun test ne parcourait.
+     *
+     * **Ce test existe a cause de la contraction.** Le pont qui derivait le
+     * beneficiaire de l'agence a ete retire, chaque appelant le passant desormais
+     * lui-meme. Sept actions ont ete reprises ; cinq etaient exercees
+     * indirectement — une vente au comptoir, un remboursement, un reglement — et
+     * `payee_id` etant obligatoire en base, une expression fausse y aurait echoue
+     * bruyamment.
+     *
+     * Ces deux-la, non : un ajustement manuel et la contre-passation d'un
+     * reversement en echec ne sont declenches par aucun autre test. Les retirer du
+     * pont sans les couvrir aurait ete un pari sur du code qui compte de l'argent,
+     * dont la premiere occasion de se tromper aurait ete la production.
+     */
+    public function test_a_manual_adjustment_and_a_failed_payout_name_their_payee(): void
+    {
+        $before = AgencyLedgerEntry::query()->count();
+
+        $adjustment = app(AdjustLedger::class)->handle(
+            $this->agency,
+            -2_500,
+            'Correction manuelle, litige resolu.',
+            $this->admin->id,
+        );
+
+        $payee = Payee::query()->where('agency_id', $this->agency->id)->firstOrFail();
+
+        $this->assertSame($payee->id, $adjustment->payee_id);
+        $this->assertSame($this->agency->id, $adjustment->agency_id);
+
+        // Un reversement parti puis refuse par l'operateur : le debit ecrit a
+        // l'envoi doit etre contre-passe, faute de quoi l'agence apparaitrait
+        // payee alors qu'elle ne l'est pas.
+        $this->paidBooking();
+        $this->depart();
+
+        $payout = app(BuildPayout::class)->handle($this->agency)['payout'];
+        $this->assertNotNull($payout);
+
+        app(ApprovePayout::class)->handle($payout, $this->admin->id);
+        $sent = app(SendPayout::class)->handle($payout->refresh(), 'test-'.$payout->reference);
+
+        app(ConfirmPayout::class)->handle(new DisbursementEvent(
+            eventId: 'evt-'.$sent->reference,
+            providerReference: (string) $sent->provider_reference,
+            status: PayoutStatus::Failed,
+            failureReason: 'Numero inconnu chez cet operateur.',
+        ));
+
+        $reversal = AgencyLedgerEntry::query()
+            ->where('type', LedgerEntryType::PayoutReversalCredit->value)
+            ->firstOrFail();
+
+        $this->assertSame($payee->id, $reversal->payee_id);
+        $this->assertSame((int) $payout->net_amount, (int) $reversal->amount);
+
+        // Aucune ecriture n'a echappe au beneficiaire, y compris celles ecrites
+        // en chemin par l'envoi.
+        $entries = AgencyLedgerEntry::query()->get();
+        $this->assertGreaterThan($before, $entries->count());
+        $this->assertTrue($entries->every(fn (AgencyLedgerEntry $e) => $e->payee_id !== null));
+    }
+
+    /**
+     * Une personne peut etre beneficiaire, et la contrainte de base refuse un
+     * beneficiaire qui melange les deux genres : sans elle, une ligne sans
+     * destinataire serait representable.
+     */
+    public function test_a_person_can_be_a_payee_and_the_kinds_do_not_mix(): void
+    {
+        $driver = User::factory()->create();
+
+        $payee = Payee::forUser($driver->id);
+
+        $this->assertSame(Payee::KIND_DRIVER, $payee->kind);
+        $this->assertNull($payee->agency_id);
+
+        $this->expectException(QueryException::class);
+
+        Payee::query()->create([
+            'kind' => Payee::KIND_DRIVER,
+            'agency_id' => $this->agency->id,
+        ]);
     }
 }

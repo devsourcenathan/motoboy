@@ -278,6 +278,1428 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Modifie son propre profil
+         * @description Mise a jour partielle : seuls les champs transmis sont modifies.
+         *
+         *     Le telephone n'y figure pas. Il porte l'identite du compte et la
+         *     destination des SMS ; le changer demande de prouver la possession du
+         *     nouveau numero, donc un parcours OTP a part.
+         *
+         *     `locale` decide de la langue des SMS.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        first_name?: string;
+                        last_name?: string;
+                        /** Format: email */
+                        email?: string | null;
+                        locale?: components["schemas"]["Locale"];
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["User"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/driver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Son dossier de chauffeur */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Depose ou represente son dossier de chauffeur
+         * @description Rejouable : un dossier refuse doit pouvoir etre corrige et represente.
+         *     Un nouveau depot repart en `PENDING` et efface la trace de
+         *     l'instruction precedente.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        license_number: string;
+                        /** Format: date */
+                        license_expires_at: string;
+                        vehicle_plate: string;
+                        vehicle_type: components["schemas"]["VehicleType"];
+                        vehicle_model?: string | null;
+                        vehicle_seats: number;
+                        /** Format: int64 */
+                        city_id: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Depose */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Depose une piece du dossier
+         * @description Une piece par type : redeposer remplace la precedente. Le nom d'origine
+         *     du fichier n'est jamais repris.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        type: components["schemas"]["DriverDocumentType"];
+                        /** Format: binary */
+                        file: string;
+                        /** Format: date */
+                        expires_at?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/rides/{reference}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Paie la course retenue
+         * @description Le prix se regle a l'acceptation de l'offre. Comme pour une reservation,
+         *     le paiement Mobile Money est **asynchrone** : la reponse est `PENDING` ou
+         *     `PROCESSING`, jamais `SUCCEEDED` immediatement, et c'est le webhook qui
+         *     tranche.
+         *
+         *     Une course porte **plusieurs tentatives**, dont une seule aboutie.
+         *     `Idempotency-Key` protege une requete rejouee, pas une nouvelle
+         *     tentative : reutiliser la cle apres un code errone renverrait le refus
+         *     precedent au lieu de reessayer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "Idempotency-Key": string;
+                };
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        method: components["schemas"]["PaymentMethod"];
+                        operator?: string | null;
+                        payer_phone?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Encaissement engage */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/rides/{reference}/no-show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signale que le chauffeur ne s'est pas presente
+         * @description Signale par le passager, seul temoin possible faute de suivi de position.
+         *     Rembourse integralement et marque le dossier du chauffeur.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ride"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Parametres commerciaux de la plateforme
+         * @description Reserve au super-administrateur.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/owner/vehicles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les vehicules du proprietaire
+         * @description **Consultation seule, aucun circuit financier** (I3). Le proprietaire loue
+         *     son vehicule a une agence et sa remuneration se regle directement avec
+         *     elle ; la plateforme ne porte aucun flux vers lui.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["OwnerVehicle"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/owner/vehicles/{vehicle}/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les departs assures par un vehicule
+         * @description Ce que le proprietaire vient verifier : **son vehicule roule-t-il ?** Le
+         *     taux de remplissage est calcule par le serveur — le laisser au client
+         *     ferait diverger deux arrondis, et c'est le chiffre dont on discute avec
+         *     l'agence.
+         *
+         *     Un vehicule qui ne lui appartient pas repond `404` et non `403` :
+         *     « interdit » revelerait qu'il existe et appartient a quelqu'un d'autre.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    vehicle: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["OwnerTrip"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/settings/ride-commission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Regle le taux de commission d'une course
+         * @description En points de base : 1000 vaut 10 %. Un taux unique s'applique a tous les
+         *     chauffeurs independants, contrairement aux conditions negociees d'une
+         *     agence. Plafonne, pour qu'un zero de trop ne prenne pas la course entiere.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        commission_bps: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/settings/id-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Piece d'identite demandee au voyageur principal
+         * @description **Deux reglages, changes ensemble.** Quelle forme — un numero saisi, ou
+         *     une photo de la piece ? Et faut-il bloquer la reservation quand elle
+         *     manque ? Les separer ferait passer par un etat que personne n'a voulu :
+         *     photo exigee avant que l'ecran de depot existe, par exemple.
+         *
+         *     La piece n'est demandee qu'au **voyageur principal** : la reclamer aux
+         *     quatre membres d'une famille transformerait une reservation en formalite,
+         *     pour une liste d'embarquement qui identifie deja le groupe par son
+         *     acheteur.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        id_document_mode: components["schemas"]["IdDocumentMode"];
+                        id_document_required: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/drivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * File des dossiers de chauffeur
+         * @description Du plus ancien au plus recent. Par defaut, ce qui attend une decision.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["DriverStatus"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminDriverRow"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payout-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Destinations de virement a verifier
+         * @description Non verifiees d'abord, puis de la plus ancienne a la plus recente.
+         *
+         *     Sans ce geste, un compte declare reste inactif et la passe de reversement
+         *     s'arrete sur `NO_VERIFIED_ACCOUNT` : personne n'est paye, et rien ne le
+         *     signale.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    kind?: "AGENCY" | "DRIVER";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminPayoutAccountRow"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/service-requests/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consulter une demande ou une course
+         * @description Pour le support : « ou en est ma course ? ». La reference d'une **demande**
+         *     comme celle d'une **course** sont acceptees — l'appelant ne fait pas la
+         *     difference, et la lui imposer reviendrait a lui demander de comprendre un
+         *     decoupage interne avant d'etre aide.
+         *
+         *     Lecture seule : le support constate, il ne decide pas.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServiceRequest"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["DefaultError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Valide un dossier de chauffeur
+         * @description Refuse un dossier incomplet, les quatre pieces etant exigees.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse un dossier de chauffeur */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/drivers/{driver}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspend un chauffeur valide
+         * @description Distinct du refus, qui porte sur un dossier jamais accepte. Ne touche ni
+         *     a l'historique des courses ni aux reversements dus.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    driver: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverProfile"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/service-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses appels de service */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ServiceRequest"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Ouvre un appel de service
+         * @description Une seule demande ouverte par passager a la fois. La position est
+         *     declaree : ville du referentiel et point de repere en texte libre.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: int64 */
+                        origin_city_id: number;
+                        origin_landmark: string;
+                        /** Format: int64 */
+                        destination_city_id: number;
+                        destination_landmark?: string | null;
+                        passengers: number;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Ouverte */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServiceRequest"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/service-requests/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Un appel de service et ses offres */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServiceRequest"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["DefaultError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/service-requests/{reference}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Annule son appel de service
+         * @description Les offres en attente tombent, et une course deja conclue est annulee avec
+         *     la demande. Sans penalite a ce stade.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        reason?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServiceRequest"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/service-requests/{reference}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Un chauffeur propose un prix
+         * @description Reserve a un dossier valide, dans la ville de depart de la demande, et a
+         *     un chauffeur qui n'a pas de course en cours.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        price_amount: number;
+                        eta_minutes: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Deposee */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RideOffer"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/offers/{offer}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retient une offre
+         * @description Operation concurrente : une seule offre acceptee par demande, une seule
+         *     course active par chauffeur. Les deux sont garanties par la base.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    offer: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Course creee */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ride"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les demandes ouvertes de sa ville
+         * @description Les plus anciennes d'abord.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["ServiceRequest"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses offres */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["RideOffer"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/rides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses courses */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Ride"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/rides/{reference}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Demarre la course
+         * @description Refuse en `RIDE_NOT_PAID` tant que le passager n'a pas paye : tout se
+         *     regle a l'acceptation (E4 bis). Sans ce controle une course entiere
+         *     pourrait se derouler sans qu'un franc ait bouge, et le reglement de fin
+         *     crediterait le chauffeur d'un argent jamais encaisse.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ride"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Son solde, son historique, ses reversements
+         * @description Trois nombres et non un : le solde du compte courant, ce qui est
+         *     **reversable aujourd'hui**, et le minimum qui declenche un virement. Une
+         *     course terminee il y a une heure compte au solde sans etre encore
+         *     versable, et confondre les deux ferait attendre un virement qui ne peut
+         *     pas partir.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DriverEarnings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["DefaultError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/payout-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ses comptes de versement */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["PayoutAccountSummary"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Declare ou remplace son compte de versement
+         * @description Mobile Money seulement : un chauffeur independant n'a pas de compte
+         *     d'entreprise, et proposer un virement bancaire ferait saisir des
+         *     coordonnees qu'on ne saurait pas verifier.
+         *
+         *     Le compte reste **inactif jusqu'a verification** par un administrateur.
+         *     Une erreur de saisie envoie l'argent a un inconnu, sans recours.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        type: "MOBILE_MONEY";
+                        /** @enum {string} */
+                        operator: "MTN" | "ORANGE";
+                        account_number: string;
+                        account_name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Declare, en attente de verification */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutAccountSummary"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/driver/rides/{reference}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Termine la course
+         * @description La course quitte l'etat actif, ce qui libere le chauffeur.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ride"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -316,6 +1738,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ce que le client doit savoir avant d'afficher un formulaire
+         * @description **Public, et volontairement pauvre.** Les reglages de plateforme vivent
+         *     derriere `platform.configure` ; un passager ne peut pas les lire. Mais il
+         *     lui faut savoir quelle piece d'identite on va lui demander, faute de quoi
+         *     l'ecran de reservation devine et le serveur refuse une saisie que le
+         *     client n'avait pas su reclamer.
+         *
+         *     N'y figure que ce qui **change ce que l'utilisateur voit**.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id_document_mode: components["schemas"]["IdDocumentMode"];
+                            id_document_required: boolean;
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/places/autocomplete": {
         parameters: {
             query?: never;
@@ -335,8 +1806,14 @@ export interface paths {
          */
         get: {
             parameters: {
-                query: {
-                    q: string;
+                query?: {
+                    /**
+                     * @description **Facultative.** Sans elle, l'endpoint rend les villes les plus utiles,
+                     *     par ordre alphabetique. Un selecteur qui s'ouvre sur une liste vide est
+                     *     exact et inutilisable : le passager qui ne sait pas quoi taper ne
+                     *     decouvre jamais ce que la plateforme dessert.
+                     */
+                    q?: string;
                     limit?: number;
                 };
                 header?: never;
@@ -519,6 +1996,66 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/id-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Depose la piece d'identite du voyageur principal
+         * @description **Avant la reservation, et separement.** Une place se tient quelques
+         *     minutes ; televerser pendant ce delai le ferait courir sur une 3G de gare,
+         *     et un echec de reseau ferait perdre la place.
+         *
+         *     Rend un `path` que la reservation reprend dans
+         *     `passengers[0].id_document_path`. Le chemin est tire au hasard par le
+         *     stockage : un client ne peut pas en fabriquer un pour designer le fichier
+         *     de quelqu'un d'autre.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description Photo de la piece — jpg, jpeg ou png, 8 Mo au plus.
+                         */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Depose */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            path: string;
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2967,6 +4504,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Le personnel de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyStaffMember"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Rattache quelqu'un au personnel
+         * @description **Le compte se cree au numero.** Si la personne a deja un compte passager,
+         *     le role s'y ajoute : c'est la meme personne, et lui imposer une seconde
+         *     identite sur le meme telephone n'aurait pas de sens. Elle se connecte par
+         *     OTP comme partout ailleurs — aucun mot de passe n'est distribue.
+         *
+         *     Le nom d'un compte existant **n'est pas ecrase** : il appartient a la
+         *     personne, pas a l'agence qui l'embauche.
+         *
+         *     Deux profils attribuables, et jamais `AGENCY` : on ne delegue pas ici le
+         *     droit de deleguer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        first_name: string;
+                        last_name: string;
+                        /** @enum {string} */
+                        role: "AGENT" | "COUNTER";
+                    };
+                };
+            };
+            responses: {
+                /** @description Rattache */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyStaffMember"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/staff/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retire quelqu'un du personnel
+         * @description **Le role est revoque, le compte survit.** Ses ventes et ses validations
+         *     restent a son nom — un historique qui perd son auteur ne se verifie plus —
+         *     et la personne garde son compte passager, qui ne regarde pas l'agence.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    user: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Retire */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/documents": {
         parameters: {
             query?: never;
@@ -3538,6 +5206,18 @@ export interface components {
                  * @description Requis en mode SEATED, ignoré en mode CAPACITY.
                  */
                 seat_id?: number | null;
+                /**
+                 * @description **Voyageur principal seulement** ; ignore pour les suivants.
+                 *     Requis quand `id_document_required` vaut vrai et que le mode est
+                 *     `NUMBER`. Exclusif de `id_document_path` — la base le garantit.
+                 */
+                id_document_number?: string | null;
+                /**
+                 * @description Chemin d'une image deja deposee. Requis quand le mode est
+                 *     `IMAGE`. Le client ne fabrique pas ce chemin : il le recoit du
+                 *     depot.
+                 */
+                id_document_path?: string | null;
             }[];
             /**
              * @description Destinataire du billet par SMS. Aucun compte n'est créé : c'est une
@@ -3734,7 +5414,7 @@ export interface components {
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
+        ErrorCode: "VALIDATION_FAILED" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "ACCOUNT_NOT_FOUND" | "ACCOUNT_NOT_VERIFIED" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "SERVICE_REQUEST_ALREADY_OPEN" | "SERVICE_REQUEST_CLOSED" | "DRIVER_NOT_APPROVED" | "DRIVER_BUSY" | "OFFER_NOT_ACCEPTABLE" | "OFFER_ALREADY_TAKEN" | "RIDE_NOT_PAID" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
         Error: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -3765,6 +5445,145 @@ export interface components {
                 [key: string]: string[];
             };
         };
+        /**
+         * @description Une ligne de la file de moderation. Volontairement plus pauvre que le
+         *     dossier complet : cet ecran decide, il ne consulte pas.
+         */
+        AdminDriverRow: {
+            /** Format: int64 */
+            id: number;
+            status: components["schemas"]["DriverStatus"];
+            /** Format: date-time */
+            submitted_at: string | null;
+            driver: {
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
+            };
+            /** Format: int64 */
+            city_id: number;
+            vehicle_plate: string | null;
+            /** @description Types de pieces deja deposees, pour voir d'un coup ce qui manque. */
+            documents: components["schemas"]["DriverDocumentType"][];
+        };
+        DriverEarnings: {
+            /** @description Le solde du compte courant, reversable ou non. */
+            balance: components["schemas"]["Money"];
+            /** @description Ce qui pourrait partir aujourd'hui, delai ecoule. */
+            payable: components["schemas"]["Money"];
+            /** @description En dessous, aucun virement n'est construit — les frais couteraient plus que le montant. */
+            minimum: components["schemas"]["Money"];
+            /** @description Delai apres la fin d'une course avant qu'elle devienne reversable. */
+            delay_hours: number;
+            entries: {
+                type: components["schemas"]["LedgerEntryType"];
+                amount: components["schemas"]["Money"];
+                description: string | null;
+                /** Format: date-time */
+                occurred_at: string | null;
+            }[];
+            payouts: {
+                reference: string;
+                status: components["schemas"]["PayoutStatus"];
+                net_amount: components["schemas"]["Money"];
+                /** Format: date-time */
+                paid_at: string | null;
+            }[];
+        };
+        /**
+         * @description Le numero est **tronque**, meme vers son proprietaire : un numero complet
+         *     dans une reponse d'API finit dans un journal ou un cache.
+         */
+        PayoutAccountSummary: {
+            /** Format: int64 */
+            id: number;
+            type: string;
+            operator: string | null;
+            account_name: string | null;
+            masked_number: string;
+            verified: boolean;
+        };
+        /**
+         * @description Une ligne de la file de verification. Le **nom du beneficiaire** y figure
+         *     parce que le controle consiste precisement a le comparer a celui du compte
+         *     Mobile Money declare.
+         */
+        AdminPayoutAccountRow: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string|null} */
+            kind: "AGENCY" | "DRIVER" | null;
+            owner: string | null;
+            owner_phone: string | null;
+            type: string;
+            operator: string | null;
+            account_name: string | null;
+            masked_number: string;
+            verified: boolean;
+            /** Format: date-time */
+            submitted_at: string | null;
+        };
+        /**
+         * @description La forme demandee. `NUMBER` se saisit hors ligne sur n'importe quel
+         *     telephone et ne coute ni stockage ni conservation ; `IMAGE` permet de
+         *     verifier, et se justifie quand un controle reel l'exige.
+         * @enum {string}
+         */
+        IdDocumentMode: "NUMBER" | "IMAGE";
+        OwnerVehicle: {
+            /** Format: int64 */
+            id: number;
+            registration: string;
+            brand?: string | null;
+            model?: string | null;
+            type: components["schemas"]["VehicleType"];
+            capacity: number;
+            /** @description L'agence qui l'exploite — l'interlocuteur du proprietaire. */
+            agency: string | null;
+            /**
+             * @description Le chiffre d'affaires n'est visible que si l'agence l'a autorise pour
+             *     ce vehicule : c'est une donnee commerciale de l'agence, pas du
+             *     proprietaire.
+             */
+            revenue_visible: boolean;
+        };
+        OwnerTrip: {
+            reference: string;
+            /** Format: date-time */
+            departure_at: string | null;
+            /**
+             * @description Declare sur place et non par un schema partage : le statut d'un depart
+             *     n'a d'enumeration ni dans le contrat ni en PHP — c'est une chaine
+             *     libre en base. En creer une ici la ferait entrer dans le controle de
+             *     parite des enumerations, sans rien a comparer de l'autre cote.
+             * @enum {string}
+             */
+            status: "SCHEDULED" | "CANCELLED";
+            /**
+             * @description Celle du **depart**, non celle du vehicule aujourd'hui : un vehicule
+             *     peut avoir ete remplace, et le remplissage d'alors se juge sur ce qui
+             *     etait offert ce jour-la.
+             */
+            capacity: number;
+            seats_sold: number;
+            /** @description En pourcentage, arrondi par le serveur. */
+            fill_rate: number;
+        };
+        AgencyStaffMember: {
+            /** Format: int64 */
+            user_id: number;
+            first_name: string;
+            last_name: string;
+            phone: string;
+            /**
+             * @description `AGENT` embarque — valider un billet, voir les departs. `COUNTER` vend
+             *     en plus. Les separer evite de donner le droit d'encaisser a quelqu'un
+             *     dont ce n'est pas le travail.
+             * @enum {string}
+             */
+            role: "AGENT" | "COUNTER";
+            is_active: boolean;
+        };
         PaginationMeta: {
             page: number;
             per_page: number;
@@ -3791,6 +5610,136 @@ export interface components {
         ValidationMethod: "SCAN" | "MANUAL";
         /** @enum {string} */
         SeatingMode: "SEATED" | "CAPACITY";
+        PlatformSettings: {
+            /** @description Points de base. 1000 vaut 10 %. */
+            ride_commission_bps: number;
+            ride_commission_max_bps: number;
+            id_document_mode: components["schemas"]["IdDocumentMode"];
+            /**
+             * @description Quand faux, la reservation passe sans piece. Le reglage existe pour
+             *     cela : une agence dont les controles ne l'exigent pas ne doit pas
+             *     ecarter des voyageurs reels pour une piece que personne ne lira.
+             */
+            id_document_required: boolean;
+        };
+        /** @enum {string} */
+        ServiceRequestStatus: "OPEN" | "OFFERED" | "MATCHED" | "CANCELLED" | "EXPIRED";
+        /** @enum {string} */
+        OfferStatus: "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+        /** @enum {string} */
+        RideStatus: "MATCHED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+        ServiceRequestPlace: {
+            /** Format: int64 */
+            city_id: number;
+            /**
+             * @description Nom de la ville, pour l'affichage. Renvoye par le serveur plutot que
+             *     resolu par le client : celui-ci ferait une requete de plus pour une
+             *     donnee deja en main.
+             */
+            city: string | null;
+            landmark: string | null;
+        };
+        ServiceRequest: {
+            reference: string;
+            status: components["schemas"]["ServiceRequestStatus"];
+            origin: components["schemas"]["ServiceRequestPlace"];
+            destination: components["schemas"]["ServiceRequestPlace"];
+            passengers: number;
+            note?: string | null;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at?: string | null;
+            offers?: components["schemas"]["RideOffer"][];
+            ride?: components["schemas"]["Ride"] | null;
+        };
+        RideOffer: {
+            /** Format: int64 */
+            id: number;
+            status: components["schemas"]["OfferStatus"];
+            price: components["schemas"]["Money"];
+            eta_minutes: number;
+            /** Format: date-time */
+            expires_at: string;
+            /**
+             * @description Nom et vehicule seulement. Le telephone n'apparait qu'une fois l'offre
+             *     retenue : le livrer avec chaque offre publierait les numeros de tous
+             *     les chauffeurs qui repondent.
+             */
+            driver: {
+                first_name?: string | null;
+                vehicle_plate?: string | null;
+                vehicle_model?: string | null;
+                vehicle_seats?: number | null;
+            };
+        };
+        Ride: {
+            reference: string;
+            status: components["schemas"]["RideStatus"];
+            /** @description Ce que paie le passager. */
+            price: components["schemas"]["Money"];
+            /**
+             * @description Prelevee par la plateforme, au taux courant du dashboard. Renvoyee
+             *     plutot que calculee par le client : un pourcentage en dur cote mobile
+             *     annoncerait un net faux le jour ou le taux change.
+             */
+            commission: components["schemas"]["Money"];
+            /** @description Ce que touche le chauffeur, prix moins commission. */
+            driver_amount: components["schemas"]["Money"];
+            /**
+             * @description Calcule par le serveur. C'est cet etat qui decide si l'ecran propose
+             *     de payer, et c'est lui qui commande la presence des telephones.
+             */
+            paid: boolean;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            completed_at?: string | null;
+            /**
+             * @description Le vehicule est visible des l'acceptation ; le telephone n'arrive
+             *     qu'une fois `paid` vrai. C'est ce que le passager achete, et le
+             *     livrer avant laisserait s'arranger hors plateforme.
+             */
+            driver: {
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
+                vehicle_plate: string | null;
+                vehicle_model: string | null;
+            };
+            /**
+             * @description Le miroir du bloc precedent, pour l'ecran du chauffeur. Meme regle :
+             *     le telephone n'apparait qu'une fois la course payee.
+             */
+            passenger: {
+                first_name: string | null;
+                last_name: string | null;
+                phone: string | null;
+            };
+        };
+        /** @enum {string} */
+        DriverStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+        /** @enum {string} */
+        DriverDocumentType: "LICENSE" | "REGISTRATION" | "IDENTITY" | "INSURANCE";
+        DriverProfile: {
+            status: components["schemas"]["DriverStatus"];
+            /** @description Dossier valide et permis non perime. */
+            can_drive: boolean;
+            license_number: string;
+            /** Format: date */
+            license_expires_at: string;
+            vehicle_plate: string;
+            vehicle_type: components["schemas"]["VehicleType"];
+            vehicle_model?: string | null;
+            vehicle_seats: number;
+            /** Format: int64 */
+            city_id: number;
+            /** @description Motif d'un refus ou d'une suspension, lisible par le chauffeur. */
+            review_note?: string | null;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+            documents: components["schemas"]["DriverDocumentType"][];
+        };
         /** @enum {string} */
         VehicleType: "BUS" | "CAR";
         User: {
@@ -3803,7 +5752,23 @@ export interface components {
             last_name: string;
             phone_verified?: boolean;
             locale?: components["schemas"]["Locale"];
+            /**
+             * @description Ce que le compte a le droit de faire. Le contrat ne le disait pas, si
+             *     bien qu'aucun client ne pouvait router selon le role : le back-office
+             *     devait laisser entrer tout le monde puis afficher des pages vides.
+             *
+             *     **Un tableau, car un compte en cumule** : le meme utilisateur est
+             *     passager et chauffeur, et un agent l'est pour une agence donnee. La
+             *     portee par agence n'apparait pas ici — un client qui en aurait besoin
+             *     interroge l'endpoint concerne, qui la revalide de toute facon.
+             *
+             *     Indicatif cote client : il evite d'afficher ce qui echouerait. C'est
+             *     l'API qui refuse, et elle seule fait autorite.
+             */
+            roles: components["schemas"]["Role"][];
         };
+        /** @enum {string} */
+        Role: "PASSENGER" | "AGENCY" | "AGENT" | "COUNTER" | "DRIVER" | "OWNER" | "ADMIN" | "SUPER_ADMIN";
         OtpChallenge: {
             /**
              * Format: date-time
@@ -4135,8 +6100,38 @@ export interface components {
         };
         Payout: {
             reference: string;
-            /** Format: int64 */
-            agency_id?: number;
+            /**
+             * Format: int64
+             * @description **Nul pour un chauffeur independant**, qui n'a pas d'agence. Le
+             *     contrat le declarait obligatoire, ce qui promettait un identifiant
+             *     toujours present la ou il n'y en a pas. Prefez `payee`, qui vaut pour
+             *     les deux genres.
+             */
+            agency_id?: number | null;
+            /**
+             * @description **A qui part l'argent.** La ressource n'exposait que `agency_id` :
+             *     celui qui valide un decaissement voyait un montant sans savoir a qui
+             *     il partait. C'est la seule information qu'il ne peut pas deviner, et
+             *     la seule dont l'erreur est irreversible — un virement Mobile Money mal
+             *     dirige ne se recupere pas.
+             */
+            payee: {
+                /** @enum {string|null} */
+                kind: "AGENCY" | "DRIVER" | null;
+                name: string | null;
+                phone: string | null;
+            };
+            /**
+             * @description Ou part l'argent. Numero tronque : les trois derniers chiffres et le
+             *     nom du compte suffisent a reconnaitre une erreur, et un numero complet
+             *     dans une reponse d'API finit dans un journal.
+             */
+            destination: {
+                operator: string | null;
+                account_name: string | null;
+                masked_number: string;
+                verified: boolean;
+            } | null;
             /** Format: date */
             period_start: string;
             /** Format: date */
@@ -4205,7 +6200,7 @@ export interface components {
             occurred_at: string;
         };
         /** @enum {string} */
-        LedgerEntryType: "BOOKING_CREDIT" | "COMMISSION_DEBIT" | "REFUND_DEBIT" | "COMMISSION_REVERSAL_CREDIT" | "AGGREGATOR_FEE_DEBIT" | "COUNTER_COMMISSION_DEBIT" | "COUNTER_COMMISSION_REVERSAL" | "ADJUSTMENT" | "PAYOUT_DEBIT" | "PAYOUT_REVERSAL_CREDIT";
+        LedgerEntryType: "BOOKING_CREDIT" | "RIDE_CREDIT" | "COMMISSION_DEBIT" | "REFUND_DEBIT" | "COMMISSION_REVERSAL_CREDIT" | "AGGREGATOR_FEE_DEBIT" | "COUNTER_COMMISSION_DEBIT" | "COUNTER_COMMISSION_REVERSAL" | "ADJUSTMENT" | "PAYOUT_DEBIT" | "PAYOUT_REVERSAL_CREDIT";
         BookingCancellation: {
             booking: components["schemas"]["Booking"];
             /**

@@ -1,6 +1,6 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
 
-export type TabName = 'home' | 'tickets' | 'account'
+export type TabName = 'home' | 'trips' | 'tickets' | 'account'
 
 export interface TabIconProps {
   name: TabName
@@ -31,6 +31,25 @@ export function TabIcon({ name, color, filled = false, size = 24 }: TabIconProps
           strokeWidth={2}
           strokeLinejoin="round"
         />
+      ) : null}
+
+      {name === 'trips' ? (
+        <>
+          {/* Une valise : le voyage, distinct du billet qu'on présente. */}
+          <Path
+            d="M3 9.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z"
+            stroke={stroke}
+            fill={fill}
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M9 7.5V5.6a1.6 1.6 0 0 1 1.6-1.6h2.8A1.6 1.6 0 0 1 15 5.6v1.9"
+            stroke={filled ? color : stroke}
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+        </>
       ) : null}
 
       {name === 'tickets' ? (

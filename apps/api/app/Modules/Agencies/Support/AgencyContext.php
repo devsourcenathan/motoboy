@@ -29,7 +29,30 @@ final class AgencyContext
      * départs sous une raison sociale qui n'est pas la bonne. Le jour où ce cas
      * existera, il faudra un sélecteur explicite — pas une heuristique.
      */
-    public function require(Request $request): Agency
+    /**
+     * L'agence du compte courant.
+     *
+     * **Le personnel entre par la permission, jamais par le role seul.**
+     *
+     * Cette methode n'acceptait que le role `AGENCY`. Consequence : un compte
+     * `AGENT` — cree precisement pour l'embarquement — ne pouvait atteindre aucun
+     * endpoint d'agence, y compris la liste d'embarquement dont la PWA a besoin.
+     * Le role existait, ses permissions etaient seedees, et rien ne le laissait
+     * entrer.
+     *
+     * Elargir l'acces a tous les roles d'agence aurait ouvert l'inventaire et les
+     * reversements au premier guichetier venu, puisque la plupart des endpoints
+     * ne verifient rien d'autre. D'ou la forme retenue :
+     *
+     * - **sans permission nommee**, il faut le role `AGENCY` — le comportement
+     *   d'origine, donc rien ne s'ouvre par inadvertance ;
+     * - **avec une permission**, tout role rattache a l'agence est accepte, a
+     *   condition de la porter.
+     *
+     * Chaque endpoint que le personnel doit atteindre declare donc ce qu'il exige,
+     * et le silence reste fermé.
+     */
+    public function require(Request $request, ?string $permission = null): Agency
     {
         $user = $request->user();
 
@@ -38,7 +61,10 @@ final class AgencyContext
         }
 
         $agencyIds = $user->roles()
-            ->where('roles.name', Role::Agency->value)
+            ->when(
+                $permission === null,
+                fn ($query) => $query->where('roles.name', Role::Agency->value),
+            )
             ->pluck('role_user.agency_id')
             ->filter()
             ->unique()
@@ -59,6 +85,15 @@ final class AgencyContext
 
         if ($agency === null) {
             throw ApiException::of(ErrorCode::Forbidden, 'Agence introuvable.');
+        }
+
+        /*
+         * La permission se verifie **pour cette agence** : un guichetier d'une
+         * agence n'est rien chez une autre, et le RBAC porte la portee sur le
+         * pivot.
+         */
+        if ($permission !== null && !$user->hasPermissionForAgency($permission, $agency->id)) {
+            throw ApiException::of(ErrorCode::Forbidden, 'Permission insuffisante.');
         }
 
         // Une agence non validée ne publie rien : elle doit d'abord fournir ses

@@ -6,5 +6,7 @@
  */
 export { AccountScreen } from './ui/AccountScreen'
 export { SignInScreen } from './ui/SignInScreen'
+export { SignUpScreen } from './ui/SignUpScreen'
+export { SettingsScreen } from './ui/SettingsScreen'
 export { VerifyOtpScreen } from './ui/VerifyOtpScreen'
 export { useCurrentUser } from './api/useAuth'

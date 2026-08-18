@@ -11,8 +11,9 @@ use App\Modules\Agencies\Actions\UpdateCommercialTerms;
 use App\Modules\Agencies\Http\Requests\UpdateCommercialTermsRequest;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Agencies\Models\AgencyDocument;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Payouts\Actions\AdjustLedger;
+use App\Modules\Payouts\Models\Payee;
+use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -149,9 +150,21 @@ final class AdminAgencyController
 
     public function verifyAccount(Request $request, int $id, ManagePayoutAccount $accounts): JsonResponse
     {
-        $admin = $this->context->require($request, 'agencies.approve');
+        $account = PayoutAccount::query()->with('payee')->whereKey($id)->firstOrFail();
 
-        $account = AgencyPayoutAccount::query()->whereKey($id)->firstOrFail();
+        /*
+         * **La permission suit le proprietaire du compte, pas l'endpoint.**
+         *
+         * Verifier ou un chauffeur independant sera paye n'est pas approuver une
+         * agence : exiger `agencies.approve` fermait ce geste a qui modere
+         * precisement les chauffeurs, et aucun compte de chauffeur n'aurait pu
+         * etre verifie — donc aucun chauffeur paye.
+         */
+        $permission = $account->payee?->kind === Payee::KIND_DRIVER
+            ? 'independent_drivers.moderate'
+            : 'agencies.approve';
+
+        $admin = $this->context->require($request, $permission);
 
         return response()->json($this->account($accounts->verify($account, $admin->id)));
     }
@@ -178,7 +191,7 @@ final class AdminAgencyController
     }
 
     /** @return array<string, mixed> */
-    private function account(AgencyPayoutAccount $account): array
+    private function account(PayoutAccount $account): array
     {
         return [
             'id' => $account->id,

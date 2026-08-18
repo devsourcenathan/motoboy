@@ -23,7 +23,12 @@ import {
 } from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useRequestOtp } from '../api/useAuth'
-import { validate, type AuthIntent, type CredentialsForm } from '../model/auth'
+import {
+  DIALLING_CODE,
+  toInternational,
+  validate,
+  type CredentialsForm,
+} from '../model/auth'
 
 /**
  * Connexion ou inscription, sur le même écran.
@@ -46,28 +51,40 @@ export function SignInScreen() {
   // le plan de sièges doit y revenir, pas atterrir sur l'accueil.
   const { next } = useLocalSearchParams<{ next?: string }>()
 
-  const [intent, setIntent] = useState<AuthIntent>('signIn')
+  /*
+   * Les noms restent dans le formulaire bien que l'écran ne les demande pas :
+   * la validation de connexion ne les regarde pas, et la forme partagée évite
+   * un second type qui divergerait au premier champ ajouté.
+   */
   const [form, setForm] = useState<CredentialsForm>({
     phone: '',
     firstName: '',
     lastName: '',
+    email: '',
   })
 
   const request = useRequestOtp()
-  const error = validate(form, intent)
+
+  /*
+   * Le champ ne contient que ce qui suit l'indicatif affiché. Le numéro complet
+   * se compose ici — et une seule fois — pour que la validation et l'envoi
+   * portent exactement sur ce qui partira au serveur.
+   */
+  const submitted: CredentialsForm = { ...form, phone: toInternational(form.phone) }
+  const error = validate(submitted, 'signIn')
 
   function submit() {
     if (error !== null) return
 
     request.mutate(
-      { form, intent },
+      { form: submitted, intent: 'signIn' },
       {
         onSuccess: (challenge) => {
           router.push({
             pathname: '/account/verify',
             params: {
-              phone: form.phone,
-              purpose: intent === 'signUp' ? 'REGISTRATION' : 'LOGIN',
+              phone: submitted.phone,
+              purpose: 'LOGIN',
               expiresAt: challenge.expires_at,
               attempts: String(challenge.attempts_remaining),
               ...(next === undefined ? {} : { next }),
@@ -88,61 +105,26 @@ export function SignInScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/*
-            La marque tient lieu d'en-tête ici : c'est le seul écran qu'on peut
-            atteindre sans jamais avoir vu le reste de l'application, et il doit
-            dire chez qui l'on saisit son numéro.
-          */}
-          <View style={styles.hero}>
-            <View style={styles.mark}>
-              <Text style={styles.markLetter}>M</Text>
-            </View>
-            <Text style={styles.wordmark} accessibilityRole="header">
-              MOTOBOY
+          <View style={styles.heading}>
+            <Text style={styles.title} accessibilityRole="header">
+              {t('account.welcome')}
             </Text>
-            <Text style={styles.tagline}>{t('account.tagline')}</Text>
+            <Text style={styles.subtitle}>
+              {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
+            </Text>
           </View>
 
           <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            {intent === 'signUp' ? t('account.signUp') : t('account.signIn')}
-          </Text>
-          <Text style={styles.cardBody}>
-            {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
-          </Text>
-
           <TextField
             label={t('account.phone')}
             hint={t('account.phoneHint')}
+            prefix={DIALLING_CODE}
             value={form.phone}
             onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
             autoComplete="tel"
           />
-
-          {intent === 'signUp' ? (
-            <>
-              <TextField
-                label={t('account.firstName')}
-                value={form.firstName}
-                onChangeText={(firstName) =>
-                  setForm((current) => ({ ...current, firstName }))
-                }
-                autoCapitalize="words"
-                textContentType="givenName"
-              />
-              <TextField
-                label={t('account.lastName')}
-                value={form.lastName}
-                onChangeText={(lastName) =>
-                  setForm((current) => ({ ...current, lastName }))
-                }
-                autoCapitalize="words"
-                textContentType="familyName"
-              />
-            </>
-          ) : null}
 
           {request.error ? (
             <Text style={styles.error}>{describe(request.error)}</Text>
@@ -151,11 +133,16 @@ export function SignInScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => setIntent(intent === 'signUp' ? 'signIn' : 'signUp')}
+            onPress={() =>
+              router.push({
+                pathname: '/account/sign-up',
+                ...(next === undefined ? {} : { params: { next } }),
+              })
+            }
             style={styles.switch}
           >
             <Text style={styles.switchLabel}>
-              {intent === 'signUp' ? t('account.haveAccount') : t('account.noAccount')}
+              {t('account.noAccount')}
             </Text>
           </Pressable>
         </ScrollView>
@@ -181,57 +168,31 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
   },
-  hero: {
-    alignItems: 'center',
+  heading: {
     gap: spacing.xs,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.base,
+  },
+  title: {
+    fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    color: theme.text.primary,
+  },
+  subtitle: {
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
+    color: theme.text.secondary,
   },
   /*
    * Un monogramme, pas un logotype : aucun fichier de marque n'existe encore,
    * et une image absente laisserait un carré vide au premier écran vu.
    */
-  mark: {
-    width: 88,
-    height: 88,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.full,
-    backgroundColor: theme.surface.brand,
-    marginBottom: spacing.base,
-  },
-  markLetter: {
-    fontSize: 44,
-    lineHeight: 52,
-    fontWeight: '800',
-    color: theme.text.inverse,
-  },
-  wordmark: {
-    fontSize: fontSize['2xl'],
-    lineHeight: lineHeight['2xl'],
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.text.brand,
-  },
-  tagline: {
-    fontSize: fontSize.base,
-    color: theme.text.secondary,
-  },
   card: {
     ...sharedStyles.card,
     gap: spacing.sm,
     padding: spacing.md,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    lineHeight: lineHeight.lg,
-    fontWeight: '700',
-    color: theme.text.primary,
-  },
-  cardBody: {
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.sm,
-    color: theme.text.secondary,
-    marginBottom: spacing.xs,
   },
   switch: {
     alignSelf: 'center',

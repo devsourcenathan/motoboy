@@ -62,5 +62,21 @@
         <env name="PULSE_ENABLED" value="false" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
         <env name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+
+        <!--
+            Les prestataires, epingles sur leurs pilotes factices.
+
+            Ils ne l'etaient pas, et le pilote des tests venait donc du `.env` du
+            developpeur : le jour ou celui-ci a bascule sur NotchPay, quatre-vingts
+            tests se sont mis a echouer sur une cle absente — et avec des cles
+            valides, ils auraient appele le vrai agregateur et consomme du credit
+            SMS a chaque execution.
+
+            Meme raison que pour `QUEUE_CONNECTION` : une suite dont le
+            comportement depend d'un fichier non versionne n'est pas reproductible.
+        -->
+        <env name="PAYMENT_GATEWAY" value="fake" force="true"/>
+        <env name="PAYOUT_GATEWAY" value="fake" force="true"/>
+        <env name="SMS_DRIVER" value="log" force="true"/>
     </php>
 </phpunit>

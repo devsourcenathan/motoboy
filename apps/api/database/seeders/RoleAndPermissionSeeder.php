@@ -46,6 +46,9 @@ final class RoleAndPermissionSeeder extends Seeder
         'commercial_terms.manage' => ['label' => 'Définir les conditions commerciales', 'group' => 'finance'],
 
         'staff.manage' => ['label' => 'Gérer les comptes de son personnel', 'group' => 'identity'],
+        // Distincte de `drivers.manage`, qui porte sur le personnel d'une
+        // agence : celle-ci instruit les dossiers de chauffeurs indépendants.
+        'independent_drivers.moderate' => ['label' => 'Modérer les chauffeurs indépendants', 'group' => 'identity'],
         'agencies.approve' => ['label' => 'Valider une agence', 'group' => 'identity'],
         'agencies.manage' => ['label' => 'Gérer les agences', 'group' => 'identity'],
         'users.manage' => ['label' => 'Gérer les comptes utilisateurs', 'group' => 'identity'],
@@ -59,6 +62,11 @@ final class RoleAndPermissionSeeder extends Seeder
         // Le passager n'a aucune permission : ses droits découlent de la
         // possession de ses propres réservations, pas du RBAC.
         Role::Passenger->value => [],
+
+        // Comme le passager : ses droits découlent de ce qu'il possède — son
+        // dossier, ses offres, ses courses — et non du RBAC. Le rôle sert à
+        // savoir quels onglets lui montrer et qui peut offrir sur une demande.
+        Role::Driver->value => [],
 
         Role::Agency->value => [
             'trips.view', 'trips.manage', 'trips.cancel', 'schedules.manage',
@@ -79,6 +87,18 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view',
         ],
 
+        /*
+         * Le guichetier fait tout ce que fait l'agent, **plus la vente**. Il ne
+         * voit ni les reversements, ni le personnel, ni l'inventaire : ce sont
+         * des decisions d'agence, pas des gestes de comptoir.
+         */
+        Role::Counter->value => [
+            'tickets.validate',
+            'trips.view',
+            'counter_sales.create',
+            'bookings.view',
+        ],
+
         // Consultation seule, aucun circuit financier (I3).
         Role::Owner->value => [
             'vehicles.view',
@@ -89,6 +109,7 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view', 'bookings.view', 'payments.view',
             'refunds.manage', 'payouts.view', 'payouts.approve',
             'agencies.approve', 'agencies.manage',
+            'independent_drivers.moderate',
             'places.manage',
             'vehicles.view',
         ],
@@ -98,6 +119,7 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view', 'bookings.view', 'payments.view',
             'refunds.manage', 'payouts.view', 'payouts.approve',
             'agencies.approve', 'agencies.manage',
+            'independent_drivers.moderate',
             'places.manage',
             'vehicles.view',
             'users.manage', 'commercial_terms.manage',
@@ -105,15 +127,28 @@ final class RoleAndPermissionSeeder extends Seeder
         ],
     ];
 
-    /** @var array<string, string> */
-    private const ROLE_LABELS = [
-        Role::Passenger->value => 'Passager',
-        Role::Agency->value => 'Agence',
-        Role::Agent->value => 'Agent d\'embarquement',
-        Role::Owner->value => 'Propriétaire de véhicule',
-        Role::Admin->value => 'Administrateur',
-        Role::SuperAdmin->value => 'Super administrateur',
-    ];
+    /**
+     * Le libellé d'un rôle.
+     *
+     * **Un `match` exhaustif, pas un tableau.** Cette liste était indexée par
+     * rôle : ajouter un cas à l'énumération sans l'y ajouter ne se voyait qu'à
+     * l'exécution — et s'est vu par cent-une erreurs « Undefined array key » au
+     * moment d'introduire `DRIVER`. Sans branche par défaut, l'analyse statique
+     * refuse désormais un cas oublié avant que le premier test ne tourne.
+     */
+    private function labelOf(Role $role): string
+    {
+        return match ($role) {
+            Role::Passenger => 'Passager',
+            Role::Driver => 'Chauffeur indépendant',
+            Role::Agency => 'Agence',
+            Role::Agent => "Agent d'embarquement",
+            Role::Counter => 'Guichetier',
+            Role::Owner => 'Propriétaire de véhicule',
+            Role::Admin => 'Administrateur',
+            Role::SuperAdmin => 'Super administrateur',
+        };
+    }
 
     public function run(): void
     {
@@ -145,7 +180,7 @@ final class RoleAndPermissionSeeder extends Seeder
             DB::table('roles')->upsert(
                 [[
                     'name' => $role->value,
-                    'label' => self::ROLE_LABELS[$role->value],
+                    'label' => $this->labelOf($role),
                     'is_system' => true,
                     'created_at' => now(),
                     'updated_at' => now(),

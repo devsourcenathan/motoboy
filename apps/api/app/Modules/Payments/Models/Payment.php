@@ -7,6 +7,7 @@ namespace App\Modules\Payments\Models;
 use App\Modules\Bookings\Models\Booking;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Rides\Models\Ride;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class Payment extends Model
 {
     protected $fillable = [
-        'reference', 'booking_id', 'amount', 'currency',
+        'reference', 'booking_id', 'ride_id', 'amount', 'currency',
         'method', 'operator', 'provider', 'provider_reference',
         'idempotency_key', 'status', 'failure_reason',
         'aggregator_fee_amount', 'paid_at',
@@ -41,5 +42,19 @@ final class Payment extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    /**
+     * L'objet du paiement, quand c'est une course d'appel de service.
+     *
+     * Exclusive de `booking` : la base refuse un paiement rattache aux deux, ou a
+     * aucun. La relation manquait, et tout ce qui remontait d'un paiement vers son
+     * objet ne savait donc voir que les reservations.
+     *
+     * @return BelongsTo<Ride, $this>
+     */
+    public function ride(): BelongsTo
+    {
+        return $this->belongsTo(Ride::class);
     }
 }

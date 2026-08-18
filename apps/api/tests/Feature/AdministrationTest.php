@@ -6,12 +6,12 @@ namespace Tests\Feature;
 
 use App\Modules\Administration\Models\AuditLog;
 use App\Modules\Agencies\Models\Agency;
-use App\Modules\Agencies\Models\AgencyPayoutAccount;
 use App\Modules\Identity\Enums\Role as RoleEnum;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
 use App\Modules\Notifications\Models\Notification;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\PayoutAccount;
 use App\Modules\Places\Models\City;
 use App\Modules\Places\Models\CityRequest;
 use App\Modules\Places\Models\Country;
@@ -166,7 +166,7 @@ final class AdministrationTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('verified', false);
 
-        $account = AgencyPayoutAccount::query()->firstOrFail();
+        $account = PayoutAccount::query()->firstOrFail();
         $this->assertFalse((bool) $account->is_active);
         $this->assertNull($account->verified_at);
 

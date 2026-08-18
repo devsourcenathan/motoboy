@@ -8,6 +8,7 @@ use App\Modules\Bookings\Models\Booking;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Commission;
+use App\Modules\Payouts\Models\Payee;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -49,6 +50,7 @@ final class RecordBookingSettlement
             ]);
 
             AgencyLedgerEntry::query()->create([
+                'payee_id' => Payee::forAgency($booking->agency_id)->id,
                 'agency_id' => $booking->agency_id,
                 'booking_id' => $booking->id,
                 'type' => 'BOOKING_CREDIT',
@@ -62,6 +64,7 @@ final class RecordBookingSettlement
             ]);
 
             AgencyLedgerEntry::query()->create([
+                'payee_id' => Payee::forAgency($booking->agency_id)->id,
                 'agency_id' => $booking->agency_id,
                 'booking_id' => $booking->id,
                 'type' => 'COMMISSION_DEBIT',

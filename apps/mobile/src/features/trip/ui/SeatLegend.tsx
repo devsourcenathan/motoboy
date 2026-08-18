@@ -54,20 +54,20 @@ const styles = StyleSheet.create({
     color: theme.text.muted,
   },
   available: {
-    backgroundColor: theme.surface.page,
+    backgroundColor: theme.seat.availableSoft,
     borderColor: theme.seat.available,
   },
   chosen: {
-    backgroundColor: theme.surface.brand,
-    borderColor: theme.surface.brand,
+    backgroundColor: theme.seat.chosen,
+    borderColor: theme.seat.chosen,
   },
   held: {
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.surface.card,
     borderColor: theme.seat.held,
     borderStyle: 'dashed',
   },
   taken: {
-    backgroundColor: theme.surface.border,
-    borderColor: theme.surface.border,
+    backgroundColor: theme.seat.taken,
+    borderColor: theme.seat.taken,
   },
 })

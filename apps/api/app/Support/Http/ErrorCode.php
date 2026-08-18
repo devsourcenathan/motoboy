@@ -31,6 +31,16 @@ enum ErrorCode: string
     case OtpExpired = 'OTP_EXPIRED';
     case OtpTooManyAttempts = 'OTP_TOO_MANY_ATTEMPTS';
 
+    /*
+     * Se connecter avec un numero inconnu et se connecter avec un compte jamais
+     * confirme sont deux situations, pas une. `NOT_FOUND` les confondait sous
+     * « Element introuvable. » — un message qui ne dit ni de s'inscrire ni de
+     * reprendre la confirmation, sur le seul ecran ou l'utilisateur ne peut rien
+     * faire d'autre.
+     */
+    case AccountNotFound = 'ACCOUNT_NOT_FOUND';
+    case AccountNotVerified = 'ACCOUNT_NOT_VERIFIED';
+
     case SeatAlreadyHeld = 'SEAT_ALREADY_HELD';
     case TripFull = 'TRIP_FULL';
     case OnlineSalesClosed = 'ONLINE_SALES_CLOSED';
@@ -47,6 +57,19 @@ enum ErrorCode: string
     case TicketWrongTrip = 'TICKET_WRONG_TRIP';
     case TicketCancelled = 'TICKET_CANCELLED';
 
+    /*
+     * Appel de service (E1). Chaque conflit a son code : un `CONFLICT`
+     * generique obligerait le client a lire le message pour savoir quoi
+     * proposer, et ce message n'est pas garanti dans sa langue (I10).
+     */
+    case ServiceRequestAlreadyOpen = 'SERVICE_REQUEST_ALREADY_OPEN';
+    case ServiceRequestClosed = 'SERVICE_REQUEST_CLOSED';
+    case DriverNotApproved = 'DRIVER_NOT_APPROVED';
+    case DriverBusy = 'DRIVER_BUSY';
+    case OfferNotAcceptable = 'OFFER_NOT_ACCEPTABLE';
+    case OfferAlreadyTaken = 'OFFER_ALREADY_TAKEN';
+    case RideNotPaid = 'RIDE_NOT_PAID';
+
     case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
     case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';
     case PayoutAccountUnverified = 'PAYOUT_ACCOUNT_UNVERIFIED';
@@ -59,7 +82,13 @@ enum ErrorCode: string
             self::ValidationFailed => 422,
             self::Unauthenticated => 401,
             self::Forbidden => 403,
-            self::NotFound, self::TicketNotFound => 404,
+            self::NotFound, self::TicketNotFound, self::AccountNotFound => 404,
+            /*
+             * 409 et non 404 : le compte **existe**, c'est son état qui bloque.
+             * Le déclarer introuvable ferait proposer une inscription qui
+             * échouerait sur un numéro déjà pris.
+             */
+            self::AccountNotVerified => 409,
             self::RateLimited => 429,
             self::OtpInvalid, self::OtpExpired, self::OtpTooManyAttempts => 422,
             default => 409,

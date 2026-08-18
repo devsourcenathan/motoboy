@@ -17,6 +17,8 @@ export const QUERY_ROOT = {
   bookings: 'bookings',
   tickets: 'tickets',
   payments: 'payments',
+  serviceRequests: 'service-requests',
+  driver: 'driver',
   me: 'me',
 } as const
 
@@ -25,8 +27,23 @@ export type QueryRoot = (typeof QUERY_ROOT)[keyof typeof QUERY_ROOT]
 export const queryKeys = {
   places: (query: string) => [QUERY_ROOT.places, query] as const,
 
-  search: (params: { from: number; to: number; date: string }) =>
-    [QUERY_ROOT.search, params.from, params.to, params.date] as const,
+  // Le tri fait partie de la clé : deux ordres différents sont deux réponses
+  // différentes, et les confondre afficherait le classement précédent.
+  search: (params: {
+    from: number
+    to: number
+    date: string
+    sort?: string
+    filters?: string
+  }) =>
+    [
+      QUERY_ROOT.search,
+      params.from,
+      params.to,
+      params.date,
+      params.sort ?? 'best',
+      params.filters ?? '',
+    ] as const,
 
   trip: (reference: string) => [QUERY_ROOT.trip, reference] as const,
   tripSeats: (reference: string) => [QUERY_ROOT.trip, reference, 'seats'] as const,
@@ -51,6 +68,22 @@ export const queryKeys = {
 
   tickets: () => [QUERY_ROOT.tickets] as const,
   ticket: (reference: string) => [QUERY_ROOT.tickets, reference] as const,
+
+  serviceRequests: () => [QUERY_ROOT.serviceRequests] as const,
+  serviceRequest: (reference: string) =>
+    [QUERY_ROOT.serviceRequests, reference] as const,
+
+  /*
+   * Le dossier, ses offres et ses courses partagent une racine : une offre
+   * acceptée crée une course, et invalider la racine rafraîchit les deux plutôt
+   * que d'obliger chaque mutation à énumérer ce qu'elle affecte.
+   */
+  driverProfile: () => [QUERY_ROOT.driver, 'profile'] as const,
+  driverRequests: () => [QUERY_ROOT.driver, 'requests'] as const,
+  driverOffers: () => [QUERY_ROOT.driver, 'offers'] as const,
+  driverRides: () => [QUERY_ROOT.driver, 'rides'] as const,
+  driverEarnings: () => [QUERY_ROOT.driver, 'earnings'] as const,
+  driverPayoutAccounts: () => [QUERY_ROOT.driver, 'payout-accounts'] as const,
 
   me: () => [QUERY_ROOT.me] as const,
 } as const

@@ -8,6 +8,7 @@ use App\Modules\Bookings\Models\Booking;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payments\Models\Refund;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 
 /**
  * Répartition des frais d'annulation au compte courant (B5).
@@ -87,6 +88,7 @@ final class RecordCancellationSettlement
         }
 
         AgencyLedgerEntry::query()->create([
+            'payee_id' => Payee::forAgency($booking->agency_id)->id,
             'agency_id' => $booking->agency_id,
             'booking_id' => $booking->id,
             'type' => 'COMMISSION_REVERSAL_CREDIT',
@@ -127,6 +129,7 @@ final class RecordCancellationSettlement
     private function debitFee(Booking $booking, Refund $refund, int $amount, string $description): void
     {
         AgencyLedgerEntry::query()->create([
+            'payee_id' => Payee::forAgency($booking->agency_id)->id,
             'agency_id' => $booking->agency_id,
             'booking_id' => $booking->id,
             'type' => 'AGGREGATOR_FEE_DEBIT',

@@ -18,6 +18,9 @@ namespace App\Modules\Payouts\Enums;
 enum LedgerEntryType: string
 {
     case BookingCredit = 'BOOKING_CREDIT';
+    /** Course d'un appel de service, encaissee par la plateforme (E4 bis). */
+    case RideCredit = 'RIDE_CREDIT';
+
     case CommissionDebit = 'COMMISSION_DEBIT';
     case RefundDebit = 'REFUND_DEBIT';
 

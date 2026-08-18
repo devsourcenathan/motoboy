@@ -12,6 +12,7 @@ use App\Modules\Identity\Enums\OtpPurpose;
 use App\Modules\Identity\Http\Requests\LoginRequest;
 use App\Modules\Identity\Http\Requests\RegisterRequest;
 use App\Modules\Identity\Http\Requests\ResendOtpRequest;
+use App\Modules\Identity\Http\Requests\UpdateProfileRequest;
 use App\Modules\Identity\Http\Requests\VerifyOtpRequest;
 use App\Modules\Identity\Http\Resources\UserResource;
 use App\Modules\Identity\Models\OtpCode;
@@ -91,6 +92,28 @@ final class AuthController
         return response()->json((new UserResource($user))->resolve());
     }
 
+    /**
+     * Modifie son propre profil.
+     *
+     * Aucune trace d'audit : le journal de §28 sert à savoir **qui a agi sur le
+     * compte d'un autre**, et un passager qui corrige l'orthographe de son nom
+     * n'y a pas sa place. L'y écrire noierait les operations qui comptent.
+     */
+    public function updateMe(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user instanceof User) {
+            throw ApiException::of(ErrorCode::Unauthenticated, 'Session absente.');
+        }
+
+        // `validated()` ne rend que les champs transmis : les absents ne sont
+        // pas ecrases, ce qui est tout l'interet d'une mise a jour partielle.
+        $user->update($request->validated());
+
+        return response()->json((new UserResource($user->refresh()))->resolve());
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -110,8 +133,21 @@ final class AuthController
     {
         $user = User::query()->where('phone', $phone)->first();
 
-        if ($user === null || $user->phone_verified_at === null) {
-            throw ApiException::of(ErrorCode::NotFound, 'Aucun compte vérifié pour ce numéro.');
+        if ($user === null) {
+            throw ApiException::of(ErrorCode::AccountNotFound, 'Aucun compte pour ce numéro.');
+        }
+
+        /*
+         * Inscrit mais jamais confirmé : le compte existe, l'inscription est à
+         * reprendre. Le renvoyer sur « introuvable » l'enfermait — il ne pouvait
+         * ni se connecter, ni comprendre qu'il devait se réinscrire pour recevoir
+         * un nouveau code.
+         */
+        if ($user->phone_verified_at === null) {
+            throw ApiException::of(
+                ErrorCode::AccountNotVerified,
+                'Ce numéro est inscrit mais jamais confirmé.',
+            );
         }
 
         if (!$user->is_active) {
