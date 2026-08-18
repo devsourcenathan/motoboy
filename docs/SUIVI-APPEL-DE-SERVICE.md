@@ -428,6 +428,8 @@ commentaire annonçait.
   destination juste dessous, et l'envoi demande confirmation en répétant les deux.
   `agency_id` était aussi déclaré obligatoire au contrat alors qu'il est nul pour
   un chauffeur.
-- **Le déploiement doit rejouer `RoleAndPermissionSeeder`** — la CI le fait
-  (`php artisan db:seed --force`), mais rien ne le garantit en production, et
-  l'oubli ferme silencieusement une file entière.
+- ~~Le déploiement doit rejouer `RoleAndPermissionSeeder`~~ — **fait** :
+  l'entrypoint du conteneur enchaîne `CountrySeeder`, `CitySeeder` et
+  `RoleAndPermissionSeeder` après les migrations, appelés **nommément** et jamais
+  par `db:seed`, dont le garde contre les données de démonstration repose sur un
+  test d'`APP_ENV`. Coupable par `RUN_SEEDERS=false` si besoin.

@@ -114,6 +114,41 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     fi
 
     echo "Migrations à jour."
+
+    # ────────────────────────── Données de référence ──────────────────────────
+    #
+    # **Une migration crée des colonnes, pas des droits.** Les rôles, les
+    # permissions et le référentiel géographique vivent dans des seeders, et un
+    # déploiement qui ne les rejoue pas laisse la base derrière le code.
+    #
+    # C'est arrivé : `independent_drivers.moderate` a été ajoutée au seeder avec
+    # la modération des chauffeurs, et sans rejeu la permission n'existait nulle
+    # part. **Toute la file de modération était fermée, administrateurs
+    # compris** — sans message d'erreur, puisque du point de vue du code la
+    # permission était simplement absente du compte.
+    #
+    # Les trois classes sont appelées **nommément**, jamais `db:seed` : celui-ci
+    # passe par `DatabaseSeeder`, qui n'écarte les données de démonstration que
+    # sur un test d'`APP_ENV`. Faire reposer l'absence de fausses agences en
+    # production sur une variable d'environnement est un pari qu'on ne gagne
+    # qu'une fois — il suffit d'un service de recette configuré autrement.
+    #
+    # Rejouables sans dégât : chaque seeder réconcilie l'existant plutôt que
+    # d'insérer aveuglément. Deux conteneurs qui démarrent ensemble calculent le
+    # même état cible, donc convergent, même en s'entrelaçant.
+    if [ "${RUN_SEEDERS:-true}" = "true" ]; then
+        echo "Données de référence…"
+
+        # Nom court : Laravel préfixe `Database\Seeders` lui-même. Le nom complet
+        # obligerait à échapper des antislashs dans une chaîne de shell, où ils
+        # se mangent silencieusement — la classe devient introuvable et le
+        # message parle de réflexion PHP, pas de la faute réelle.
+        for seeder in CountrySeeder CitySeeder RoleAndPermissionSeeder; do
+            php_artisan db:seed --force --class="${seeder}"
+        done
+
+        echo "Rôles, permissions et référentiel à jour."
+    fi
 fi
 
 # ──────────────────────────────── Démarrage ────────────────────────────────
