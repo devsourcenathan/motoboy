@@ -49,10 +49,15 @@ final class TechSoftSmsSender implements SmsSender
                 ->timeout($this->timeoutSeconds)
                 ->post(rtrim($this->baseUrl, '/').'/sms/send', [
                     'api_token' => $this->apiToken,
-                    // Le numero tel que la plateforme le stocke, au format
-                    // international. Leur exemple montre des numeros sans `+` ;
-                    // a verifier au premier envoi reel.
-                    'recipient' => $message->to,
+                    /*
+                     * **Sans le `+`.** La plateforme stocke la forme
+                     * internationale (`+237690000001`) ; tous les exemples de
+                     * TechSoft montrent l'indicatif nu (`237690000001`). Le
+                     * premier envoi reel n'a rien remis — et le refus d'un
+                     * prestataire sur un format de numero ne ressemble pas a une
+                     * erreur de format, il ressemble a un silence.
+                     */
+                    'recipient' => ltrim($message->to, '+'),
                     'sender_id' => $this->senderId,
                     // `plain` : le seul type utile ici. Les modeles DLT ne
                     // concernent pas le Cameroun.
@@ -82,11 +87,16 @@ final class TechSoftSmsSender implements SmsSender
                 ? $body['message']
                 : 'Refus du prestataire ('.$response->status().').';
 
+            /*
+             * Journalise le corps de la reponse, pas celui de la requete : le
+             * premier explique le refus, le second contient le jeton.
+             */
             Log::warning('SMS TechSoft : envoi refuse.', [
                 'to' => $message->to,
                 'type' => $message->type,
                 'status' => $response->status(),
                 'error' => $error,
+                'body' => $body,
             ]);
 
             return SmsResult::failed($error);
