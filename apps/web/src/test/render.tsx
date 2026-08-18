@@ -57,6 +57,37 @@ export function mockFetch(...responses: Response[]): void {
 }
 
 /**
+ * Programme les réponses **par URL**, et non dans l'ordre.
+ *
+ * L'ordre est fragile dès qu'un écran fait plusieurs requêtes : un champ de
+ * recherche qui interroge à l'ouverture puis à chaque frappe consomme les
+ * réponses prévues pour d'autres appels, et le test échoue en désignant le
+ * mauvais endroit. Une correspondance par motif dit aussi **ce que le test
+ * suppose du serveur**, ce qu'une file anonyme ne dit pas.
+ *
+ * Le motif est cherché dans l'URL ; la première entrée qui correspond gagne, donc
+ * les plus spécifiques se placent en tête.
+ */
+export function mockRoutes(routes: Record<string, () => Response>): void {
+  const mock = fetch as unknown as ReturnType<typeof vi.fn>
+
+  mock.mockImplementation((input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : String((input as Request).url)
+
+    for (const [pattern, respond] of Object.entries(routes)) {
+      if (url.includes(pattern)) return Promise.resolve(respond())
+    }
+
+    /*
+     * Une requête non prévue **échoue bruyamment** plutôt que de rendre une
+     * réponse vide : un écran qui appelle un endpoint auquel personne n'a pensé
+     * est précisément ce qu'un test doit révéler.
+     */
+    return Promise.reject(new Error(`Aucune réponse prévue pour ${url}`))
+  })
+}
+
+/**
  * Les URL appelées, dans l'ordre.
  *
  * Sert à vérifier **ce que l'écran a demandé** — un test qui ne regarde que le

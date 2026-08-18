@@ -14,6 +14,11 @@ import { DriverQueuePage } from './features/drivers/DriverQueuePage'
 import { PayoutAccountsPage } from './features/payouts/PayoutAccountsPage'
 import { PayoutQueuePage } from './features/payouts/PayoutQueuePage'
 import { SupportLookupPage } from './features/support/SupportLookupPage'
+import { AgencyLayout } from './features/agency/AgencyLayout'
+import { DriversPage } from './features/agency/DriversPage'
+import { RoutesPage } from './features/agency/RoutesPage'
+import { StationsPage } from './features/agency/StationsPage'
+import { VehiclesPage } from './features/agency/VehiclesPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,14 +58,47 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/sign-in" element={<SignInPage />} />
+
+      {/*
+        Deux espaces distincts derrière la même connexion. Une agence et un
+        administrateur n'ont ni les mêmes écrans ni les mêmes droits, et les
+        mélanger sous un seul menu obligerait chacun à ignorer la moitié de ce
+        qu'il voit.
+      */}
+      <Route
+        path="/agency/*"
+        element={
+          <RequireSession allow={['AGENCY', 'AGENT']}>
+            <AgencySpace />
+          </RequireSession>
+        }
+      />
+
       <Route
         path="/*"
         element={
-          <RequireSession>
+          <RequireSession allow={['ADMIN', 'SUPER_ADMIN']}>
             <AdminLayout />
           </RequireSession>
         }
       />
+    </Routes>
+  )
+}
+
+function AgencySpace() {
+  const signOut = useSignOut()
+
+  return (
+    <Routes>
+      <Route element={<AgencyLayout onSignOut={() => signOut.mutate()} />}>
+        <Route path="stations" element={<StationsPage />} />
+        <Route path="vehicles" element={<VehiclesPage />} />
+        <Route path="drivers" element={<DriversPage />} />
+        <Route path="routes" element={<RoutesPage />} />
+        {/* Les gares d'abord : tout le reste de l'inventaire s'y rattache. */}
+        <Route path="*" element={<Navigate to="/agency/stations" replace />} />
+      </Route>
     </Routes>
   )
 }
@@ -73,7 +111,13 @@ export function AppRoutes() {
  * sert pas, et laisser entrer sur cette seule foi afficherait un back-office
  * vide en promettant qu'il ne l'est pas.
  */
-function RequireSession({ children }: { children: React.ReactNode }) {
+function RequireSession({
+  allow,
+  children,
+}: {
+  allow: readonly string[]
+  children: React.ReactNode
+}) {
   const me = useCurrentUser()
 
   if (me.isPending) {
@@ -87,7 +131,7 @@ function RequireSession({ children }: { children: React.ReactNode }) {
    * protège rien — il évite d'afficher des pages qui échoueraient ; c'est l'API
    * qui refuse, et elle seule fait autorité.
    */
-  if (!me.data.roles.includes('ADMIN') && !me.data.roles.includes('SUPER_ADMIN')) {
+  if (!me.data.roles.some((role) => allow.includes(role))) {
     return (
       <main className="p-8">
         <h1 className="text-xl font-bold text-ink-700">Espace réservé</h1>

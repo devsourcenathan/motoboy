@@ -29,6 +29,36 @@ export type DriverStatus = S['DriverStatus']
 export type DriverDocumentType = S['DriverDocumentType']
 export type AdminDriverRow = S['AdminDriverRow']
 export type AdminPayoutAccountRow = S['AdminPayoutAccountRow']
+
+/*
+ * Inventaire d'agence. C'est lui qui rend la plateforme cherchable : sans gares,
+ * vehicules, itineraires et horaires, aucun depart n'existe.
+ *
+ * Un type present dans le schema mais absent de cette facade est invisible pour
+ * ses consommateurs — le back-office a deja bute dessus une fois.
+ */
+export type AgencyStation = S['AgencyStation']
+export type AgencyStationInput = S['AgencyStationInput']
+export type AgencyVehicle = S['AgencyVehicle']
+export type AgencyVehicleInput = S['AgencyVehicleInput']
+export type AgencySeat = S['AgencySeat']
+export type AgencyDriver = S['AgencyDriver']
+export type AgencyDriverInput = S['AgencyDriverInput']
+export type AgencyRoute = S['AgencyRoute']
+export type AgencyRouteInput = S['AgencyRouteInput']
+export type AgencySchedule = S['AgencySchedule']
+export type AgencyScheduleInput = S['AgencyScheduleInput']
+export type AgencySummary = S['AgencySummary']
+export type AgencyDocument = S['AgencyDocument']
+export type BoardingList = S['BoardingList']
+export type BoardingPassenger = S['BoardingPassenger']
+export type CounterSale = S['CounterSale']
+export type CounterSaleInput = S['CounterSaleInput']
+export type CounterSeatMap = S['CounterSeatMap']
+export type LedgerEntry = S['LedgerEntry']
+export type PayoutAccount = S['PayoutAccount']
+export type PayoutAccountInput = S['PayoutAccountInput']
+export type ValidationResult = S['ValidationResult']
 export type Payout = S['Payout']
 
 export type ErrorCode = S['ErrorCode']
@@ -72,9 +102,6 @@ export type CancellationQuote = S['CancellationQuote']
 export type Payment = S['Payment']
 export type Refund = S['Refund']
 export type Ticket = S['Ticket']
-export type BoardingList = S['BoardingList']
-export type BoardingPassenger = S['BoardingPassenger']
-export type ValidationResult = S['ValidationResult']
 
 /**
  * Affine une valeur vers la **forme JSON** d'une erreur. Pas d'I/O, donc
