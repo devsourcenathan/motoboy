@@ -26,6 +26,24 @@ function resolveBaseUrl(): string {
 
   const host = Constants.expoConfig?.hostUri?.split(':')[0]
 
+  /*
+   * **Une adresse de bouclage ne mène nulle part depuis un téléphone** : elle y
+   * désigne l'appareil lui-même. Metro l'annonce pourtant quand il tourne en
+   * mode localhost, et la déduction produit alors une adresse injoignable —
+   * l'application affiche « pas de connexion » sans que rien ne soit en panne.
+   *
+   * Le dire plutôt que de le subir : il n'y a rien de mieux à déduire à
+   * l'exécution, mais un message qui nomme la cause vaut mieux qu'un symptôme
+   * qui accuse le réseau.
+   */
+  if (__DEV__ && (host === '127.0.0.1' || host === 'localhost')) {
+    console.warn(
+      `[api] Metro annonce « ${host} », que le téléphone ne peut pas joindre : ` +
+        "il s'agit de lui-même. Renseignez EXPO_PUBLIC_API_URL dans apps/mobile/.env " +
+        "avec l'IPv4 Wi-Fi du poste, puis relancez avec --clear.",
+    )
+  }
+
   return host ? `http://${host}:8000/api` : 'http://localhost:8000/api'
 }
 
