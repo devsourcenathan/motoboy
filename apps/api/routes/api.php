@@ -265,6 +265,7 @@ Route::prefix('v1')->group(function (): void {
              */
             Route::get('settings', [PlatformSettingController::class, 'show']);
             Route::patch('settings/ride-commission', [PlatformSettingController::class, 'updateRideCommission']);
+            Route::patch('settings/id-documents', [PlatformSettingController::class, 'updateIdDocumentPolicy']);
 
             Route::get('drivers', [AdminDriverController::class, 'index']);
             Route::post('drivers/{driver}/approve', [AdminDriverController::class, 'approve']);

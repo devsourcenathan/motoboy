@@ -149,6 +149,8 @@ final class CreateBooking
                 'first_name' => $passenger->firstName,
                 'last_name' => $passenger->lastName,
                 'phone' => $passenger->phone,
+                'id_document_number' => $passenger->idDocumentNumber,
+                'id_document_path' => $passenger->idDocumentPath,
                 'status' => 'ACTIVE',
             ]);
         }

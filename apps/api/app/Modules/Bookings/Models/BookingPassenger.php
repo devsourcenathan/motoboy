@@ -32,6 +32,7 @@ final class BookingPassenger extends Model
     protected $fillable = [
         'booking_id', 'trip_id', 'seat_id', 'holds_seat',
         'first_name', 'last_name', 'phone', 'status',
+        'id_document_number', 'id_document_path',
     ];
 
     /** @var array<string, string> */

@@ -650,6 +650,63 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/settings/id-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Piece d'identite demandee au voyageur principal
+         * @description **Deux reglages, changes ensemble.** Quelle forme — un numero saisi, ou
+         *     une photo de la piece ? Et faut-il bloquer la reservation quand elle
+         *     manque ? Les separer ferait passer par un etat que personne n'a voulu :
+         *     photo exigee avant que l'ecran de depot existe, par exemple.
+         *
+         *     La piece n'est demandee qu'au **voyageur principal** : la reclamer aux
+         *     quatre membres d'une famille transformerait une reservation en formalite,
+         *     pour une liste d'embarquement qui identifie deja le groupe par son
+         *     acheteur.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        id_document_mode: components["schemas"]["IdDocumentMode"];
+                        id_document_required: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSettings"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/admin/drivers": {
         parameters: {
             query?: never;
@@ -4812,6 +4869,18 @@ export interface components {
                  * @description Requis en mode SEATED, ignoré en mode CAPACITY.
                  */
                 seat_id?: number | null;
+                /**
+                 * @description **Voyageur principal seulement** ; ignore pour les suivants.
+                 *     Requis quand `id_document_required` vaut vrai et que le mode est
+                 *     `NUMBER`. Exclusif de `id_document_path` — la base le garantit.
+                 */
+                id_document_number?: string | null;
+                /**
+                 * @description Chemin d'une image deja deposee. Requis quand le mode est
+                 *     `IMAGE`. Le client ne fabrique pas ce chemin : il le recoit du
+                 *     depot.
+                 */
+                id_document_path?: string | null;
             }[];
             /**
              * @description Destinataire du billet par SMS. Aucun compte n'est créé : c'est une
@@ -5117,6 +5186,13 @@ export interface components {
             /** Format: date-time */
             submitted_at: string | null;
         };
+        /**
+         * @description La forme demandee. `NUMBER` se saisit hors ligne sur n'importe quel
+         *     telephone et ne coute ni stockage ni conservation ; `IMAGE` permet de
+         *     verifier, et se justifie quand un controle reel l'exige.
+         * @enum {string}
+         */
+        IdDocumentMode: "NUMBER" | "IMAGE";
         PaginationMeta: {
             page: number;
             per_page: number;
@@ -5147,6 +5223,13 @@ export interface components {
             /** @description Points de base. 1000 vaut 10 %. */
             ride_commission_bps: number;
             ride_commission_max_bps: number;
+            id_document_mode: components["schemas"]["IdDocumentMode"];
+            /**
+             * @description Quand faux, la reservation passe sans piece. Le reglage existe pour
+             *     cela : une agence dont les controles ne l'exigent pas ne doit pas
+             *     ecarter des voyageurs reels pour une piece que personne ne lira.
+             */
+            id_document_required: boolean;
         };
         /** @enum {string} */
         ServiceRequestStatus: "OPEN" | "OFFERED" | "MATCHED" | "CANCELLED" | "EXPIRED";

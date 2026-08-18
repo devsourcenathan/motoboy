@@ -461,6 +461,40 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+
+  /v1/admin/settings/id-documents:
+    patch:
+      tags: [Administration]
+      summary: Piece d'identite demandee au voyageur principal
+      description: |
+        **Deux reglages, changes ensemble.** Quelle forme — un numero saisi, ou
+        une photo de la piece ? Et faut-il bloquer la reservation quand elle
+        manque ? Les separer ferait passer par un etat que personne n'a voulu :
+        photo exigee avant que l'ecran de depot existe, par exemple.
+
+        La piece n'est demandee qu'au **voyageur principal** : la reclamer aux
+        quatre membres d'une famille transformerait une reservation en formalite,
+        pour une liste d'embarquement qui identifie deja le groupe par son
+        acheteur.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_document_mode, id_document_required]
+              properties:
+                id_document_mode: { $ref: '#/components/schemas/IdDocumentMode' }
+                id_document_required: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlatformSettings' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /v1/admin/drivers:
     get:
       tags: [Administration]
@@ -2966,6 +3000,20 @@ components:
                 type: [integer, 'null']
                 format: int64
                 description: Requis en mode SEATED, ignoré en mode CAPACITY.
+              id_document_number:
+                type: [string, 'null']
+                maxLength: 50
+                description: |
+                  **Voyageur principal seulement** ; ignore pour les suivants.
+                  Requis quand `id_document_required` vaut vrai et que le mode est
+                  `NUMBER`. Exclusif de `id_document_path` — la base le garantit.
+              id_document_path:
+                type: [string, 'null']
+                maxLength: 255
+                description: |
+                  Chemin d'une image deja deposee. Requis quand le mode est
+                  `IMAGE`. Le client ne fabrique pas ce chemin : il le recoit du
+                  depot.
         contact_phone:
           type: string
           maxLength: 20
@@ -3376,6 +3424,14 @@ components:
         verified: { type: boolean }
         submitted_at: { type: [string, 'null'], format: date-time }
 
+    IdDocumentMode:
+      type: string
+      description: |
+        La forme demandee. `NUMBER` se saisit hors ligne sur n'importe quel
+        telephone et ne coute ni stockage ni conservation ; `IMAGE` permet de
+        verifier, et se justifie quand un controle reel l'exige.
+      enum: [NUMBER, IMAGE]
+
     PaginationMeta:
       type: object
       required: [page, per_page, total, last_page]
@@ -3437,12 +3493,25 @@ components:
 
     PlatformSettings:
       type: object
-      required: [ride_commission_bps, ride_commission_max_bps]
+      required:
+        [
+          ride_commission_bps,
+          ride_commission_max_bps,
+          id_document_mode,
+          id_document_required,
+        ]
       properties:
         ride_commission_bps:
           type: integer
           description: Points de base. 1000 vaut 10 %.
         ride_commission_max_bps: { type: integer }
+        id_document_mode: { $ref: '#/components/schemas/IdDocumentMode' }
+        id_document_required:
+          type: boolean
+          description: |
+            Quand faux, la reservation passe sans piece. Le reglage existe pour
+            cela : une agence dont les controles ne l'exigent pas ne doit pas
+            ecarter des voyageurs reels pour une piece que personne ne lira.
 
     ServiceRequestStatus:
       type: string
