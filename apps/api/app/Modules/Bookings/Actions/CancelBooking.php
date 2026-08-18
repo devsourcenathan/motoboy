@@ -15,6 +15,7 @@ use App\Modules\Payments\Enums\RefundReason;
 use App\Modules\Payments\Models\Refund;
 use App\Modules\Payouts\Actions\RecordCancellationSettlement;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 use App\Modules\Tickets\Enums\TicketStatus;
 use App\Modules\Trips\Models\Trip;
 use App\Support\Http\ApiException;
@@ -190,6 +191,7 @@ final class CancelBooking
         }
 
         AgencyLedgerEntry::query()->create([
+            'payee_id' => Payee::forAgency($booking->agency_id)->id,
             'agency_id' => $booking->agency_id,
             'booking_id' => $booking->id,
             'type' => 'COUNTER_COMMISSION_REVERSAL',

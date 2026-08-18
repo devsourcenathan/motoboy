@@ -11,6 +11,7 @@ use App\Modules\Payments\Enums\RefundStatus;
 use App\Modules\Payments\Models\Payment;
 use App\Modules\Payments\Models\Refund;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 use App\Support\Reference;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -168,6 +169,7 @@ final class RefundPayment
             // Débit au compte courant : le remboursement se répercute sur ce que
             // l'agence percevra, quelle que soit la période où il survient (B4).
             AgencyLedgerEntry::query()->create([
+                'payee_id' => Payee::forAgency($booking->agency_id)->id,
                 'agency_id' => $booking->agency_id,
                 'booking_id' => $booking->id,
                 'type' => 'REFUND_DEBIT',

@@ -8,6 +8,7 @@ use App\Modules\Administration\Actions\RecordAudit;
 use App\Modules\Agencies\Models\Agency;
 use App\Modules\Payouts\Enums\LedgerEntryType;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
+use App\Modules\Payouts\Models\Payee;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -30,6 +31,7 @@ final class AdjustLedger
     {
         return DB::transaction(function () use ($agency, $amount, $description, $userId): AgencyLedgerEntry {
             $entry = AgencyLedgerEntry::query()->create([
+                'payee_id' => Payee::forAgency($agency->id)->id,
                 'agency_id' => $agency->id,
                 // Aucune réservation en face : un ajustement est reversable
                 // immédiatement, sans attendre qu'un départ soit parti.

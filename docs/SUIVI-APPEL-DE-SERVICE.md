@@ -415,13 +415,12 @@ commentaire annonçait.
 
 ### Reste ouvert
 
-- **Sept actions écrivent encore au grand livre sans passer de bénéficiaire** —
-  `CancelBooking`, `CreateCounterSale`, `RefundPayment`, `AdjustLedger`,
-  `ConfirmPayout`, `RecordBookingSettlement`, `RecordCancellationSettlement`.
-  Elles fonctionnent parce que le pont dérive le bénéficiaire de l'agence, et
-  qu'une réservation en a toujours une. La contraction annoncée à l'étape 1
-  consiste à les faire passer le bénéficiaire elles-mêmes, puis à retirer le
-  pont. Ce n'est pas urgent, mais c'est du code qui compte de l'argent.
+- ~~Sept actions écrivent encore au grand livre sans passer de bénéficiaire~~ —
+  **contraction faite** : les neuf écritures passent désormais leur bénéficiaire,
+  et le pont `booted()` d'`AgencyLedgerEntry` a été retiré. Deux de ces chemins
+  — un ajustement manuel et la contre-passation d'un reversement en échec —
+  n'étaient parcourus par aucun test ; ils le sont maintenant, et le test échoue
+  si on retire le bénéficiaire, vérifié en le retirant.
 - ~~La file des reversements ne nomme pas son bénéficiaire~~ — **corrigé** :
   `Payout` porte `payee` (genre, nom, téléphone) et `destination` (opérateur, nom
   du compte, numéro tronqué, vérifié ou non). L'écran met le nom en tête, la

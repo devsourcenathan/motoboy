@@ -42,34 +42,6 @@ final class AgencyLedgerEntry extends Model
         'created_at' => 'immutable_datetime',
     ];
 
-    /**
-     * Pont transitoire vers le bénéficiaire.
-     *
-     * Les appelants renseignent encore `agency_id` seul ; `payee_id` est
-     * obligatoire en base depuis l'introduction des bénéficiaires. Le résoudre
-     * ici évite de modifier six actions d'un coup — donc de toucher au code qui
-     * compte l'argent en même temps qu'au schéma.
-     *
-     * **À retirer** quand les appelants passeront le bénéficiaire eux-mêmes :
-     * dériver une colonne en silence est acceptable le temps d'une migration,
-     * pas durablement.
-     */
-    protected static function booted(): void
-    {
-        self::creating(function (self $entry): void {
-            /*
-             * Ne concerne que les ecritures creees a l'ancienne, avec une agence
-             * et sans beneficiaire. Une ecriture de course passe le sien
-             * explicitement et ne repasse donc pas ici — si les deux manquaient,
-             * `payee_id` etant obligatoire, la base refuserait bruyamment plutot
-             * que d'ecrire une ecriture sans destinataire.
-             */
-            if ($entry->payee_id === null && $entry->agency_id !== null) {
-                $entry->payee()->associate(Payee::forAgency($entry->agency_id));
-            }
-        });
-    }
-
     /** @return BelongsTo<Payee, $this> */
     public function payee(): BelongsTo
     {
