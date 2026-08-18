@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Modules\Payments\Data\PaymentIntent;
+use App\Modules\Payments\Data\RefundEvent;
+use App\Modules\Payments\Data\RefundIntent;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Enums\RefundStatus;
 use App\Modules\Payments\Gateways\NotchPayGateway;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -146,6 +149,71 @@ final class NotchPayGatewayTest extends TestCase
         $this->assertSame(PaymentStatus::Failed, $this->gateway()->charge($this->intent('VISA'))->status);
 
         Http::assertNothingSent();
+    }
+
+    /**
+     * Le montant est **toujours** envoye. Leur API l'accepte comme facultatif, et
+     * l'omettre rembourserait ce que *leur* systeme croit avoir encaisse — ce qui
+     * differe du notre sur une annulation partielle, ou le grand livre fait foi.
+     */
+    public function test_a_refund_sends_the_amount_we_owe(): void
+    {
+        Http::fake([
+            'api.notchpay.co/refunds' => Http::response([
+                'refund' => ['id' => 'rfd_1', 'status' => 'pending'],
+            ], 201),
+        ]);
+
+        $refund = $this->gateway()->refund(new RefundIntent(
+            reference: 'RFD-ABC123',
+            paymentReference: 'trx_1',
+            amount: 11000,
+            currency: 'XAF',
+            idempotencyKey: 'cle',
+        ));
+
+        // Accepte, pas solde : le denouement arrive par webhook.
+        $this->assertSame(RefundStatus::Processing, $refund->status);
+        $this->assertSame('rfd_1', $refund->providerReference);
+
+        Http::assertSent(fn ($request) => $request->data()['payment'] === 'trx_1'
+            && $request->data()['amount'] === 11000);
+    }
+
+    /**
+     * **Un remboursement n'est pas un paiement.** Les deux arrivent par la meme
+     * URL et la meme signature ; les confondre marquerait un paiement encaisse au
+     * moment ou l'argent en repart.
+     */
+    public function test_a_refund_webhook_is_not_read_as_a_payment(): void
+    {
+        [$payload, $headers] = $this->signed([
+            'event' => 'refund.complete',
+            'data' => ['transaction' => 'rfd_1', 'status' => 'complete'],
+        ]);
+
+        $event = $this->gateway()->parseWebhook($payload, $headers);
+
+        $this->assertInstanceOf(RefundEvent::class, $event);
+        $this->assertSame(RefundStatus::Completed, $event->status);
+    }
+
+    /**
+     * `refund.created` dit que la demande est enregistree, pas que l'argent est
+     * reparti. Le traiter comme un aboutissement afficherait « remboursé » a
+     * quelqu'un qui n'a encore rien recu.
+     */
+    public function test_a_created_refund_is_not_a_completed_one(): void
+    {
+        [$payload, $headers] = $this->signed([
+            'event' => 'refund.created',
+            'data' => ['transaction' => 'rfd_1', 'status' => 'pending'],
+        ]);
+
+        $event = $this->gateway()->parseWebhook($payload, $headers);
+
+        $this->assertInstanceOf(RefundEvent::class, $event);
+        $this->assertNotSame(RefundStatus::Completed, $event->status);
     }
 
     public function test_a_correctly_signed_webhook_is_accepted(): void
