@@ -25,7 +25,7 @@ const me = (roles: string[]) => ({
 
 describe('RequireSession', () => {
   it('renvoie à la connexion quand aucune session n’existe', async () => {
-    render(<AppRoutes />, { route: '/drivers' })
+    render(<AppRoutes />, { route: '/admin/drivers' })
 
     expect(await screen.findByRole('button', { name: 'Recevoir un code' })).toBeInTheDocument()
   })
@@ -38,7 +38,7 @@ describe('RequireSession', () => {
     await session.start('jeton-passager')
     mockFetch(jsonResponse(me(['PASSENGER'])))
 
-    render(<AppRoutes />, { route: '/drivers' })
+    render(<AppRoutes />, { route: '/admin/drivers' })
 
     expect(await screen.findByText('Espace réservé')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Recevoir un code' })).not.toBeInTheDocument()
@@ -48,21 +48,36 @@ describe('RequireSession', () => {
     await session.start('jeton-admin')
     mockFetch(jsonResponse(me(['ADMIN'])), jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }))
 
-    render(<AppRoutes />, { route: '/drivers' })
+    render(<AppRoutes />, { route: '/admin/drivers' })
 
     expect(await screen.findByRole('heading', { name: 'Dossiers de chauffeur' })).toBeInTheDocument()
   })
 
   /**
-   * La file des dossiers est la page d'accueil : c'est ce qui attend une
-   * décision, et rien d'autre ne mérite d'ouvrir le back-office.
+   * La file des dossiers reste la page d'accueil **de l'administration** : c'est
+   * ce qui attend une décision.
    */
   it('ouvre sur la file des dossiers', async () => {
     await session.start('jeton-admin')
     mockFetch(jsonResponse(me(['SUPER_ADMIN'])), jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }))
 
-    render(<AppRoutes />, { route: '/' })
+    render(<AppRoutes />, { route: '/admin' })
 
     expect(await screen.findByRole('heading', { name: 'Dossiers de chauffeur' })).toBeInTheDocument()
+  })
+
+  /**
+   * **La racine appartient au public.** La recherche fonctionne sans compte
+   * (§35) ; y exiger une session perdrait les gens sur une question qu'ils ne se
+   * posaient pas, et c'est le premier écran du produit.
+   */
+  it('ouvre la recherche publique à la racine, sans session', async () => {
+    mockFetch(jsonResponse({ data: [] }))
+
+    render(<AppRoutes />, { route: '/' })
+
+    expect(
+      await screen.findByRole('heading', { name: /Comparez les départs/ }),
+    ).toBeInTheDocument()
   })
 })

@@ -19,6 +19,9 @@ import { DriversPage } from './features/agency/DriversPage'
 import { RoutesPage } from './features/agency/RoutesPage'
 import { BoardingPage } from './features/agency/BoardingPage'
 import { BoardingScannerPage } from './features/boarding/BoardingScannerPage'
+import { OwnerPage } from './features/owner/OwnerPage'
+import { SearchPage } from './features/public/SearchPage'
+import { TripPage } from './features/public/TripPage'
 import { CounterSalePage } from './features/agency/CounterSalePage'
 import { DeparturesPage } from './features/agency/DeparturesPage'
 import { MoneyPage } from './features/agency/MoneyPage'
@@ -62,6 +65,15 @@ export default function App() {
 export function AppRoutes() {
   return (
     <Routes>
+      {/*
+        **Le public d'abord, à la racine.** La recherche fonctionne sans compte
+        (§35) : c'est le premier écran du produit, et le mettre derrière une
+        connexion perdrait les gens sur une question qu'ils ne se posaient pas.
+        L'administration descend donc sous `/admin`.
+      */}
+      <Route path="/" element={<SearchPage />} />
+      <Route path="/trips/:reference" element={<TripPage />} />
+
       <Route path="/sign-in" element={<SignInPage />} />
 
       {/*
@@ -84,6 +96,20 @@ export function AppRoutes() {
         }
       />
 
+      {/*
+        Le proprietaire n'a qu'une page : lui donner un gabarit a onglets ferait
+        promettre une profondeur qui n'existe pas, et qui ne doit pas exister —
+        aucun circuit financier ne le relie a la plateforme (I3).
+      */}
+      <Route
+        path="/owner"
+        element={
+          <RequireSession allow={['OWNER']}>
+            <OwnerPage />
+          </RequireSession>
+        }
+      />
+
       <Route
         path="/agency/*"
         element={
@@ -94,7 +120,7 @@ export function AppRoutes() {
       />
 
       <Route
-        path="/*"
+        path="/admin/*"
         element={
           <RequireSession allow={['ADMIN', 'SUPER_ADMIN']}>
             <AdminLayout />
@@ -198,13 +224,13 @@ function AdminLayout() {
       <header className="bg-ink-700 px-6 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <nav className="flex items-center gap-6">
-            <Link to="/drivers" className="font-bold text-neutral-0">
+            <Link to="/admin/drivers" className="font-bold text-neutral-0">
               MOTOBOY
             </Link>
-            <NavLink to="/drivers">Dossiers</NavLink>
-            <NavLink to="/payouts">Reversements</NavLink>
-            <NavLink to="/payout-accounts">Comptes</NavLink>
-            <NavLink to="/support">Suivi</NavLink>
+            <NavLink to="/admin/drivers">Dossiers</NavLink>
+            <NavLink to="/admin/payouts">Reversements</NavLink>
+            <NavLink to="/admin/payout-accounts">Comptes</NavLink>
+            <NavLink to="/admin/support">Suivi</NavLink>
           </nav>
           <button
             type="button"
@@ -218,12 +244,12 @@ function AdminLayout() {
 
       <main className="mx-auto max-w-5xl p-6">
         <Routes>
-          <Route path="/drivers" element={<DriverQueuePage />} />
-          <Route path="/payouts" element={<PayoutQueuePage />} />
-          <Route path="/payout-accounts" element={<PayoutAccountsPage />} />
-          <Route path="/support" element={<SupportLookupPage />} />
+          <Route path="drivers" element={<DriverQueuePage />} />
+          <Route path="payouts" element={<PayoutQueuePage />} />
+          <Route path="payout-accounts" element={<PayoutAccountsPage />} />
+          <Route path="support" element={<SupportLookupPage />} />
           {/* La file est la page d'accueil : c'est ce qui attend une décision. */}
-          <Route path="*" element={<Navigate to="/drivers" replace />} />
+          <Route path="*" element={<Navigate to="/admin/drivers" replace />} />
         </Routes>
       </main>
     </div>

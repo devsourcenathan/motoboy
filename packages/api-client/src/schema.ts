@@ -600,6 +600,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/owner/vehicles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les vehicules du proprietaire
+         * @description **Consultation seule, aucun circuit financier** (I3). Le proprietaire loue
+         *     son vehicule a une agence et sa remuneration se regle directement avec
+         *     elle ; la plateforme ne porte aucun flux vers lui.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["OwnerVehicle"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/owner/vehicles/{vehicle}/trips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Les departs assures par un vehicule
+         * @description Ce que le proprietaire vient verifier : **son vehicule roule-t-il ?** Le
+         *     taux de remplissage est calcule par le serveur — le laisser au client
+         *     ferait diverger deux arrondis, et c'est le chiffre dont on discute avec
+         *     l'agence.
+         *
+         *     Un vehicule qui ne lui appartient pas repond `404` et non `403` :
+         *     « interdit » revelerait qu'il existe et appartient a quelqu'un d'autre.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    vehicle: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["OwnerTrip"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/settings/ride-commission": {
         parameters: {
             query?: never;
@@ -1899,6 +1996,66 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/id-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Depose la piece d'identite du voyageur principal
+         * @description **Avant la reservation, et separement.** Une place se tient quelques
+         *     minutes ; televerser pendant ce delai le ferait courir sur une 3G de gare,
+         *     et un echec de reseau ferait perdre la place.
+         *
+         *     Rend un `path` que la reservation reprend dans
+         *     `passengers[0].id_document_path`. Le chemin est tire au hasard par le
+         *     stockage : un client ne peut pas en fabriquer un pour designer le fichier
+         *     de quelqu'un d'autre.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description Photo de la piece — jpg, jpeg ou png, 8 Mo au plus.
+                         */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Depose */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            path: string;
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -5242,6 +5399,45 @@ export interface components {
          * @enum {string}
          */
         IdDocumentMode: "NUMBER" | "IMAGE";
+        OwnerVehicle: {
+            /** Format: int64 */
+            id: number;
+            registration: string;
+            brand?: string | null;
+            model?: string | null;
+            type: components["schemas"]["VehicleType"];
+            capacity: number;
+            /** @description L'agence qui l'exploite — l'interlocuteur du proprietaire. */
+            agency: string | null;
+            /**
+             * @description Le chiffre d'affaires n'est visible que si l'agence l'a autorise pour
+             *     ce vehicule : c'est une donnee commerciale de l'agence, pas du
+             *     proprietaire.
+             */
+            revenue_visible: boolean;
+        };
+        OwnerTrip: {
+            reference: string;
+            /** Format: date-time */
+            departure_at: string | null;
+            /**
+             * @description Declare sur place et non par un schema partage : le statut d'un depart
+             *     n'a d'enumeration ni dans le contrat ni en PHP — c'est une chaine
+             *     libre en base. En creer une ici la ferait entrer dans le controle de
+             *     parite des enumerations, sans rien a comparer de l'autre cote.
+             * @enum {string}
+             */
+            status: "SCHEDULED" | "CANCELLED";
+            /**
+             * @description Celle du **depart**, non celle du vehicule aujourd'hui : un vehicule
+             *     peut avoir ete remplace, et le remplissage d'alors se juge sur ce qui
+             *     etait offert ce jour-la.
+             */
+            capacity: number;
+            seats_sold: number;
+            /** @description En pourcentage, arrondi par le serveur. */
+            fill_rate: number;
+        };
         PaginationMeta: {
             page: number;
             per_page: number;

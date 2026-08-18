@@ -16,6 +16,7 @@ use App\Modules\Agencies\Http\Controllers\RoutingController;
 use App\Modules\Agencies\Http\Controllers\StationController;
 use App\Modules\Bookings\Http\Controllers\BookingController;
 use App\Modules\Bookings\Http\Controllers\IdDocumentController;
+use App\Modules\Fleet\Http\Controllers\OwnerController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\WebhookController;
@@ -261,6 +262,15 @@ Route::prefix('v1')->group(function (): void {
          * le calcul est automatique, mais rien ne le valide ni ne l'envoie. Le
          * reste de l'espace d'administration reste à construire.
          */
+        /*
+         * Espace proprietaire (I3) — **consultation seule**. Sa remuneration se
+         * regle directement avec l'agence ; la plateforme ne porte aucun flux
+         * vers lui, et lui ouvrir un endpoint d'ecriture laisserait croire le
+         * contraire.
+         */
+        Route::get('owner/vehicles', [OwnerController::class, 'vehicles']);
+        Route::get('owner/vehicles/{vehicle}/trips', [OwnerController::class, 'trips']);
+
         Route::prefix('admin')->group(function (): void {
             Route::get('payouts', [AdminPayoutController::class, 'index']);
             Route::post('payouts/build', [AdminPayoutController::class, 'build']);
