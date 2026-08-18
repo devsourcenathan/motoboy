@@ -22,11 +22,16 @@ describe('SkeletonList', () => {
       </View>,
     )
 
-    const list = screen.getByTestId('parent').children[0]
+    /*
+     * Le style déclaré du conteneur, lu tel quel. `toHaveStyle` de Testing
+     * Library ne s'applique qu'aux éléments hôtes, et celui-ci est un composant :
+     * on inspecte donc le nœud, en passant par `unknown` parce que `TestNode` ne
+     * promet rien sur la forme de ses props.
+     */
+    const list = screen.getByTestId('parent').children[0] as unknown as {
+      props: { style?: unknown }
+    }
 
-    // `children` rend des éléments React ; on lit le style déclaré du conteneur.
-    const style = (list as { props: { style: { alignSelf?: string }[] } }).props.style
-
-    expect(JSON.stringify(style)).toContain('stretch')
+    expect(JSON.stringify(list.props.style)).toContain('stretch')
   })
 })
