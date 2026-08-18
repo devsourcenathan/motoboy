@@ -27,6 +27,7 @@ final class AgencyPayoutController
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
 
         $payouts = Payout::query()
+            ->with(['payee.agency', 'payee.user', 'account'])
             ->where('agency_id', $agency->id)
             ->orderByDesc('created_at')
             ->paginate($perPage);

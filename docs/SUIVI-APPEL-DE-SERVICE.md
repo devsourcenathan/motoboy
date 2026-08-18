@@ -422,10 +422,12 @@ commentaire annonçait.
   qu'une réservation en a toujours une. La contraction annoncée à l'étape 1
   consiste à les faire passer le bénéficiaire elles-mêmes, puis à retirer le
   pont. Ce n'est pas urgent, mais c'est du code qui compte de l'argent.
-- **La file des reversements ne nomme pas son bénéficiaire** : elle expose
-  `agency_id`, nul pour un chauffeur, et aucun nom ni destination. Un
-  administrateur qui valide un décaissement voit un montant sans savoir à qui il
-  part. À corriger avant que quiconque valide un vrai virement.
+- ~~La file des reversements ne nomme pas son bénéficiaire~~ — **corrigé** :
+  `Payout` porte `payee` (genre, nom, téléphone) et `destination` (opérateur, nom
+  du compte, numéro tronqué, vérifié ou non). L'écran met le nom en tête, la
+  destination juste dessous, et l'envoi demande confirmation en répétant les deux.
+  `agency_id` était aussi déclaré obligatoire au contrat alors qu'il est nul pour
+  un chauffeur.
 - **Le déploiement doit rejouer `RoleAndPermissionSeeder`** — la CI le fait
   (`php artisan db:seed --force`), mais rien ne le garantit en production, et
   l'oubli ferme silencieusement une file entière.

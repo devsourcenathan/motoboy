@@ -31,6 +31,12 @@ final class AdminPayoutController
         $perPage = min(max($request->integer('per_page', 20), 1), 100);
 
         $payouts = Payout::query()
+            /*
+             * Charge en amont ce que la ressource nomme : sans cela,
+             * `loadMissing` s'execute par ligne et une page de vingt fait
+             * soixante requetes de plus.
+             */
+            ->with(['payee.agency', 'payee.user', 'account'])
             ->when(
                 $request->filled('status'),
                 fn ($query) => $query->where('status', $request->string('status')->value()),
@@ -84,7 +90,10 @@ final class AdminPayoutController
     {
         $user = $this->authorize($request, 'payouts.approve');
 
-        $payout = Payout::query()->where('reference', $reference)->firstOrFail();
+        $payout = Payout::query()
+            ->where('reference', $reference)
+            ->with(['payee.agency', 'payee.user', 'account'])
+            ->firstOrFail();
 
         return response()->json((new PayoutResource($approve->handle($payout, $user->id)))->resolve());
     }
@@ -104,7 +113,7 @@ final class AdminPayoutController
 
         $payout = Payout::query()
             ->where('reference', $reference)
-            ->with('account')
+            ->with(['payee.agency', 'payee.user', 'account'])
             ->firstOrFail();
 
         return response()->json((new PayoutResource($send->handle($payout, trim($key))))->resolve());

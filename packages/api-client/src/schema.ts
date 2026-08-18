@@ -5620,8 +5620,38 @@ export interface components {
         };
         Payout: {
             reference: string;
-            /** Format: int64 */
-            agency_id?: number;
+            /**
+             * Format: int64
+             * @description **Nul pour un chauffeur independant**, qui n'a pas d'agence. Le
+             *     contrat le declarait obligatoire, ce qui promettait un identifiant
+             *     toujours present la ou il n'y en a pas. Prefez `payee`, qui vaut pour
+             *     les deux genres.
+             */
+            agency_id?: number | null;
+            /**
+             * @description **A qui part l'argent.** La ressource n'exposait que `agency_id` :
+             *     celui qui valide un decaissement voyait un montant sans savoir a qui
+             *     il partait. C'est la seule information qu'il ne peut pas deviner, et
+             *     la seule dont l'erreur est irreversible — un virement Mobile Money mal
+             *     dirige ne se recupere pas.
+             */
+            payee: {
+                /** @enum {string|null} */
+                kind: "AGENCY" | "DRIVER" | null;
+                name: string | null;
+                phone: string | null;
+            };
+            /**
+             * @description Ou part l'argent. Numero tronque : les trois derniers chiffres et le
+             *     nom du compte suffisent a reconnaitre une erreur, et un numero complet
+             *     dans une reponse d'API finit dans un journal.
+             */
+            destination: {
+                operator: string | null;
+                account_name: string | null;
+                masked_number: string;
+                verified: boolean;
+            } | null;
             /** Format: date */
             period_start: string;
             /** Format: date */

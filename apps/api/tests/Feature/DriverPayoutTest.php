@@ -17,6 +17,7 @@ use App\Modules\Payouts\Actions\ApprovePayout;
 use App\Modules\Payouts\Actions\BuildDriverPayout;
 use App\Modules\Payouts\Actions\SendPayout;
 use App\Modules\Payouts\Enums\LedgerEntryType;
+use App\Modules\Payouts\Http\Resources\PayoutResource;
 use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Payee;
 use App\Modules\Payouts\Models\PayoutAccount;
@@ -189,6 +190,43 @@ final class DriverPayoutTest extends TestCase
             0,
             (int) AgencyLedgerEntry::query()->where('payee_id', $payee->id)->sum('amount'),
         );
+    }
+
+    /**
+     * La file nomme a qui l'argent part, et ou.
+     *
+     * La ressource n'exposait que `agency_id`, nulle pour un chauffeur : celui qui
+     * valide un decaissement voyait un montant sans savoir a qui il partait. C'est
+     * la seule information qu'il ne peut pas deviner, et la seule dont l'erreur
+     * est irreversible.
+     */
+    public function test_a_payout_says_who_is_paid_and_where(): void
+    {
+        $driver = $this->driver();
+        $ride = $this->completedRide($driver, 10_000);
+        $this->age($ride);
+
+        $account = $this->declareAccount($driver, '+237655443322');
+        app(ManagePayoutAccount::class)->verify($account, User::factory()->create()->id);
+
+        $payout = app(BuildDriverPayout::class)->handle($this->payeeOf($driver))['payout'];
+        $this->assertNotNull($payout);
+
+        $rendered = (new PayoutResource($payout))->resolve();
+
+        $user = $this->userOf($driver);
+
+        $this->assertSame('DRIVER', $rendered['payee']['kind']);
+        $this->assertSame($user->fullName(), $rendered['payee']['name']);
+        $this->assertSame($user->phone, $rendered['payee']['phone']);
+
+        $this->assertSame('MTN', $rendered['destination']['operator']);
+        $this->assertTrue($rendered['destination']['verified']);
+
+        // Tronque, meme vers l'administration : un numero complet dans une
+        // reponse d'API finit dans un journal.
+        $this->assertStringEndsWith('322', $rendered['destination']['masked_number']);
+        $this->assertStringNotContainsString('655443', $rendered['destination']['masked_number']);
     }
 
     public function test_a_balance_below_the_minimum_waits(): void
