@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Modules\Payments\Contracts\PaymentGateway;
+use App\Modules\Payments\Gateways\NotchPayGateway;
 use App\Modules\Payments\Gateways\TranzakPaymentGateway;
 use App\Modules\Payouts\Contracts\PayoutGateway;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,25 @@ final class PaymentServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(NotchPayGateway::class, function (): NotchPayGateway {
+            foreach (['base_url', 'api_key', 'webhook_hash'] as $key) {
+                $value = config("payments.notchpay.{$key}");
+
+                if (!is_string($value) || $value === '') {
+                    throw new \RuntimeException(
+                        "NotchPay : « {$key} » manquant. Sans la clé de hachage, ".
+                        'aucun webhook ne peut être prouvé authentique.',
+                    );
+                }
+            }
+
+            return new NotchPayGateway(
+                baseUrl: (string) config('payments.notchpay.base_url'),
+                apiKey: (string) config('payments.notchpay.api_key'),
+                webhookHash: (string) config('payments.notchpay.webhook_hash'),
+            );
+        });
+
         /*
          * Tranzak se construit depuis la configuration : le conteneur ne sait pas
          * deviner trois chaines. Il refuse de le batir avec un reglage manquant
