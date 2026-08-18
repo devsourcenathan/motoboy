@@ -238,6 +238,7 @@ export interface PassengerMessages {
     readonly lastName: string
     readonly continue: string
     readonly noAccount: string
+    readonly continueAsGuest: string
     readonly haveAccount: string
     readonly signOut: string
     readonly history: string
@@ -697,6 +698,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       lastName: 'Nom',
       continue: 'Continuer',
       noAccount: 'Pas encore de compte ?',
+      continueAsGuest: 'Continuer sans compte',
       haveAccount: 'J’ai déjà un compte',
       signOut: 'Se déconnecter',
       history: 'Mes voyages',
@@ -1139,6 +1141,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       lastName: 'Last name',
       continue: 'Continue',
       noAccount: 'No account yet?',
+      continueAsGuest: 'Continue without an account',
       haveAccount: 'I already have an account',
       signOut: 'Sign out',
       history: 'My trips',

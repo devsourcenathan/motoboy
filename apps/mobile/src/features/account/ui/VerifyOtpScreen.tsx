@@ -21,6 +21,7 @@ import {
   TimerIcon,
 } from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
+import { markAuthChoiceMade } from '../../onboarding'
 import { useResendOtp, useVerifyOtp } from '../api/useAuth'
 import {
   maskPhone,
@@ -75,6 +76,14 @@ export function VerifyOtpScreen() {
       { phone, code, purpose },
       {
         onSuccess: () => {
+          /*
+           * Le choix est fait, quel qu'il soit : se connecter compte autant que
+           * continuer sans compte. Sans ce marqueur, l'écran de connexion se
+           * reposerait au prochain lancement à quelqu'un qui vient justement de
+           * s'y connecter.
+           */
+          void markAuthChoiceMade()
+
           // `replace` : revenir en arrière sur un écran de code déjà consommé
           // ne mène nulle part.
           router.replace(

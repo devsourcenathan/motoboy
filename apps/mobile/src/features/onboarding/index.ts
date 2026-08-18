@@ -6,4 +6,9 @@
  * de routeur reviendrait à réécrire les écrans.
  */
 export { Onboarding } from './ui/Onboarding'
-export { hasSeenOnboarding, markOnboardingSeen } from './model/storage'
+export {
+  hasMadeAuthChoice,
+  hasSeenOnboarding,
+  markAuthChoiceMade,
+  markOnboardingSeen,
+} from './model/storage'

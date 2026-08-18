@@ -30,3 +30,35 @@ export async function markOnboardingSeen(): Promise<void> {
     // Sans conséquence : l'onboarding se remontrera au prochain démarrage.
   }
 }
+
+const CHOICE_KEY = 'motoboy.auth.choiceMade'
+
+/**
+ * Le passager a-t-il déjà tranché entre se connecter et continuer sans compte ?
+ *
+ * **Sans ce marqueur, l'écran d'accueil redemanderait à chaque lancement.** Un
+ * choix qu'on repose est une obstruction, pas une proposition — et quelqu'un qui
+ * a décidé de chercher sans compte ne doit pas être ramené devant la même
+ * question le lendemain.
+ *
+ * Le marqueur est posé dans les deux cas : connexion réussie **ou** entrée en
+ * invité. C'est le fait d'avoir choisi qui compte, pas ce qui a été choisi.
+ */
+export async function hasMadeAuthChoice(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(CHOICE_KEY)) === '1'
+  } catch {
+    // Un stockage indisponible ne doit pas bloquer l'entrée : on laisse passer
+    // plutôt que d'enfermer quelqu'un devant un écran de connexion.
+    return true
+  }
+}
+
+export async function markAuthChoiceMade(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CHOICE_KEY, '1')
+  } catch {
+    // Sans effet : la question se reposera au prochain lancement, ce qui est
+    // ennuyeux mais pas bloquant.
+  }
+}
