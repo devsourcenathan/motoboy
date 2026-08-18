@@ -9,6 +9,7 @@ use App\Modules\Administration\Http\Controllers\AdminReferenceController;
 use App\Modules\Administration\Http\Controllers\ClientConfigController;
 use App\Modules\Administration\Http\Controllers\PlatformSettingController;
 use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
+use App\Modules\Agencies\Http\Controllers\AgencyStaffController;
 use App\Modules\Agencies\Http\Controllers\CancellationController;
 use App\Modules\Agencies\Http\Controllers\CounterSaleController;
 use App\Modules\Agencies\Http\Controllers\FleetController;
@@ -251,6 +252,15 @@ Route::prefix('v1')->group(function (): void {
              */
             Route::get('payout-accounts', [AgencyAccountController::class, 'payoutAccounts']);
             Route::post('payout-accounts', [AgencyAccountController::class, 'submitPayoutAccount']);
+            /*
+             * Personnel de l'agence. Deux profils attribuables — `AGENT` pour
+             * l'embarquement, `COUNTER` pour la vente — et jamais `AGENCY` : on ne
+             * delegue pas ici le droit de deleguer.
+             */
+            Route::get('staff', [AgencyStaffController::class, 'index']);
+            Route::post('staff', [AgencyStaffController::class, 'store']);
+            Route::delete('staff/{user}', [AgencyStaffController::class, 'destroy']);
+
             Route::get('documents', [AgencyAccountController::class, 'documents']);
             Route::post('documents', [AgencyAccountController::class, 'uploadDocument']);
         });

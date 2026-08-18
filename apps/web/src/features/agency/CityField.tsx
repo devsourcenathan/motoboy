@@ -33,14 +33,9 @@ export function CityField({
 
   return (
     <div>
-      {/*
-        `hint` omis plutôt que passé à `undefined` : `exactOptionalPropertyTypes`
-        distingue « absent » de « présent et indéfini », et c'est une distinction
-        utile — elle empêche d'effacer une valeur par inadvertance.
-      */}
       <Field
         label={label}
-        {...(value === null ? { hint: 'Cherchez dans le référentiel MOTOBOY.' } : {})}
+        hint={value === null ? 'Cherchez dans le référentiel MOTOBOY.' : undefined}
       >
         <input
           className={INPUT}

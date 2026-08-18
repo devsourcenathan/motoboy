@@ -4504,6 +4504,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Le personnel de l'agence */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AgencyStaffMember"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        /**
+         * Rattache quelqu'un au personnel
+         * @description **Le compte se cree au numero.** Si la personne a deja un compte passager,
+         *     le role s'y ajoute : c'est la meme personne, et lui imposer une seconde
+         *     identite sur le meme telephone n'aurait pas de sens. Elle se connecte par
+         *     OTP comme partout ailleurs — aucun mot de passe n'est distribue.
+         *
+         *     Le nom d'un compte existant **n'est pas ecrase** : il appartient a la
+         *     personne, pas a l'agence qui l'embauche.
+         *
+         *     Deux profils attribuables, et jamais `AGENCY` : on ne delegue pas ici le
+         *     droit de deleguer.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        first_name: string;
+                        last_name: string;
+                        /** @enum {string} */
+                        role: "AGENT" | "COUNTER";
+                    };
+                };
+            };
+            responses: {
+                /** @description Rattache */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyStaffMember"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/staff/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retire quelqu'un du personnel
+         * @description **Le role est revoque, le compte survit.** Ses ventes et ses validations
+         *     restent a son nom — un historique qui perd son auteur ne se verifie plus —
+         *     et la personne garde son compte passager, qui ne regarde pas l'agence.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    user: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Retire */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/documents": {
         parameters: {
             query?: never;
@@ -5438,6 +5569,21 @@ export interface components {
             /** @description En pourcentage, arrondi par le serveur. */
             fill_rate: number;
         };
+        AgencyStaffMember: {
+            /** Format: int64 */
+            user_id: number;
+            first_name: string;
+            last_name: string;
+            phone: string;
+            /**
+             * @description `AGENT` embarque — valider un billet, voir les departs. `COUNTER` vend
+             *     en plus. Les separer evite de donner le droit d'encaisser a quelqu'un
+             *     dont ce n'est pas le travail.
+             * @enum {string}
+             */
+            role: "AGENT" | "COUNTER";
+            is_active: boolean;
+        };
         PaginationMeta: {
             page: number;
             per_page: number;
@@ -5622,7 +5768,7 @@ export interface components {
             roles: components["schemas"]["Role"][];
         };
         /** @enum {string} */
-        Role: "PASSENGER" | "AGENCY" | "AGENT" | "DRIVER" | "OWNER" | "ADMIN" | "SUPER_ADMIN";
+        Role: "PASSENGER" | "AGENCY" | "AGENT" | "COUNTER" | "DRIVER" | "OWNER" | "ADMIN" | "SUPER_ADMIN";
         OtpChallenge: {
             /**
              * Format: date-time

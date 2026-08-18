@@ -32,7 +32,7 @@ final class CounterSaleController
 
     public function store(Request $request, CreateCounterSale $sell): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->require($request, 'counter_sales.create');
 
         $validated = $request->validate([
             'trip_reference' => ['required', 'string', 'max:20'],
@@ -83,7 +83,7 @@ final class CounterSaleController
      */
     public function seats(Request $request, string $reference): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->require($request, 'counter_sales.create');
 
         $trip = Trip::query()
             ->where('reference', $reference)

@@ -74,7 +74,16 @@ export function Field({
   children,
 }: {
   label: string
-  hint?: string
+  /**
+   * `| undefined` explicitement.
+   *
+   * `exactOptionalPropertyTypes` distingue « absent » de « présent et indéfini »,
+   * et cette distinction a un sens sur une donnée qu'on met à jour — elle empêche
+   * d'effacer une valeur par inadvertance. Sur un indice d'affichage, elle n'en a
+   * aucun : « pas d'indice » se dit des deux façons. Trois appelants ont dû
+   * contourner par un `...spread` avant que je corrige ici plutôt que chez eux.
+   */
+  hint?: string | undefined
   children: ReactNode
 }) {
   return (

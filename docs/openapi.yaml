@@ -2711,6 +2711,81 @@ paths:
               schema: { $ref: '#/components/schemas/PayoutAccount' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /v1/agency/staff:
+    get:
+      tags: [Agency]
+      summary: Le personnel de l'agence
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgencyStaffMember' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Agency]
+      summary: Rattache quelqu'un au personnel
+      description: |
+        **Le compte se cree au numero.** Si la personne a deja un compte passager,
+        le role s'y ajoute : c'est la meme personne, et lui imposer une seconde
+        identite sur le meme telephone n'aurait pas de sens. Elle se connecte par
+        OTP comme partout ailleurs — aucun mot de passe n'est distribue.
+
+        Le nom d'un compte existant **n'est pas ecrase** : il appartient a la
+        personne, pas a l'agence qui l'embauche.
+
+        Deux profils attribuables, et jamais `AGENCY` : on ne delegue pas ici le
+        droit de deleguer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, first_name, last_name, role]
+              properties:
+                phone: { type: string, maxLength: 20 }
+                first_name: { type: string, maxLength: 100 }
+                last_name: { type: string, maxLength: 100 }
+                role: { type: string, enum: [AGENT, COUNTER] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Rattache
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyStaffMember' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/agency/staff/{user}:
+    delete:
+      tags: [Agency]
+      summary: Retire quelqu'un du personnel
+      description: |
+        **Le role est revoque, le compte survit.** Ses ventes et ses validations
+        restent a son nom — un historique qui perd son auteur ne se verifie plus —
+        et la personne garde son compte passager, qui ne regarde pas l'agence.
+      parameters:
+        - name: user
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '204': { description: Retire }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /v1/agency/documents:
     get:
       tags: [Agency]
@@ -3597,6 +3672,23 @@ components:
           type: integer
           description: En pourcentage, arrondi par le serveur.
 
+    AgencyStaffMember:
+      type: object
+      required: [user_id, first_name, last_name, phone, role, is_active]
+      properties:
+        user_id: { type: integer, format: int64 }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+        role:
+          type: string
+          enum: [AGENT, COUNTER]
+          description: |
+            `AGENT` embarque — valider un billet, voir les departs. `COUNTER` vend
+            en plus. Les separer evite de donner le droit d'encaisser a quelqu'un
+            dont ce n'est pas le travail.
+        is_active: { type: boolean }
+
     PaginationMeta:
       type: object
       required: [page, per_page, total, last_page]
@@ -3867,6 +3959,7 @@ components:
         - PASSENGER
         - AGENCY
         - AGENT
+        - COUNTER
         - DRIVER
         - OWNER
         - ADMIN

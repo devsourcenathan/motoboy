@@ -151,9 +151,11 @@ export function BoardingScannerPage() {
               <div className="flex-1">
                 <Field
                   label="Saisie manuelle"
-                  {...(scanningSupported()
-                    ? {}
-                    : { hint: 'Cet appareil ne sait pas lire les QR : tout passe par ici.' })}
+                  hint={
+                    scanningSupported()
+                      ? undefined
+                      : 'Cet appareil ne sait pas lire les QR : tout passe par ici.'
+                  }
                 >
                   <input
                     className={`${INPUT} font-mono uppercase`}

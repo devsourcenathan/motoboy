@@ -87,6 +87,18 @@ final class RoleAndPermissionSeeder extends Seeder
             'trips.view',
         ],
 
+        /*
+         * Le guichetier fait tout ce que fait l'agent, **plus la vente**. Il ne
+         * voit ni les reversements, ni le personnel, ni l'inventaire : ce sont
+         * des decisions d'agence, pas des gestes de comptoir.
+         */
+        Role::Counter->value => [
+            'tickets.validate',
+            'trips.view',
+            'counter_sales.create',
+            'bookings.view',
+        ],
+
         // Consultation seule, aucun circuit financier (I3).
         Role::Owner->value => [
             'vehicles.view',
@@ -131,6 +143,7 @@ final class RoleAndPermissionSeeder extends Seeder
             Role::Driver => 'Chauffeur indépendant',
             Role::Agency => 'Agence',
             Role::Agent => "Agent d'embarquement",
+            Role::Counter => 'Guichetier',
             Role::Owner => 'Propriétaire de véhicule',
             Role::Admin => 'Administrateur',
             Role::SuperAdmin => 'Super administrateur',

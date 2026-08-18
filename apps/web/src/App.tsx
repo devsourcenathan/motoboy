@@ -25,6 +25,7 @@ import { TripPage } from './features/public/TripPage'
 import { CounterSalePage } from './features/agency/CounterSalePage'
 import { DeparturesPage } from './features/agency/DeparturesPage'
 import { MoneyPage } from './features/agency/MoneyPage'
+import { StaffPage } from './features/agency/StaffPage'
 import { StationsPage } from './features/agency/StationsPage'
 import { VehiclesPage } from './features/agency/VehiclesPage'
 
@@ -145,6 +146,7 @@ function AgencySpace() {
         <Route path="counter" element={<CounterSalePage />} />
         <Route path="boarding" element={<BoardingPage />} />
         <Route path="money" element={<MoneyPage />} />
+        <Route path="staff" element={<StaffPage />} />
         {/* Les gares d'abord : tout le reste de l'inventaire s'y rattache. */}
         <Route path="*" element={<Navigate to="/agency/stations" replace />} />
       </Route>
