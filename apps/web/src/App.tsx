@@ -18,6 +18,7 @@ import { AgencyLayout } from './features/agency/AgencyLayout'
 import { DriversPage } from './features/agency/DriversPage'
 import { RoutesPage } from './features/agency/RoutesPage'
 import { BoardingPage } from './features/agency/BoardingPage'
+import { BoardingScannerPage } from './features/boarding/BoardingScannerPage'
 import { CounterSalePage } from './features/agency/CounterSalePage'
 import { DeparturesPage } from './features/agency/DeparturesPage'
 import { MoneyPage } from './features/agency/MoneyPage'
@@ -69,6 +70,20 @@ export function AppRoutes() {
         mélanger sous un seul menu obligerait chacun à ignorer la moitié de ce
         qu'il voit.
       */}
+      {/*
+        L'embarquement est **hors du gabarit d'agence** : il tourne sur un
+        téléphone tenu à bout de bras, sur un quai, et un bandeau d'onglets y
+        volerait la moitié de l'écran. Il partage la session, pas la mise en page.
+      */}
+      <Route
+        path="/boarding"
+        element={
+          <RequireSession allow={['AGENCY', 'AGENT']}>
+            <BoardingScannerPage />
+          </RequireSession>
+        }
+      />
+
       <Route
         path="/agency/*"
         element={
