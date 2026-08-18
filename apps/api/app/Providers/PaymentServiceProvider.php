@@ -25,7 +25,7 @@ final class PaymentServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(NotchPayGateway::class, function (): NotchPayGateway {
-            foreach (['base_url', 'api_key', 'webhook_hash'] as $key) {
+            foreach (['base_url', 'public_key', 'private_key', 'webhook_hash'] as $key) {
                 $value = config("payments.notchpay.{$key}");
 
                 if (!is_string($value) || $value === '') {
@@ -38,7 +38,8 @@ final class PaymentServiceProvider extends ServiceProvider
 
             return new NotchPayGateway(
                 baseUrl: (string) config('payments.notchpay.base_url'),
-                apiKey: (string) config('payments.notchpay.api_key'),
+                publicKey: (string) config('payments.notchpay.public_key'),
+                privateKey: (string) config('payments.notchpay.private_key'),
                 webhookHash: (string) config('payments.notchpay.webhook_hash'),
             );
         });

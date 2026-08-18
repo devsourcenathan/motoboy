@@ -43,7 +43,8 @@ return [
      */
     'notchpay' => [
         'base_url' => env('NOTCHPAY_BASE_URL', 'https://api.notchpay.co'),
-        'api_key' => env('NOTCHPAY_API_KEY', ''),
+        'public_key' => env('NOTCHPAY_PUBLIC_KEY', ''),
+        'private_key' => env('NOTCHPAY_PRIVATE_KEY', ''),
         'webhook_hash' => env('NOTCHPAY_WEBHOOK_HASH', ''),
     ],
 

@@ -41,9 +41,22 @@ final class NotchPayGateway implements PaymentGateway
         'ORANGE' => 'cm.orange',
     ];
 
+    /**
+     * **Trois cles, trois roles distincts** — leur tableau de bord les distingue,
+     * et les confondre casse a des endroits differents :
+     *
+     * - la **publique** (`pk_`) autorise les operations sans donnee sensible, dont
+     *   la creation d'un paiement. C'est celle qui voyage en `Authorization` ;
+     * - la **privee** (`sk_`) ouvre les operations sensibles — virements, compte,
+     *   gestion des webhooks — par l'en-tete `X-Grant`. Elle ne doit jamais
+     *   quitter le serveur ;
+     * - la **cle de hachage** ne sert qu'a verifier les webhooks. Elle n'est
+     *   envoyee nulle part : on l'utilise pour recalculer un condensat.
+     */
     public function __construct(
         private readonly string $baseUrl,
-        private readonly string $apiKey,
+        private readonly string $publicKey,
+        private readonly string $privateKey,
         private readonly string $webhookHash,
         private readonly int $timeoutSeconds = 20,
     ) {}
@@ -217,7 +230,16 @@ final class NotchPayGateway implements PaymentGateway
     private function post(string $path, array $body): Response
     {
         return Http::acceptJson()
-            ->withHeaders(['Authorization' => $this->apiKey])
+            ->withHeaders([
+                'Authorization' => $this->publicKey,
+                /*
+                 * La cle privee accompagne chaque appel serveur : elle est ce qui
+                 * autorisera les virements et la gestion des webhooks. L'ajouter
+                 * ici plutot qu'au cas par cas evite de decouvrir son absence sur
+                 * un decaissement, c'est-a-dire au pire moment.
+                 */
+                'X-Grant' => $this->privateKey,
+            ])
             ->timeout($this->timeoutSeconds)
             ->post(rtrim($this->baseUrl, '/').$path, $body);
     }

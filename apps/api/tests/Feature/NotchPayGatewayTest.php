@@ -26,7 +26,8 @@ final class NotchPayGatewayTest extends TestCase
     {
         return new NotchPayGateway(
             baseUrl: 'https://api.notchpay.co',
-            apiKey: 'cle-api',
+            publicKey: 'pk_test',
+            privateKey: 'sk_test',
             webhookHash: self::HASH,
         );
     }
@@ -80,6 +81,25 @@ final class NotchPayGatewayTest extends TestCase
             return $request->data()['channel'] === 'cm.mtn'
                 && $request->data()['data']['account_number'] === '+237690000001';
         });
+    }
+
+    /**
+     * **Chaque cle a son en-tete.** La publique autorise l'appel, la privee ouvre
+     * les operations sensibles. Les intervertir marcherait sur un encaissement et
+     * echouerait sur un virement — une panne qui n'apparaitrait qu'au premier
+     * decaissement, c'est-a-dire au pire moment.
+     */
+    public function test_each_key_travels_in_its_own_header(): void
+    {
+        Http::fake([
+            'api.notchpay.co/payments/*' => Http::response(['status' => 'Accepted']),
+            'api.notchpay.co/payments' => Http::response(['transaction' => 'trx_3'], 201),
+        ]);
+
+        $this->gateway()->charge($this->intent());
+
+        Http::assertSent(fn ($request) => $request->header('Authorization')[0] === 'pk_test'
+            && $request->header('X-Grant')[0] === 'sk_test');
     }
 
     public function test_orange_uses_its_own_channel(): void
