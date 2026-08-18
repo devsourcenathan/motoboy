@@ -1,9 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ApiError } from '@motoboy/api-client'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router'
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  NavLink as RouterNavLink,
+  Route,
+  Routes,
+} from 'react-router'
 import { SignInPage } from './features/auth/SignInPage'
 import { useCurrentUser, useSignOut } from './features/auth/useAuth'
 import { DriverQueuePage } from './features/drivers/DriverQueuePage'
+import { PayoutAccountsPage } from './features/payouts/PayoutAccountsPage'
+import { SupportLookupPage } from './features/support/SupportLookupPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +85,28 @@ function RequireSession({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+/**
+ * Un lien du bandeau, souligne quand il est actif.
+ *
+ * `NavLink` de react-router plutot qu'une comparaison manuelle sur l'URL : celle
+ * ecrite a la main oublie les sous-chemins, et le lien s'eteint des qu'on ouvre
+ * un detail.
+ */
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  return (
+    <RouterNavLink
+      to={to}
+      className={({ isActive }) =>
+        isActive
+          ? 'border-b-2 border-brand-500 pb-0.5 text-sm font-semibold text-neutral-0'
+          : 'pb-0.5 text-sm text-neutral-0/70 hover:text-neutral-0'
+      }
+    >
+      {children}
+    </RouterNavLink>
+  )
+}
+
 function AdminLayout() {
   const signOut = useSignOut()
 
@@ -83,9 +114,14 @@ function AdminLayout() {
     <div className="min-h-screen">
       <header className="bg-ink-700 px-6 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link to="/drivers" className="font-bold text-neutral-0">
-            MOTOBOY
-          </Link>
+          <nav className="flex items-center gap-6">
+            <Link to="/drivers" className="font-bold text-neutral-0">
+              MOTOBOY
+            </Link>
+            <NavLink to="/drivers">Dossiers</NavLink>
+            <NavLink to="/payout-accounts">Comptes</NavLink>
+            <NavLink to="/support">Suivi</NavLink>
+          </nav>
           <button
             type="button"
             onClick={() => signOut.mutate()}
@@ -99,6 +135,8 @@ function AdminLayout() {
       <main className="mx-auto max-w-5xl p-6">
         <Routes>
           <Route path="/drivers" element={<DriverQueuePage />} />
+          <Route path="/payout-accounts" element={<PayoutAccountsPage />} />
+          <Route path="/support" element={<SupportLookupPage />} />
           {/* La file est la page d'accueil : c'est ce qui attend une décision. */}
           <Route path="*" element={<Navigate to="/drivers" replace />} />
         </Routes>

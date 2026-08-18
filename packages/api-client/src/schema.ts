@@ -697,6 +697,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/payout-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Destinations de virement a verifier
+         * @description Non verifiees d'abord, puis de la plus ancienne a la plus recente.
+         *
+         *     Sans ce geste, un compte declare reste inactif et la passe de reversement
+         *     s'arrete sur `NO_VERIFIED_ACCOUNT` : personne n'est paye, et rien ne le
+         *     signale.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    kind?: "AGENCY" | "DRIVER";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminPayoutAccountRow"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/service-requests/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consulter une demande ou une course
+         * @description Pour le support : « ou en est ma course ? ». La reference d'une **demande**
+         *     comme celle d'une **course** sont acceptees — l'appelant ne fait pas la
+         *     difference, et la lui imposer reviendrait a lui demander de comprendre un
+         *     decoupage interne avant d'etre aide.
+         *
+         *     Lecture seule : le support constate, il ne decide pas.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    reference: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServiceRequest"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["DefaultError"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/drivers/{driver}/approve": {
         parameters: {
             query?: never;
@@ -4989,6 +5090,26 @@ export interface components {
             account_name: string | null;
             masked_number: string;
             verified: boolean;
+        };
+        /**
+         * @description Une ligne de la file de verification. Le **nom du beneficiaire** y figure
+         *     parce que le controle consiste precisement a le comparer a celui du compte
+         *     Mobile Money declare.
+         */
+        AdminPayoutAccountRow: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string|null} */
+            kind: "AGENCY" | "DRIVER" | null;
+            owner: string | null;
+            owner_phone: string | null;
+            type: string;
+            operator: string | null;
+            account_name: string | null;
+            masked_number: string;
+            verified: boolean;
+            /** Format: date-time */
+            submitted_at: string | null;
         };
         PaginationMeta: {
             page: number;

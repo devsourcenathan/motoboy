@@ -28,6 +28,7 @@ export type Role = S['Role']
 export type DriverStatus = S['DriverStatus']
 export type DriverDocumentType = S['DriverDocumentType']
 export type AdminDriverRow = S['AdminDriverRow']
+export type AdminPayoutAccountRow = S['AdminPayoutAccountRow']
 
 export type ErrorCode = S['ErrorCode']
 /**

@@ -365,3 +365,31 @@ donc une décision produit et une migration — pas un réglage.
 | 17 août 2026 | Une course **impayée ne démarre pas** — 409 `RIDE_NOT_PAID` |
 | 17 août 2026 | Reversement chauffeur : **24 h**, **5 000 F**, réglables au dashboard |
 | 17 août 2026 | Le webhook confirme aussi un paiement de course — il l'ignorait |
+
+---
+
+## 7. Espace d'administration (A1–A4)
+
+| Écran | État |
+| --- | --- |
+| A1 File des dossiers | ✅ `apps/web` — quatre onglets, du plus ancien au plus récent |
+| A2 Instruire un dossier | ✅ pièces manquantes nommées ; valider inerte tant qu'il en manque une |
+| A3 Suspendre un chauffeur | ✅ motif obligatoire, lu par le chauffeur |
+| A4 Consulter demande et course | ✅ référence SRV- **ou** RID-, lecture seule |
+| Vérifier un compte de versement | ✅ — sans lui, `NO_VERIFIED_ACCOUNT` et personne n'est payé |
+
+### Ce que la construction a révélé
+
+| Trouvé | Conséquence |
+| --- | --- |
+| `/v1/me` ne disait pas le rôle | Aucun client ne pouvait router dessus. `User.roles` ajouté — **au pluriel**, un compte en cumulant plusieurs, avec une portée par agence que le contrat n'expose pas |
+| `verifyAccount` exigeait `agencies.approve` | Un compte de chauffeur n'a pas d'agence : la permission suit désormais le propriétaire du compte, sans quoi aucun chauffeur n'aurait jamais pu être payé |
+| Aucun endpoint ne listait les comptes à vérifier | Le geste existait, la file non — donc il n'était jamais fait |
+| Jetons de couleur du web restés sur l'ancien bleu | Le fichier se disait le reflet de `@motoboy/shared` et ne l'était plus |
+| Cache de routes périmé | `OpenApiCoverageTest` déclarait deux endpoints introuvables alors qu'ils étaient écrits. Même famille que le `bootstrap/cache/config.php` de l'étape 2 |
+
+### Reste ouvert
+
+- **Aucun test sur les écrans web.** Le mobile a 89 tests, le web zéro : il n'y a pas encore de harnais de test côté web, et l'ajouter est un chantier à part entière.
+- **La passe de reversement n'a jamais produit de reversement réel** — elle s'arrête correctement sur `NO_VERIFIED_ACCOUNT`, ce qui est le comportement attendu, mais le chemin complet jusqu'à `PENDING_VALIDATION` n'a pas été exercé de bout en bout.
+- **Le support ne peut pas agir**, par choix : ni annuler ni rembourser depuis l'écran de suivi. Si le besoin se confirme, il passera par les Actions existantes et leurs gardes, jamais par une écriture directe.

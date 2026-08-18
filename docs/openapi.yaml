@@ -487,6 +487,64 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /v1/admin/payout-accounts:
+    get:
+      tags: [Administration]
+      summary: Destinations de virement a verifier
+      description: |
+        Non verifiees d'abord, puis de la plus ancienne a la plus recente.
+
+        Sans ce geste, un compte declare reste inactif et la passe de reversement
+        s'arrete sur `NO_VERIFIED_ACCOUNT` : personne n'est paye, et rien ne le
+        signale.
+      parameters:
+        - name: kind
+          in: query
+          schema: { type: string, enum: [AGENCY, DRIVER] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminPayoutAccountRow' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /v1/admin/service-requests/{reference}:
+    get:
+      tags: [Administration]
+      summary: Consulter une demande ou une course
+      description: |
+        Pour le support : « ou en est ma course ? ». La reference d'une **demande**
+        comme celle d'une **course** sont acceptees — l'appelant ne fait pas la
+        difference, et la lui imposer reviendrait a lui demander de comprendre un
+        decoupage interne avant d'etre aide.
+
+        Lecture seule : le support constate, il ne decide pas.
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ServiceRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/DefaultError' }
+
   /v1/admin/drivers/{driver}/approve:
     post:
       tags: [Administration]
@@ -3293,6 +3351,25 @@ components:
         account_name: { type: [string, 'null'] }
         masked_number: { type: string }
         verified: { type: boolean }
+
+    AdminPayoutAccountRow:
+      type: object
+      required: [id, kind, owner, owner_phone, type, operator, account_name, masked_number, verified, submitted_at]
+      description: |
+        Une ligne de la file de verification. Le **nom du beneficiaire** y figure
+        parce que le controle consiste precisement a le comparer a celui du compte
+        Mobile Money declare.
+      properties:
+        id: { type: integer, format: int64 }
+        kind: { type: [string, 'null'], enum: [AGENCY, DRIVER, null] }
+        owner: { type: [string, 'null'] }
+        owner_phone: { type: [string, 'null'] }
+        type: { type: string }
+        operator: { type: [string, 'null'] }
+        account_name: { type: [string, 'null'] }
+        masked_number: { type: string }
+        verified: { type: boolean }
+        submitted_at: { type: [string, 'null'], format: date-time }
 
     PaginationMeta:
       type: object

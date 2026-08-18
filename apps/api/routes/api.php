@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Administration\Http\Controllers\AdminAgencyController;
 use App\Modules\Administration\Http\Controllers\AdminDashboardController;
+use App\Modules\Administration\Http\Controllers\AdminPayoutAccountController;
 use App\Modules\Administration\Http\Controllers\AdminReferenceController;
 use App\Modules\Administration\Http\Controllers\PlatformSettingController;
 use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
@@ -21,6 +22,7 @@ use App\Modules\Payouts\Http\Controllers\AgencyPayoutController;
 use App\Modules\Payouts\Http\Controllers\PayoutWebhookController;
 use App\Modules\Places\Http\Controllers\PlaceController;
 use App\Modules\Rides\Http\Controllers\AdminDriverController;
+use App\Modules\Rides\Http\Controllers\AdminServiceRequestController;
 use App\Modules\Rides\Http\Controllers\DriverController;
 use App\Modules\Rides\Http\Controllers\DriverEarningsController;
 use App\Modules\Rides\Http\Controllers\DriverRideController;
@@ -268,6 +270,16 @@ Route::prefix('v1')->group(function (): void {
             Route::post('drivers/{driver}/approve', [AdminDriverController::class, 'approve']);
             Route::post('drivers/{driver}/reject', [AdminDriverController::class, 'reject']);
             Route::post('drivers/{driver}/suspend', [AdminDriverController::class, 'suspend']);
+
+            /*
+             * Destinations de virement a verifier (B4, C9). Sans ce geste, un
+             * compte declare reste inactif et la passe de reversement s'arrete
+             * sur `NO_VERIFIED_ACCOUNT` — sans que rien ne le signale.
+             */
+            Route::get('payout-accounts', [AdminPayoutAccountController::class, 'index']);
+
+            // « Ou en est ma course ? » (A4). Lecture seule.
+            Route::get('service-requests/{reference}', [AdminServiceRequestController::class, 'show']);
 
             /*
              * Validation des agences (§23).
