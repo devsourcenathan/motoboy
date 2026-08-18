@@ -1,94 +1,108 @@
-import { useState } from 'react'
-import { newIdempotencyKey } from '@motoboy/api-client'
-import type { Locale, TripSummary } from '@motoboy/api-client/types'
-import {
-  bookingStatusLabels,
-  colors,
-  countdownTo,
-  errorLabel,
-  formatCountdown,
-  formatDuration,
-  formatMoney,
-  formatTime,
-  LOCALE_NAMES,
-  resolveLocale,
-  SUPPORTED_LOCALES,
-} from '@motoboy/shared'
-import { api } from './lib/api'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ApiError } from '@motoboy/api-client'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router'
+import { SignInPage } from './features/auth/SignInPage'
+import { useCurrentUser, useSignOut } from './features/auth/useAuth'
+import { DriverQueuePage } from './features/drivers/DriverQueuePage'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      /*
+       * Ne pas réessayer une réponse du serveur : un `403` ne devient pas un
+       * `200` à la troisième tentative, et l'écran resterait en chargement le
+       * temps de trois allers-retours avant de dire ce qu'il savait déjà.
+       * Le reste — coupure, délai — mérite un essai de plus.
+       */
+      retry: (count, error) => !(error instanceof ApiError) && count < 1,
+      staleTime: 30_000,
+    },
+  },
+})
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route
+            path="/*"
+            element={
+              <RequireSession>
+                <AdminLayout />
+              </RequireSession>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  )
+}
 
 /**
- * Écran de vérification de la chaîne.
+ * Le garde de session.
  *
- * Il ne fait pas partie du produit : il existe pour prouver que le contrat
- * OpenAPI, les types générés et le package partagé traversent bien jusqu'à
- * l'application, dans les deux langues. À remplacer par le vrai routage.
+ * Il interroge l'API plutôt que de se fier à la présence d'un jeton : un jeton
+ * révoqué côté serveur est indiscernable d'un jeton valide tant qu'on ne s'en
+ * sert pas, et laisser entrer sur cette seule foi afficherait un back-office
+ * vide en promettant qu'il ne l'est pas.
  */
-export default function App() {
-  const [locale, setLocale] = useState<Locale>(() => resolveLocale(navigator.language))
-  const [trips, setTrips] = useState<TripSummary[]>([])
-  const [error, setError] = useState<string | null>(null)
+function RequireSession({ children }: { children: React.ReactNode }) {
+  const me = useCurrentUser()
 
-  async function search() {
-    const { data, error: err } = await api.GET('/v1/search', {
-      params: {
-        query: {
-          origin_city_id: 1,
-          destination_city_id: 2,
-          date: '2026-08-14',
-          passengers: 1,
-        },
-      },
-    })
-
-    if (err) {
-      setError(errorLabel(err.code, locale))
-      return
-    }
-
-    setError(null)
-    setTrips(data.data)
+  if (me.isPending) {
+    return <p className="p-8 text-sm text-neutral-500">Vérification de la session…</p>
   }
 
-  const hold = countdownTo(new Date(Date.now() + 9 * 60_000).toISOString())
+  if (!me.data) return <Navigate to="/sign-in" replace />
+
+  /*
+   * **Le rôle se vérifie ici et de nouveau à chaque appel.** Cet écran ne
+   * protège rien — il évite d'afficher des pages qui échoueraient ; c'est l'API
+   * qui refuse, et elle seule fait autorité.
+   */
+  if (!me.data.roles.includes('ADMIN') && !me.data.roles.includes('SUPER_ADMIN')) {
+    return (
+      <main className="p-8">
+        <h1 className="text-xl font-bold text-ink-700">Espace réservé</h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          Ce compte n’a pas accès à l’administration.
+        </p>
+      </main>
+    )
+  }
+
+  return <>{children}</>
+}
+
+function AdminLayout() {
+  const signOut = useSignOut()
 
   return (
-    <main style={{ fontFamily: 'system-ui', padding: 32, maxWidth: 720 }}>
-      <h1 style={{ color: colors.brand[600] }}>MOTOBOY</h1>
-
-      <div>
-        {SUPPORTED_LOCALES.map((code) => (
+    <div className="min-h-screen">
+      <header className="bg-ink-700 px-6 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
+          <Link to="/drivers" className="font-bold text-neutral-0">
+            MOTOBOY
+          </Link>
           <button
-            key={code}
             type="button"
-            onClick={() => setLocale(code)}
-            disabled={code === locale}
+            onClick={() => signOut.mutate()}
+            className="text-sm text-neutral-0/80 hover:text-neutral-0"
           >
-            {LOCALE_NAMES[code]}
+            Se déconnecter
           </button>
-        ))}
-      </div>
+        </div>
+      </header>
 
-      <p>
-        {bookingStatusLabels[locale].PENDING_PAYMENT} —{' '}
-        <strong>{formatCountdown(hold)}</strong>
-      </p>
-
-      <button type="button" onClick={search}>
-        {newIdempotencyKey().slice(0, 8)}
-      </button>
-
-      {error && <p style={{ color: colors.status.danger }}>{error}</p>}
-
-      <ul>
-        {trips.map((trip) => (
-          <li key={trip.reference}>
-            {formatTime(trip.departure_at, { locale })} — {trip.agency.name} —{' '}
-            {formatMoney(trip.price, locale)}
-            {trip.duration_minutes != null &&
-              ` — ${formatDuration(trip.duration_minutes, locale)}`}
-          </li>
-        ))}
-      </ul>
-    </main>
+      <main className="mx-auto max-w-5xl p-6">
+        <Routes>
+          <Route path="/drivers" element={<DriverQueuePage />} />
+          {/* La file est la page d'accueil : c'est ce qui attend une décision. */}
+          <Route path="*" element={<Navigate to="/drivers" replace />} />
+        </Routes>
+      </main>
+    </div>
   )
 }

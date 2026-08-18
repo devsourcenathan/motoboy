@@ -26,6 +26,19 @@ final class UserResource extends JsonResource
             'last_name' => $this->resource->last_name,
             'phone_verified' => $this->resource->phone_verified_at !== null,
             'locale' => $this->resource->locale,
+            /*
+             * Les roles, pour que le client sache quoi afficher. Ils ne protegent
+             * rien : chaque endpoint les revalide, et un client modifie ne gagne
+             * qu'une page qui echouera.
+             *
+             * `loadMissing` parce que `shouldBeStrict()` interdit le chargement
+             * paresseux, et qu'une ressource ne doit pas dependre de ce que
+             * l'appelant a pense a charger.
+             */
+            'roles' => $this->resource->loadMissing('roles')->roles
+                ->pluck('name')
+                ->values()
+                ->all(),
         ];
     }
 }

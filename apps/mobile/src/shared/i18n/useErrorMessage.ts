@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiError, NetworkError } from '@motoboy/api-client'
 import { errorLabel } from '@motoboy/shared'
 import { useLocale } from './useLocale'
+import { API_BASE_URL } from '../api/client'
 
 /**
  * Traduit une erreur en message affichable.
@@ -27,7 +28,27 @@ export function useErrorMessage(): (error: unknown) => string {
 
   return (error: unknown) => {
     if (error instanceof ApiError) return errorLabel(error.code, locale)
-    if (error instanceof NetworkError) return t('state.offline', { ns: 'common' })
+
+    if (error instanceof NetworkError) {
+      /*
+       * **L'adresse appelée, en développement.**
+       *
+       * « Pas de connexion » accuse le réseau, alors que la cause est presque
+       * toujours l'adresse : une IP figée dans le paquet et devenue fausse, ou
+       * une adresse de bouclage déduite d'un Metro en mode localhost. Sans elle
+       * affichée, on ne peut pas distinguer les deux depuis l'appareil — et il
+       * n'y a pas de console à portée.
+       */
+      if (__DEV__) {
+        const cause = error.cause instanceof Error ? error.cause.message : ''
+
+        return `${t('state.offline', { ns: 'common' })}\n[dev] ${API_BASE_URL}${
+          cause === '' ? '' : `\n[dev] ${cause}`
+        }`
+      }
+
+      return t('state.offline', { ns: 'common' })
+    }
 
     /*
      * **La branche de repli disait « une erreur inattendue » et rien d'autre.**

@@ -5151,7 +5151,23 @@ export interface components {
             last_name: string;
             phone_verified?: boolean;
             locale?: components["schemas"]["Locale"];
+            /**
+             * @description Ce que le compte a le droit de faire. Le contrat ne le disait pas, si
+             *     bien qu'aucun client ne pouvait router selon le role : le back-office
+             *     devait laisser entrer tout le monde puis afficher des pages vides.
+             *
+             *     **Un tableau, car un compte en cumule** : le meme utilisateur est
+             *     passager et chauffeur, et un agent l'est pour une agence donnee. La
+             *     portee par agence n'apparait pas ici — un client qui en aurait besoin
+             *     interroge l'endpoint concerne, qui la revalide de toute facon.
+             *
+             *     Indicatif cote client : il evite d'afficher ce qui echouerait. C'est
+             *     l'API qui refuse, et elle seule fait autorite.
+             */
+            roles: components["schemas"]["Role"][];
         };
+        /** @enum {string} */
+        Role: "PASSENGER" | "AGENCY" | "AGENT" | "DRIVER" | "OWNER" | "ADMIN" | "SUPER_ADMIN";
         OtpChallenge: {
             /**
              * Format: date-time

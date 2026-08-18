@@ -18,6 +18,16 @@ export type { components, paths }
 type S = components['schemas']
 
 export type Locale = S['Locale']
+export type Role = S['Role']
+
+/*
+ * Moderation des dossiers de chauffeur (A1-A3). Exposes ici parce que le
+ * back-office en a besoin : un type present dans le schema mais absent de cette
+ * facade est invisible pour ses consommateurs.
+ */
+export type DriverStatus = S['DriverStatus']
+export type DriverDocumentType = S['DriverDocumentType']
+export type AdminDriverRow = S['AdminDriverRow']
 
 export type ErrorCode = S['ErrorCode']
 /**
