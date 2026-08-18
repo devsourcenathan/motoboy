@@ -102,6 +102,29 @@ final class NotchPayGatewayTest extends TestCase
             && $request->header('X-Grant')[0] === 'sk_test');
     }
 
+    /**
+     * **Le cas qui a echoue en production.** NotchPay a repondu 201 avec
+     * « Payment initialized », et l'adaptateur a rendu ce message de succes comme
+     * motif d'echec — parce qu'il ne savait lire `transaction` que sous forme de
+     * chaine. Imbriquee dans un objet, elle devenait invisible.
+     */
+    public function test_a_nested_transaction_reference_is_read(): void
+    {
+        Http::fake([
+            'api.notchpay.co/payments/*' => Http::response(['status' => 'Accepted']),
+            'api.notchpay.co/payments' => Http::response([
+                'status' => 'Accepted',
+                'message' => 'Payment initialized',
+                'transaction' => ['reference' => 'trx_imbrique'],
+            ], 201),
+        ]);
+
+        $charge = $this->gateway()->charge($this->intent());
+
+        $this->assertSame(PaymentStatus::Processing, $charge->status);
+        $this->assertSame('trx_imbrique', $charge->providerReference);
+    }
+
     public function test_orange_uses_its_own_channel(): void
     {
         Http::fake([
