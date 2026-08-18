@@ -988,6 +988,32 @@ paths:
 
   # ────────────────────────────── Places ──────────────────────────────
 
+  /v1/config:
+    get:
+      tags: [Places]
+      summary: Ce que le client doit savoir avant d'afficher un formulaire
+      description: |
+        **Public, et volontairement pauvre.** Les reglages de plateforme vivent
+        derriere `platform.configure` ; un passager ne peut pas les lire. Mais il
+        lui faut savoir quelle piece d'identite on va lui demander, faute de quoi
+        l'ecran de reservation devine et le serveur refuse une saisie que le
+        client n'avait pas su reclamer.
+
+        N'y figure que ce qui **change ce que l'utilisateur voit**.
+      security: []
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id_document_mode, id_document_required]
+                properties:
+                  id_document_mode: { $ref: '#/components/schemas/IdDocumentMode' }
+                  id_document_required: { type: boolean }
+
   /v1/places/autocomplete:
     get:
       tags: [Places]
@@ -1153,6 +1179,44 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ────────────────────────────── Bookings ──────────────────────────────
+
+  /v1/id-documents:
+    post:
+      tags: [Bookings]
+      summary: Depose la piece d'identite du voyageur principal
+      description: |
+        **Avant la reservation, et separement.** Une place se tient quelques
+        minutes ; televerser pendant ce delai le ferait courir sur une 3G de gare,
+        et un echec de reseau ferait perdre la place.
+
+        Rend un `path` que la reservation reprend dans
+        `passengers[0].id_document_path`. Le chemin est tire au hasard par le
+        stockage : un client ne peut pas en fabriquer un pour designer le fichier
+        de quelqu'un d'autre.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Photo de la piece — jpg, jpeg ou png, 8 Mo au plus.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '201':
+          description: Depose
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [path]
+                properties:
+                  path: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /v1/bookings:
     post:

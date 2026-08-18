@@ -6,6 +6,7 @@ use App\Modules\Administration\Http\Controllers\AdminAgencyController;
 use App\Modules\Administration\Http\Controllers\AdminDashboardController;
 use App\Modules\Administration\Http\Controllers\AdminPayoutAccountController;
 use App\Modules\Administration\Http\Controllers\AdminReferenceController;
+use App\Modules\Administration\Http\Controllers\ClientConfigController;
 use App\Modules\Administration\Http\Controllers\PlatformSettingController;
 use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
 use App\Modules\Agencies\Http\Controllers\CancellationController;
@@ -14,6 +15,7 @@ use App\Modules\Agencies\Http\Controllers\FleetController;
 use App\Modules\Agencies\Http\Controllers\RoutingController;
 use App\Modules\Agencies\Http\Controllers\StationController;
 use App\Modules\Bookings\Http\Controllers\BookingController;
+use App\Modules\Bookings\Http\Controllers\IdDocumentController;
 use App\Modules\Identity\Http\Controllers\AuthController;
 use App\Modules\Payments\Http\Controllers\PaymentController;
 use App\Modules\Payments\Http\Controllers\WebhookController;
@@ -48,6 +50,13 @@ Route::prefix('v1')->group(function (): void {
 
     // Recherche et consultation : publiques, sans authentification. C'est le
     // premier écran du passager, et il doit fonctionner avant tout compte.
+    /*
+     * Ce que le client doit savoir avant d'afficher un formulaire — la forme de
+     * piece d'identite attendue, aujourd'hui. Public : l'ecran de reservation en
+     * a besoin avant tout compte.
+     */
+    Route::get('config', ClientConfigController::class);
+
     Route::get('places/autocomplete', [PlaceController::class, 'autocomplete']);
     Route::get('search', SearchController::class);
     Route::get('trips/{reference}', [TripController::class, 'show']);
@@ -133,6 +142,13 @@ Route::prefix('v1')->group(function (): void {
 
         // Réservation. La prise de places est l'opération atomique du produit :
         // elle tient les places avant même la saisie du paiement (B2).
+        /*
+         * La piece se depose **avant** la reservation et renvoie un chemin :
+         * televerser pendant que la place est tenue ferait perdre celle-ci sur un
+         * echec de reseau.
+         */
+        Route::post('id-documents', [IdDocumentController::class, 'store']);
+
         Route::post('bookings', [BookingController::class, 'store']);
         Route::get('bookings', [BookingController::class, 'index']);
         Route::get('bookings/{reference}', [BookingController::class, 'show']);

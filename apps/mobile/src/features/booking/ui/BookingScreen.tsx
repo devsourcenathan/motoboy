@@ -31,6 +31,8 @@ import {
   validate,
   type BookingForm,
 } from '../model/passengerForm'
+import { IdDocumentField } from './IdDocumentField'
+import { useIdDocumentPolicy } from '../api/useIdDocumentPolicy'
 import { readMainPassenger, rememberMainPassenger } from '../model/mainPassenger'
 import { useCurrentUser } from '../../account'
 
@@ -114,9 +116,18 @@ export function BookingScreen() {
     }
   }, [])
 
+  const policy = useIdDocumentPolicy()
   const create = useCreateBooking(reference)
   const countdown = useHoldCountdown(create.data?.expires_at)
-  const error = validate(form)
+  const error = validate(
+    form,
+    policy.data === undefined
+      ? undefined
+      : {
+          mode: policy.data.id_document_mode,
+          required: policy.data.id_document_required,
+        },
+  )
 
   function submit() {
     if (error !== null) return
@@ -224,6 +235,27 @@ export function BookingScreen() {
               keyboardType="phone-pad"
               textContentType="telephoneNumber"
             />
+
+            {/*
+              La pièce du voyageur principal se saisit ici, sous le contact,
+              plutôt que dans le bloc du premier passager : c'est une formalité
+              unique, et la placer au milieu d'une liste de noms laisserait croire
+              qu'il en faut une par personne.
+
+              Rien tant que la politique n'est pas connue : afficher un champ puis
+              le remplacer par l'autre sous les doigts est pire que d'attendre une
+              réponse qui arrive en une fraction de seconde.
+            */}
+            {policy.data === undefined ? null : (
+              <IdDocumentField
+                mode={policy.data.id_document_mode}
+                required={policy.data.id_document_required}
+                number={form.idNumber}
+                path={form.idPath}
+                onChangeNumber={(idNumber) => setForm((f) => ({ ...f, idNumber }))}
+                onChangePath={(idPath) => setForm((f) => ({ ...f, idPath }))}
+              />
+            )}
           </View>
 
           {create.error ? (

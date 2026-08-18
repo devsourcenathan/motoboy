@@ -138,6 +138,16 @@ export interface PassengerMessages {
     readonly lastName: string
     readonly contact: string
     readonly contactPhone: string
+    readonly idNumber: string
+    readonly idNumberOptional: string
+    readonly idNumberHint: string
+    readonly idPhoto: string
+    readonly idPhotoOptional: string
+    readonly idPhotoHint: string
+    readonly idPhotoAdd: string
+    readonly idPhotoDone: string
+    readonly idPhotoReplace: string
+    readonly idPhotoDenied: string
     readonly contactHint: string
     readonly submit: string
     readonly seatLabel: string
@@ -572,6 +582,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       lastName: 'Nom',
       contact: 'Contact',
       contactPhone: 'Téléphone',
+      idNumber: 'Pièce d’identité du voyageur principal',
+      idNumberOptional: 'Pièce d’identité (facultatif)',
+      idNumberHint: 'Numéro de CNI, de passeport ou de récépissé.',
+      idPhoto: 'Photo de la pièce d’identité',
+      idPhotoOptional: 'Photo de la pièce (facultatif)',
+      idPhotoHint: 'Le numéro doit être lisible sur la photo.',
+      idPhotoAdd: 'Ajouter la photo',
+      idPhotoDone: 'Photo enregistrée',
+      idPhotoReplace: 'Appuyez pour la remplacer',
+      idPhotoDenied: 'Accès aux photos refusé. Autorisez-le dans les réglages du téléphone.',
       contactHint: 'Le billet et les alertes de départ y seront envoyés.',
       submit: 'Réserver',
       seatLabel: 'Place {{label}}',
@@ -1011,6 +1031,16 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       lastName: 'Last name',
       contact: 'Contact',
       contactPhone: 'Phone',
+      idNumber: 'Main traveller’s ID',
+      idNumberOptional: 'ID document (optional)',
+      idNumberHint: 'National ID, passport or receipt number.',
+      idPhoto: 'Photo of the ID document',
+      idPhotoOptional: 'Photo of the ID (optional)',
+      idPhotoHint: 'The number must be readable on the photo.',
+      idPhotoAdd: 'Add the photo',
+      idPhotoDone: 'Photo saved',
+      idPhotoReplace: 'Tap to replace it',
+      idPhotoDenied: 'Photo access denied. Allow it in your phone settings.',
       contactHint: 'The ticket and departure alerts will be sent there.',
       submit: 'Book',
       seatLabel: 'Seat {{label}}',

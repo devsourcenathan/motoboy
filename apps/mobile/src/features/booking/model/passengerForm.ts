@@ -8,9 +8,20 @@ export interface PassengerInput {
 export interface BookingForm {
   readonly passengers: readonly PassengerInput[]
   readonly contactPhone: string
+  /**
+   * Pièce du **voyageur principal**, dans la forme que la plateforme demande.
+   * Les deux champs coexistent dans le formulaire mais un seul part : le mode
+   * décide, et la base refuse les deux à la fois.
+   */
+  readonly idNumber: string
+  readonly idPath: string | null
 }
 
-export type BookingFormError = 'NAMES_MISSING' | 'PHONE_MISSING' | null
+export type BookingFormError =
+  | 'NAMES_MISSING'
+  | 'PHONE_MISSING'
+  | 'ID_MISSING'
+  | null
 
 /**
  * Un formulaire par passager, plus un contact.
@@ -31,6 +42,8 @@ export function emptyForm(seatIds: readonly number[], passengers: number): Booki
       seatId: seatIds[index] ?? null,
     })),
     contactPhone: '',
+    idNumber: '',
+    idPath: null,
   }
 }
 
@@ -87,13 +100,28 @@ export function setPassenger(
  * reste seul juge de ce qu'il accepte (§29). Un formulaire qui laisse partir un
  * nom vide fait perdre au passager la place qu'il tenait, le temps du refus.
  */
-export function validate(form: BookingForm): BookingFormError {
+export function validate(
+  form: BookingForm,
+  /*
+   * La politique vient du serveur. Sans elle — le temps que `/v1/config`
+   * réponde — on ne bloque pas : mieux vaut laisser partir une requête que le
+   * serveur refusera clairement que retenir une saisie valide sur une hypothèse.
+   */
+  policy?: { mode: 'NUMBER' | 'IMAGE'; required: boolean },
+): BookingFormError {
   const named = form.passengers.every(
     (passenger) => passenger.firstName.trim() !== '' && passenger.lastName.trim() !== '',
   )
 
   if (!named) return 'NAMES_MISSING'
   if (form.contactPhone.trim() === '') return 'PHONE_MISSING'
+
+  if (policy?.required === true) {
+    const provided =
+      policy.mode === 'IMAGE' ? form.idPath !== null : form.idNumber.trim() !== ''
+
+    if (!provided) return 'ID_MISSING'
+  }
 
   return null
 }
@@ -102,10 +130,22 @@ export function validate(form: BookingForm): BookingFormError {
 export function toRequestBody(form: BookingForm, tripReference: string) {
   return {
     trip_reference: tripReference,
-    passengers: form.passengers.map((passenger) => ({
+    passengers: form.passengers.map((passenger, index) => ({
       first_name: passenger.firstName.trim(),
       last_name: passenger.lastName.trim(),
       ...(passenger.seatId === null ? {} : { seat_id: passenger.seatId }),
+      /*
+       * Sur le **premier** seulement, et une seule des deux formes : la base
+       * refuse un passager qui porterait les deux, et les suivants ne sont pas
+       * concernés par la pièce.
+       */
+      ...(index !== 0
+        ? {}
+        : form.idPath !== null
+          ? { id_document_path: form.idPath }
+          : form.idNumber.trim() === ''
+            ? {}
+            : { id_document_number: form.idNumber.trim() }),
     })),
     contact_phone: form.contactPhone.trim(),
   }

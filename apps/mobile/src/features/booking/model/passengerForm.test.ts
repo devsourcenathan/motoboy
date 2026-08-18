@@ -31,6 +31,8 @@ describe('validate', () => {
   const filled = {
     passengers: [{ firstName: 'Awa', lastName: 'Nkeng', seatId: 1 }],
     contactPhone: '+237690000001',
+    idNumber: '',
+    idPath: null,
   }
 
   it('accepte un formulaire complet', () => {
@@ -85,6 +87,8 @@ describe('toRequestBody', () => {
       {
         passengers: [{ firstName: ' Awa ', lastName: ' Nkeng ', seatId: 5 }],
         contactPhone: ' +237690000001 ',
+        idNumber: '',
+        idPath: null,
       },
       'TR-001',
     )
@@ -107,6 +111,8 @@ describe('toRequestBody', () => {
       {
         passengers: [{ firstName: 'Awa', lastName: 'Nkeng', seatId: null }],
         contactPhone: '+237',
+        idNumber: '',
+        idPath: null,
       },
       'TR-001',
     )
@@ -160,5 +166,79 @@ describe('prefill', () => {
     const form = prefill(blank, { firstName: 'Awa', lastName: 'Nkeng' })
 
     expect(form.passengers[1]).toMatchObject({ firstName: '', lastName: '' })
+  })
+})
+
+describe('validate — pièce d’identité', () => {
+  const filled = {
+    passengers: [{ firstName: 'Awa', lastName: 'Nkeng', seatId: 1 }],
+    contactPhone: '+237690000001',
+    idNumber: '',
+    idPath: null,
+  }
+
+  /**
+   * La politique arrive du serveur. Tant qu'elle n'est pas là, on ne bloque
+   * pas : retenir une saisie valide sur une hypothèse est pire que de laisser
+   * partir une requête que le serveur refusera clairement.
+   */
+  it('n’exige rien tant que la politique est inconnue', () => {
+    expect(validate(filled)).toBeNull()
+  })
+
+  it('exige un numéro en mode NUMBER', () => {
+    expect(validate(filled, { mode: 'NUMBER', required: true })).toBe('ID_MISSING')
+    expect(
+      validate({ ...filled, idNumber: '110234567' }, { mode: 'NUMBER', required: true }),
+    ).toBeNull()
+  })
+
+  /**
+   * Le mode décide de la **forme** : un numéro ne satisfait pas une demande de
+   * photo, sans quoi le réglage ne réglerait rien — et le serveur, lui, refuse.
+   */
+  it('n’accepte pas un numéro quand une photo est demandée', () => {
+    expect(
+      validate({ ...filled, idNumber: '110234567' }, { mode: 'IMAGE', required: true }),
+    ).toBe('ID_MISSING')
+
+    expect(
+      validate({ ...filled, idPath: 'id-documents/1/a.jpg' }, { mode: 'IMAGE', required: true }),
+    ).toBeNull()
+  })
+
+  it('n’exige rien quand le réglage est désactivé', () => {
+    expect(validate(filled, { mode: 'IMAGE', required: false })).toBeNull()
+  })
+})
+
+describe('toRequestBody — pièce d’identité', () => {
+  const base = {
+    passengers: [
+      { firstName: 'Awa', lastName: 'Nkeng', seatId: 1 },
+      { firstName: 'Jean', lastName: 'Kamdem', seatId: 2 },
+    ],
+    contactPhone: '+237690000001',
+    idNumber: '',
+    idPath: null,
+  }
+
+  /** Le **premier** seulement : les suivants ne sont pas concernés. */
+  it('ne met la pièce que sur le voyageur principal', () => {
+    const body = toRequestBody({ ...base, idNumber: '110234567' }, 'TR-1')
+
+    expect(body.passengers[0]).toMatchObject({ id_document_number: '110234567' })
+    expect(body.passengers[1]).not.toHaveProperty('id_document_number')
+  })
+
+  /** La base refuse un passager qui porterait les deux formes. */
+  it('n’envoie jamais les deux formes à la fois', () => {
+    const body = toRequestBody(
+      { ...base, idNumber: '110234567', idPath: 'id-documents/1/a.jpg' },
+      'TR-1',
+    )
+
+    expect(body.passengers[0]).toMatchObject({ id_document_path: 'id-documents/1/a.jpg' })
+    expect(body.passengers[0]).not.toHaveProperty('id_document_number')
   })
 })

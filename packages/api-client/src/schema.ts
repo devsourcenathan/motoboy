@@ -1641,6 +1641,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ce que le client doit savoir avant d'afficher un formulaire
+         * @description **Public, et volontairement pauvre.** Les reglages de plateforme vivent
+         *     derriere `platform.configure` ; un passager ne peut pas les lire. Mais il
+         *     lui faut savoir quelle piece d'identite on va lui demander, faute de quoi
+         *     l'ecran de reservation devine et le serveur refuse une saisie que le
+         *     client n'avait pas su reclamer.
+         *
+         *     N'y figure que ce qui **change ce que l'utilisateur voit**.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            id_document_mode: components["schemas"]["IdDocumentMode"];
+                            id_document_required: boolean;
+                        };
+                    };
+                };
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/places/autocomplete": {
         parameters: {
             query?: never;
