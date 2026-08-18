@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Modules\Payments\Contracts\PaymentGateway;
+use App\Modules\Payments\Gateways\TranzakPaymentGateway;
 use App\Modules\Payouts\Contracts\PayoutGateway;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,6 +23,27 @@ final class PaymentServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        /*
+         * Tranzak se construit depuis la configuration : le conteneur ne sait pas
+         * deviner trois chaines. Il refuse de le batir avec un reglage manquant
+         * plutot que d'echouer au premier encaissement.
+         */
+        $this->app->singleton(TranzakPaymentGateway::class, function (): TranzakPaymentGateway {
+            foreach (['base_url', 'app_id', 'app_key'] as $key) {
+                $value = config("payments.tranzak.{$key}");
+
+                if (!is_string($value) || $value === '') {
+                    throw new \RuntimeException("Tranzak : « {$key} » manquant.");
+                }
+            }
+
+            return new TranzakPaymentGateway(
+                baseUrl: (string) config('payments.tranzak.base_url'),
+                appId: (string) config('payments.tranzak.app_id'),
+                appKey: (string) config('payments.tranzak.app_key'),
+            );
+        });
+
         $this->bindGateway(PaymentGateway::class, 'payments.gateway', 'payments.gateways', 'Agrégateur');
         $this->bindGateway(PayoutGateway::class, 'payments.payout_gateway', 'payments.payout_gateways', 'Décaisseur');
     }

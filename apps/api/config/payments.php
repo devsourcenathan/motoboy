@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Payments\Gateways\FakePaymentGateway;
+use App\Modules\Payments\Gateways\TranzakPaymentGateway;
 use App\Modules\Payouts\Gateways\FakePayoutGateway;
 
 return [
@@ -23,6 +24,20 @@ return [
 
     'gateways' => [
         'fake' => FakePaymentGateway::class,
+        'tranzak' => TranzakPaymentGateway::class,
+    ],
+
+    /*
+     * Tranzak — https://docs.developer.tranzak.me/
+     *
+     * La cle porte un prefixe selon l'environnement (`SAND_` ou `PROD_`), et il
+     * doit concorder avec l'URL. S'en remettre a l'un sans verifier l'autre
+     * ferait un jour payer pour de vrai en croyant tester.
+     */
+    'tranzak' => [
+        'base_url' => env('TRANZAK_BASE_URL', 'https://sandbox.dsapi.tranzak.me'),
+        'app_id' => env('TRANZAK_APP_ID', ''),
+        'app_key' => env('TRANZAK_APP_KEY', ''),
     ],
 
     /*
