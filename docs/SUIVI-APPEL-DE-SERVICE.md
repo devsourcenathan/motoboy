@@ -391,5 +391,41 @@ donc une décision produit et une migration — pas un réglage.
 ### Reste ouvert
 
 - **Aucun test sur les écrans web.** Le mobile a 89 tests, le web zéro : il n'y a pas encore de harnais de test côté web, et l'ajouter est un chantier à part entière.
-- **La passe de reversement n'a jamais produit de reversement réel** — elle s'arrête correctement sur `NO_VERIFIED_ACCOUNT`, ce qui est le comportement attendu, mais le chemin complet jusqu'à `PENDING_VALIDATION` n'a pas été exercé de bout en bout.
+- ~~La passe de reversement n'a jamais produit de reversement réel~~ — **exercée de bout en bout le 18 août 2026** : demande → offre → acceptation → paiement confirmé par le webhook → course roulée → grand livre → compte déclaré et vérifié → `PYT-…` à 7 200 F sur 8 000 F encaissés → validation → envoi → grand livre soldé. Voir ci-dessous.
 - **Le support ne peut pas agir**, par choix : ni annuler ni rembourser depuis l'écran de suivi. Si le besoin se confirme, il passera par les Actions existantes et leurs gardes, jamais par une écriture directe.
+
+---
+
+## 8. La passe de reversement, exercée de bout en bout
+
+Course à 8 000 F, commission 10 %, net 7 200 F. Le solde du grand livre est
+passé de 12 600 F à 5 400 F — exactement la course encore non éligible, dont la
+fin de course n'a pas 24 h. L'arithmétique se referme.
+
+### Deux défauts que seul ce parcours pouvait révéler
+
+| Défaut | Portée |
+| --- | --- |
+| `SendPayout` n'écrivait que `agency_id` au grand livre | Nulle pour un chauffeur, et `payee_id` est obligatoire depuis l'étape 1. Un reversement de chauffeur pouvait être **construit et validé, puis échouait au décaissement** — au moment précis où l'argent devait partir. Verrouillé par `test_a_driver_payout_can_actually_be_sent`, vérifié en remettant le bogue |
+| `independent_drivers.moderate` absente de la base | La permission est bien déclarée dans `RoleAndPermissionSeeder`, mais le seeder n'avait pas été rejoué. **Toute la file de modération était fermée, administrateurs compris** — ce qui n'apparaissait pas parce que `motoboy:approve-driver` contourne l'API |
+
+Le pont transitoire d'`AgencyLedgerEntry` a joué son rôle : plutôt que d'écrire
+une écriture sans destinataire, la base a refusé bruyamment. C'est ce que son
+commentaire annonçait.
+
+### Reste ouvert
+
+- **Sept actions écrivent encore au grand livre sans passer de bénéficiaire** —
+  `CancelBooking`, `CreateCounterSale`, `RefundPayment`, `AdjustLedger`,
+  `ConfirmPayout`, `RecordBookingSettlement`, `RecordCancellationSettlement`.
+  Elles fonctionnent parce que le pont dérive le bénéficiaire de l'agence, et
+  qu'une réservation en a toujours une. La contraction annoncée à l'étape 1
+  consiste à les faire passer le bénéficiaire elles-mêmes, puis à retirer le
+  pont. Ce n'est pas urgent, mais c'est du code qui compte de l'argent.
+- **La file des reversements ne nomme pas son bénéficiaire** : elle expose
+  `agency_id`, nul pour un chauffeur, et aucun nom ni destination. Un
+  administrateur qui valide un décaissement voit un montant sans savoir à qui il
+  part. À corriger avant que quiconque valide un vrai virement.
+- **Le déploiement doit rejouer `RoleAndPermissionSeeder`** — la CI le fait
+  (`php artisan db:seed --force`), mais rien ne le garantit en production, et
+  l'oubli ferme silencieusement une file entière.

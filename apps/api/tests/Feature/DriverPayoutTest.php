@@ -13,7 +13,11 @@ use App\Modules\Payments\Data\WebhookEvent;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Models\Payment;
+use App\Modules\Payouts\Actions\ApprovePayout;
 use App\Modules\Payouts\Actions\BuildDriverPayout;
+use App\Modules\Payouts\Actions\SendPayout;
+use App\Modules\Payouts\Enums\LedgerEntryType;
+use App\Modules\Payouts\Models\AgencyLedgerEntry;
 use App\Modules\Payouts\Models\Payee;
 use App\Modules\Payouts\Models\PayoutAccount;
 use App\Modules\Places\Models\City;
@@ -139,6 +143,52 @@ final class DriverPayoutTest extends TestCase
 
         // Proposé, pas versé : le calcul est automatique, le décaissement humain.
         $this->assertSame('PENDING_VALIDATION', $payout->status->value);
+    }
+
+    /**
+     * Le reversement va jusqu'au bout, et le grand livre s'en trouve solde.
+     *
+     * **Ce test existe parce que rien n'allait jusque-la.** La construction etait
+     * couverte, l'envoi non : l'ecriture de debit ne portait que `agency_id`,
+     * nulle pour un chauffeur, et `payee_id` est obligatoire depuis l'etape 1. Un
+     * reversement de chauffeur pouvait donc etre construit et valide, puis
+     * echouait au decaissement — au moment ou l'argent devait partir.
+     */
+    public function test_a_driver_payout_can_actually_be_sent(): void
+    {
+        $driver = $this->driver();
+        $ride = $this->completedRide($driver, 10_000);
+        $this->age($ride);
+
+        $account = $this->declareAccount($driver);
+        app(ManagePayoutAccount::class)->verify($account, User::factory()->create()->id);
+
+        $payee = $this->payeeOf($driver);
+        $payout = app(BuildDriverPayout::class)->handle($payee)['payout'];
+        $this->assertNotNull($payout);
+
+        app(ApprovePayout::class)->handle($payout, User::factory()->create()->id);
+        $sent = app(SendPayout::class)->handle($payout->refresh(), 'test-'.$payout->reference);
+
+        $this->assertContains($sent->status->value, ['PROCESSING', 'PAID']);
+
+        // L'ecriture de debit existe, et elle porte son beneficiaire.
+        $debit = AgencyLedgerEntry::query()
+            ->where('payee_id', $payee->id)
+            ->where('type', LedgerEntryType::PayoutDebit->value)
+            ->firstOrFail();
+
+        $this->assertSame(-9_000, (int) $debit->amount);
+        $this->assertNull($debit->agency_id);
+
+        /*
+         * Le solde retombe a zero : ce qui est parti ne doit plus etre reversable,
+         * faute de quoi la passe suivante le proposerait une seconde fois.
+         */
+        $this->assertSame(
+            0,
+            (int) AgencyLedgerEntry::query()->where('payee_id', $payee->id)->sum('amount'),
+        );
     }
 
     public function test_a_balance_below_the_minimum_waits(): void

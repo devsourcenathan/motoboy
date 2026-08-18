@@ -92,6 +92,16 @@ final class SendPayout
     private function debit(Payout $payout): void
     {
         AgencyLedgerEntry::query()->create([
+            /*
+             * **Le bénéficiaire, obligatoire depuis l'étape 1.**
+             *
+             * Ces deux écritures ne portaient que l'agence. Pour un chauffeur
+             * elle est nulle, et `payee_id` l'était aussi : la base refusait la
+             * ligne. Un reversement de chauffeur pouvait donc être construit et
+             * validé, mais **jamais envoyé** — l'argent ne partait pas, et
+             * l'échec n'apparaissait qu'au moment du décaissement.
+             */
+            'payee_id' => $payout->payee_id,
             'agency_id' => $payout->agency_id,
             // Aucune réservation : un reversement solde le compte, il ne se
             // rapporte à aucun voyage en particulier. C'est ce qui le rend
@@ -122,6 +132,7 @@ final class SendPayout
             ]);
 
             AgencyLedgerEntry::query()->create([
+                'payee_id' => $payout->payee_id,
                 'agency_id' => $payout->agency_id,
                 'booking_id' => null,
                 'type' => LedgerEntryType::PayoutReversalCredit,
