@@ -46,13 +46,16 @@ export function useUploadDocument() {
        * est un passage du fichier en mémoire, acceptable pour une pièce
        * d'identité photographiée.
        */
-      const file = await fetch(upload.file.uri)
+      /*
+       * **Pas de contrôle sur `ok`.** Une réponse `file://` porte le statut 0,
+       * donc `ok` vaut `false` même quand la lecture a parfaitement réussi : le
+       * garde que j'avais écrit rejetait tous les fichiers, y compris valides.
+       * C'est `blob()` qui échoue si le fichier est réellement illisible, et son
+       * erreur est plus précise que celle que je fabriquais.
+       */
+      const blob = await (await fetch(upload.file.uri)).blob()
 
-      if (!file.ok) {
-        throw new Error(`Fichier illisible : ${upload.file.uri}`)
-      }
-
-      body.append('file', await file.blob(), upload.file.name)
+      body.append('file', blob, upload.file.name)
 
       const token = await session.token()
 

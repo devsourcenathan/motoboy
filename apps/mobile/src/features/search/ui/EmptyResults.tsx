@@ -1,8 +1,16 @@
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { formatDate, formatMoney } from '@motoboy/shared'
 import type { SearchSuggestions } from '@motoboy/api-client/types'
-import { fontSize, radius, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
+import {
+  EmptyState,
+  fontSize,
+  radius,
+  SearchIcon,
+  spacing,
+  theme,
+  TOUCH_TARGET,
+} from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 
 export interface EmptyResultsProps {
@@ -34,11 +42,23 @@ export function EmptyResults({
   const routes = suggestions?.routes_served ?? []
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title} accessibilityRole="header">
-        {t('results.empty.title')}
-      </Text>
-      <Text style={styles.body}>{t('results.empty.body')}</Text>
+    /*
+     * **Défilante.** C'était une `View` simple : dès que les suggestions
+     * dépassaient la hauteur de l'écran, le bas devenait inatteignable — et rien
+     * n'indiquait qu'il y avait un bas. Les dates proches sont précisément ce
+     * qu'on vient chercher ici, et elles se trouvaient sous la ligne de flottaison.
+     */
+    <ScrollView
+      contentContainerStyle={styles.container}
+      // Le contenu tient parfois en entier : sans ça, l'indicateur de défilement
+      // apparaîtrait sur un écran qui n'a rien à faire défiler.
+      showsVerticalScrollIndicator={false}
+    >
+      <EmptyState
+        icon={<SearchIcon color={theme.text.brand} size={28} />}
+        title={t('results.empty.title')}
+        body={t('results.empty.body')}
+      />
 
       {dates.length === 0 ? null : (
         <View style={styles.section}>
@@ -86,7 +106,7 @@ export function EmptyResults({
           ))}
         </View>
       )}
-    </View>
+    </ScrollView>
   )
 }
 

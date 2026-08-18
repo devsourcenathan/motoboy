@@ -131,15 +131,25 @@ export function SkeletonList({
 const styles = StyleSheet.create({
   list: {
     gap: spacing.sm,
+    /*
+     * **Occupe toute la largeur offerte.** Sans cela, un parent qui centre ses
+     * enfants — le cas de plusieurs états vides — laisse la liste se réduire à
+     * son contenu, et des barres en `width: '100%'` d'un parent large de zéro
+     * deviennent invisibles : l'écran paraît vide au lieu de paraître en train
+     * de charger.
+     */
+    alignSelf: 'stretch',
   },
   row: {
     gap: spacing.base,
     paddingVertical: spacing.sm,
+    alignSelf: 'stretch',
   },
   card: {
     gap: spacing.base,
     padding: spacing.md,
     borderRadius: radius.lg,
     backgroundColor: theme.surface.card,
+    alignSelf: 'stretch',
   },
 })

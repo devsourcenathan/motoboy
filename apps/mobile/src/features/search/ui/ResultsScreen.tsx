@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   ScrollView,
@@ -17,6 +16,7 @@ import {
   lineHeight,
   radius,
   RouteDot,
+  SkeletonList,
   Screen,
   spacing,
   theme,
@@ -153,8 +153,13 @@ export function ResultsScreen() {
       </ScrollView>
 
       {isPending ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        /*
+         * Des cartes en attente plutôt qu'un rond au milieu du vide : elles ont
+         * la forme de ce qui arrive, l'écran ne saute donc pas quand les trajets
+         * les remplacent, et sur une 3G de gare on voit la page se construire.
+         */
+        <View style={styles.list}>
+          <SkeletonList count={5} variant="card" />
         </View>
       ) : error ? (
         <SearchError error={error} onRetry={() => void refetch()} />
