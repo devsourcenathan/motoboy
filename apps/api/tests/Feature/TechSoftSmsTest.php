@@ -64,7 +64,8 @@ final class TechSoftSmsTest extends TestCase
                 && $body['api_token'] === 'jeton-de-test'
                 && $body['sender_id'] === 'MOTOBOY'
                 && $body['type'] === 'plain'
-                && $body['recipient'] === '+237690000001';
+                // Sans le `+` : c'est la forme que montrent leurs exemples.
+                && $body['recipient'] === '237690000001';
         });
     }
 
