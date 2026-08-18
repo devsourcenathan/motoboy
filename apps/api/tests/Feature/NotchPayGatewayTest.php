@@ -152,7 +152,11 @@ final class NotchPayGatewayTest extends TestCase
     {
         [$payload, $headers] = $this->signed([
             'event' => 'payment.complete',
-            'data' => ['merchant_reference' => 'PAY-ABC123', 'status' => 'complete'],
+            'data' => [
+                'transaction' => 'trx_1',
+                'merchant_reference' => 'PAY-ABC123',
+                'status' => 'complete',
+            ],
         ]);
 
         $event = $this->gateway()->parseWebhook($payload, $headers);
@@ -160,7 +164,14 @@ final class NotchPayGatewayTest extends TestCase
         $this->assertNotNull($event);
         $this->assertTrue($event->signatureValid);
         $this->assertSame(PaymentStatus::Succeeded, $event->status);
-        $this->assertSame('PAY-ABC123', $event->providerReference);
+
+        /*
+         * **Leur reference, pas la notre.** `ConfirmPayment` cherche le paiement
+         * par `provider_reference`, ou l'identifiant de transaction a ete range a
+         * la creation. Rendre `PAY-ABC123` ferait chercher une valeur absente, et
+         * un webhook valide ne rapprocherait rien.
+         */
+        $this->assertSame('trx_1', $event->providerReference);
     }
 
     /**

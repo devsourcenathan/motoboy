@@ -186,9 +186,20 @@ final class NotchPayGateway implements PaymentGateway
         $decoded = is_array($decoded) ? $decoded : [];
 
         $data = is_array($decoded['data'] ?? null) ? $decoded['data'] : $decoded;
-        $reference = $this->stringOf($data, 'merchant_reference')
+
+        /*
+         * **La reference de NotchPay d'abord, la notre seulement en dernier.**
+         *
+         * `ConfirmPayment` retrouve le paiement par `provider_reference`, et c'est
+         * l'identifiant de transaction rendu a la creation qui y est stocke.
+         * Renvoyer d'abord `merchant_reference` — la notre — faisait chercher une
+         * valeur qui ne s'y trouve jamais : le webhook arrivait, sa signature etait
+         * valide, et il ne rapprochait rien.
+         */
+        $reference = $this->stringOf($data, 'transaction')
+            ?? $this->stringOf($data, 'id')
             ?? $this->stringOf($data, 'reference')
-            ?? $this->stringOf($data, 'transaction');
+            ?? $this->stringOf($data, 'merchant_reference');
 
         if ($reference === null) {
             return null;
