@@ -1,4 +1,10 @@
-import { emptyForm, setPassenger, toRequestBody, validate } from './passengerForm'
+import {
+  emptyForm,
+  prefill,
+  setPassenger,
+  toRequestBody,
+  validate,
+} from './passengerForm'
 
 describe('emptyForm', () => {
   it('crée un formulaire par passager', () => {
@@ -106,5 +112,53 @@ describe('toRequestBody', () => {
     )
 
     expect(body.passengers[0]).not.toHaveProperty('seat_id')
+  })
+})
+
+describe('prefill', () => {
+  const blank = emptyForm([5], 2)
+
+  it('renseigne le premier passager et le contact', () => {
+    const form = prefill(blank, {
+      firstName: 'Awa',
+      lastName: 'Nkeng',
+      phone: '+237690000001',
+    })
+
+    expect(form.passengers[0]).toMatchObject({ firstName: 'Awa', lastName: 'Nkeng' })
+    expect(form.contactPhone).toBe('+237690000001')
+  })
+
+  /**
+   * Le compte et la mémoire arrivent après le premier rendu. Sans cette
+   * condition, ils effaceraient ce que le passager vient de taper pendant
+   * qu'ils chargeaient — un champ qui se vide sous les doigts.
+   */
+  it('n’écrase pas une saisie en cours', () => {
+    const typed = setPassenger(
+      { ...blank, contactPhone: '+237699999999' },
+      0,
+      { firstName: 'Jean' },
+    )
+
+    const form = prefill(typed, {
+      firstName: 'Awa',
+      lastName: 'Nkeng',
+      phone: '+237690000001',
+    })
+
+    expect(form.passengers[0]?.firstName).toBe('Jean')
+    expect(form.contactPhone).toBe('+237699999999')
+  })
+
+  /**
+   * Les passagers suivants sont **d'autres personnes**. Leur proposer le nom du
+   * titulaire du téléphone produirait des billets au mauvais nom — l'erreur que
+   * ce confort doit précisément éviter.
+   */
+  it('ne touche jamais aux passagers suivants', () => {
+    const form = prefill(blank, { firstName: 'Awa', lastName: 'Nkeng' })
+
+    expect(form.passengers[1]).toMatchObject({ firstName: '', lastName: '' })
   })
 })

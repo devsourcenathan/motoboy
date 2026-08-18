@@ -34,6 +34,39 @@ export function emptyForm(seatIds: readonly number[], passengers: number): Booki
   }
 }
 
+/**
+ * Prérenseigne le voyageur principal et le contact.
+ *
+ * **Sans jamais écraser une saisie en cours.** Le compte et la mémoire arrivent
+ * de façon asynchrone, donc après le premier rendu : appliqués sans condition,
+ * ils effaceraient ce que le passager vient de taper pendant qu'ils chargeaient.
+ *
+ * Seul le **premier** passager est prérempli : les suivants sont d'autres
+ * personnes, et leur proposer le nom du titulaire du téléphone produirait des
+ * billets au mauvais nom — l'erreur exacte que ce confort doit éviter.
+ */
+export function prefill(
+  form: BookingForm,
+  known: { firstName?: string; lastName?: string; phone?: string },
+): BookingForm {
+  const first = form.passengers[0]
+
+  const filled = form.contactPhone.trim() === '' && known.phone !== undefined
+    ? { ...form, contactPhone: known.phone }
+    : form
+
+  if (first === undefined) return filled
+
+  if (first.firstName.trim() !== '' || first.lastName.trim() !== '') {
+    return filled
+  }
+
+  return setPassenger(filled, 0, {
+    firstName: known.firstName ?? '',
+    lastName: known.lastName ?? '',
+  })
+}
+
 export function setPassenger(
   form: BookingForm,
   index: number,

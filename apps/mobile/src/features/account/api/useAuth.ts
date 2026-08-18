@@ -4,6 +4,7 @@ import type { Locale } from '@motoboy/shared'
 import { api } from '../../../shared/api/client'
 import { queryKeys } from '../../../shared/api/queryKeys'
 import { session } from '../../../shared/session/session'
+import { forgetMainPassenger } from '../../booking/model/mainPassenger'
 import { deviceLocale } from '../../../shared/i18n'
 import { normalisePhone, type CredentialsForm } from '../model/auth'
 
@@ -140,6 +141,17 @@ export function useSignOut() {
     },
     onSettled: async () => {
       await session.end()
+
+      /*
+       * **Le voyageur principal s'oublie avec la session.**
+       *
+       * Le laisser préremplirait le formulaire du suivant avec le nom et le
+       * numéro du précédent — sur un téléphone partagé, ce qui est courant ici,
+       * c'est une fuite et une confusion qui se termine par un billet au mauvais
+       * nom.
+       */
+      await forgetMainPassenger()
+
       queryClient.clear()
     },
   })
