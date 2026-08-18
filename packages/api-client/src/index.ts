@@ -49,7 +49,20 @@ export type ApiClient = ReturnType<typeof createApiClient>
 export function createApiClient(options: CreateApiClientOptions) {
   const { baseUrl, session } = options
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  const underlying = options.fetch ?? fetch
+  /*
+   * ⚠️ **Résolu à l'appel, pas à la construction.**
+   *
+   * `options.fetch ?? fetch` figeait la référence globale au moment où le client
+   * était créé — c'est-à-dire à l'évaluation du module. Deux conséquences : un
+   * test qui remplace `globalThis.fetch` n'était jamais entendu, et un
+   * environnement qui installe son `fetch` après nos imports — le cas d'un
+   * polyfill — restait ignoré.
+   *
+   * Le coût est une indirection par requête, invisible à côté d'un aller-retour
+   * réseau.
+   */
+  const underlying: typeof fetch = (input, init) =>
+    (options.fetch ?? globalThis.fetch)(input, init)
 
   /*
    * Construit avec `AbortController` et `setTimeout`, **pas** avec

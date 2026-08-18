@@ -34,19 +34,34 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/sign-in" element={<SignInPage />} />
-          <Route
-            path="/*"
-            element={
-              <RequireSession>
-                <AdminLayout />
-              </RequireSession>
-            }
-          />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </QueryClientProvider>
+  )
+}
+
+/**
+ * Le routage, **séparé des fournisseurs**.
+ *
+ * `App` portait les deux, si bien qu'un test ne pouvait pas le rendre sous un
+ * `MemoryRouter` sans imbriquer deux routeurs — React Router refuse, et le
+ * back-office était donc intestable en entier. Exporté ici, il se rend sous le
+ * routeur que l'appelant choisit ; c'est aussi le découpage naturel, un routeur
+ * n'ayant rien à faire dans la définition des routes.
+ */
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/sign-in" element={<SignInPage />} />
+      <Route
+        path="/*"
+        element={
+          <RequireSession>
+            <AdminLayout />
+          </RequireSession>
+        }
+      />
+    </Routes>
   )
 }
 
