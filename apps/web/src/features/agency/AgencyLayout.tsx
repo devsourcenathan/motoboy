@@ -15,6 +15,10 @@ const TABS = [
   { to: '/agency/vehicles', label: 'Véhicules' },
   { to: '/agency/drivers', label: 'Chauffeurs' },
   { to: '/agency/routes', label: 'Itinéraires' },
+  { to: '/agency/departures', label: 'Départs' },
+  { to: '/agency/counter', label: 'Guichet' },
+  { to: '/agency/boarding', label: 'Embarquement' },
+  { to: '/agency/money', label: 'Compte' },
 ] as const
 
 export function AgencyLayout({ onSignOut }: { onSignOut: () => void }) {

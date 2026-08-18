@@ -17,6 +17,10 @@ import { SupportLookupPage } from './features/support/SupportLookupPage'
 import { AgencyLayout } from './features/agency/AgencyLayout'
 import { DriversPage } from './features/agency/DriversPage'
 import { RoutesPage } from './features/agency/RoutesPage'
+import { BoardingPage } from './features/agency/BoardingPage'
+import { CounterSalePage } from './features/agency/CounterSalePage'
+import { DeparturesPage } from './features/agency/DeparturesPage'
+import { MoneyPage } from './features/agency/MoneyPage'
 import { StationsPage } from './features/agency/StationsPage'
 import { VehiclesPage } from './features/agency/VehiclesPage'
 
@@ -96,6 +100,10 @@ function AgencySpace() {
         <Route path="vehicles" element={<VehiclesPage />} />
         <Route path="drivers" element={<DriversPage />} />
         <Route path="routes" element={<RoutesPage />} />
+        <Route path="departures" element={<DeparturesPage />} />
+        <Route path="counter" element={<CounterSalePage />} />
+        <Route path="boarding" element={<BoardingPage />} />
+        <Route path="money" element={<MoneyPage />} />
         {/* Les gares d'abord : tout le reste de l'inventaire s'y rattache. */}
         <Route path="*" element={<Navigate to="/agency/stations" replace />} />
       </Route>
