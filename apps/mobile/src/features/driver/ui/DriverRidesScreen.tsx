@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   Linking,
   Pressable,
   RefreshControl,
@@ -15,7 +14,9 @@ import {
   fontSize,
   lineHeight,
   radius,
+  EmptyState,
   Screen,
+  SkeletonList,
   sharedStyles,
   spacing,
   theme,
@@ -64,8 +65,8 @@ export function DriverRidesScreen() {
   if (rides.isPending) {
     return (
       <Screen title={t('driver.myRides')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.content}>
+          <SkeletonList count={4} variant="card" />
         </View>
       </Screen>
     )
@@ -156,9 +157,11 @@ export function DriverRidesScreen() {
         )}
 
         {past.length === 0 && live === undefined ? (
-          <View style={styles.empty}>
-            <Text style={styles.body}>{t('driver.myRidesEmpty')}</Text>
-          </View>
+          <EmptyState
+            icon={<TimerIcon color={theme.text.brand} size={28} />}
+            title={t('driver.myRidesEmpty')}
+            body={t('driver.myRidesEmptyBody')}
+          />
         ) : null}
 
         {past.length === 0 ? null : (

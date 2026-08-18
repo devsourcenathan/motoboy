@@ -18,6 +18,7 @@ import {
   RouteDot,
   Screen,
   sharedStyles,
+  SkeletonList,
   spacing,
   theme,
   TimerIcon,
@@ -65,8 +66,8 @@ export function ServiceCallStatusScreen() {
   if (call.isPending) {
     return (
       <Screen title={t('serviceCall.title')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={2} variant="card" />
         </View>
       </Screen>
     )
@@ -348,6 +349,11 @@ function Notice({
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   content: {
     padding: spacing.md,
     gap: spacing.sm,

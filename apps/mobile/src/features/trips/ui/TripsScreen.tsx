@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -17,6 +16,9 @@ import {
   lineHeight,
   radius,
   Screen,
+  SkeletonList,
+  HistoryIcon,
+  EmptyState,
   sharedStyles,
   spacing,
   theme,
@@ -46,10 +48,14 @@ export function TripsScreen() {
   const bookings = useBookings()
 
   if (bookings.isPending) {
+    /*
+     * Des cartes en attente, pas un rond : elles ont la forme des réservations
+     * qui arrivent, donc l'écran ne saute pas quand elles les remplacent.
+     */
     return (
       <Screen title={t('tabs.trips')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.list}>
+          <SkeletonList count={4} variant="card" />
         </View>
       </Screen>
     )
@@ -106,9 +112,12 @@ export function TripsScreen() {
         refreshing={bookings.isFetching}
         onRefresh={() => void bookings.refetch()}
         ListEmptyComponent={
-          <View style={sharedStyles.centered}>
-            <Text style={styles.message}>{t('account.historyEmpty')}</Text>
-          </View>
+          <EmptyState
+            icon={<HistoryIcon color={theme.text.brand} size={28} />}
+            title={t('account.historyEmpty')}
+            body={t('account.historyEmptyBody')}
+            action={{ label: t('account.historyEmptyAction'), onPress: () => router.push('/') }}
+          />
         }
         renderItem={({ item }) => (
           <BookingCard

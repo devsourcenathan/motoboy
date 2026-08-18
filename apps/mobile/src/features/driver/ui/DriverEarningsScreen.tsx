@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -17,6 +16,7 @@ import {
   lineHeight,
   radius,
   Screen,
+  SkeletonList,
   sharedStyles,
   spacing,
   TextField,
@@ -56,8 +56,8 @@ export function DriverEarningsScreen() {
   if (earnings.isPending) {
     return (
       <Screen title={t('driver.earnings')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.content}>
+          <SkeletonList count={3} variant="card" />
         </View>
       </Screen>
     )

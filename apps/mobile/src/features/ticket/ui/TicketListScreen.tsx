@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   Pressable,
   SectionList,
   StyleSheet,
@@ -17,7 +16,10 @@ import {
   lineHeight,
   radius,
   RouteDot,
+  EmptyState,
+  HistoryIcon,
   Screen,
+  SkeletonList,
   sharedStyles,
   spacing,
   theme,
@@ -50,8 +52,8 @@ export function TicketListScreen() {
   if (tickets.isPending) {
     return (
       <Screen title={t('ticket.listTitle')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.list}>
+          <SkeletonList count={4} variant="card" />
         </View>
       </Screen>
     )
@@ -92,9 +94,11 @@ export function TicketListScreen() {
         onRefresh={() => void tickets.refetch()}
         stickySectionHeadersEnabled={false}
         ListEmptyComponent={
-          <View style={sharedStyles.centered}>
-            <Text style={styles.message}>{t('ticket.empty')}</Text>
-          </View>
+          <EmptyState
+            icon={<HistoryIcon color={theme.text.brand} size={28} />}
+            title={t('ticket.empty')}
+            body={t('ticket.emptyBody')}
+          />
         }
         renderSectionHeader={({ section }) => (
           <Text style={styles.sectionTitle}>{section.title}</Text>

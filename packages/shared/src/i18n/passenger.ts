@@ -211,6 +211,7 @@ export interface PassengerMessages {
     readonly seeTicket: string
     readonly seats: string
     readonly empty: string
+    readonly emptyBody: string
     readonly passenger: string
     readonly seat: string
     readonly noSeat: string
@@ -241,6 +242,8 @@ export interface PassengerMessages {
     readonly signOut: string
     readonly history: string
     readonly historyEmpty: string
+    readonly historyEmptyBody: string
+    readonly historyEmptyAction: string
     readonly whyNeeded: string
     readonly tagline: string
     readonly welcome: string
@@ -398,6 +401,7 @@ export interface PassengerMessages {
     readonly offerExpired: string
     readonly myRides: string
     readonly myRidesEmpty: string
+    readonly myRidesEmptyBody: string
     readonly currentRide: string
     readonly awaitingPayment: string
     readonly startRide: string
@@ -664,6 +668,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       seeTicket: 'Voir le billet',
       seats: 'Places',
       empty: 'Aucun billet pour le moment.',
+      emptyBody: 'Un billet apparaît ici dès qu’une réservation est payée.',
       passenger: 'Passager',
       seat: 'Place',
       noSeat: 'Non numérotée',
@@ -696,6 +701,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       signOut: 'Se déconnecter',
       history: 'Mes voyages',
       historyEmpty: 'Aucun voyage pour le moment.',
+      historyEmptyBody: 'Vos réservations apparaîtront ici, avec leurs billets.',
+      historyEmptyAction: 'Chercher un trajet',
       // La connexion n'est demandée qu'au dernier moment, une fois les places
       // choisies : l'exiger d'entrée ferait renoncer quelqu'un qui veut
       // seulement savoir s'il y a un car ce soir (§35).
@@ -861,6 +868,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       offerExpired: 'Expirée',
       myRides: 'Mes courses',
       myRidesEmpty: 'Aucune course pour l’instant.',
+      myRidesEmptyBody: 'Répondez à une demande de votre ville pour commencer.',
       currentRide: 'Course en cours',
       awaitingPayment: 'En attente du paiement du passager',
       startRide: 'Démarrer la course',
@@ -1104,6 +1112,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       seeTicket: 'View ticket',
       seats: 'Seats',
       empty: 'No tickets yet.',
+      emptyBody: 'A ticket shows up here as soon as a booking is paid.',
       passenger: 'Passenger',
       seat: 'Seat',
       noSeat: 'Unnumbered',
@@ -1134,6 +1143,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       signOut: 'Sign out',
       history: 'My trips',
       historyEmpty: 'No trips yet.',
+      historyEmptyBody: 'Your bookings will appear here, with their tickets.',
+      historyEmptyAction: 'Search for a trip',
       whyNeeded: 'An account is needed to complete the booking.',
       tagline: 'Travel with confidence.',
       welcome: 'Welcome 👋',
@@ -1288,6 +1299,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       offerExpired: 'Expired',
       myRides: 'My rides',
       myRidesEmpty: 'No rides yet.',
+      myRidesEmptyBody: 'Answer a request in your city to get started.',
       currentRide: 'Current ride',
       awaitingPayment: 'Waiting for the passenger to pay',
       startRide: 'Start the ride',

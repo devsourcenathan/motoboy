@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import type { Seat } from '@motoboy/api-client/types'
 import { formatMoney, formatTime } from '@motoboy/shared'
-import { Button, fontSize, Screen, spacing, theme } from '../../../shared/ui'
+import { Button, fontSize, Screen, SkeletonList, spacing, theme } from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useCurrentUser } from '../../account'
@@ -97,8 +97,8 @@ export function TripScreen() {
   if (trip.isPending) {
     return (
       <Screen>
-        <View style={styles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={3} variant="card" />
         </View>
       </Screen>
     )
@@ -200,6 +200,11 @@ export function TripScreen() {
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   body: {
     padding: spacing.lg,
     gap: spacing.lg,

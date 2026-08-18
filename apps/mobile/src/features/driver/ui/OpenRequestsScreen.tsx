@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -18,7 +17,10 @@ import {
   lineHeight,
   radius,
   RouteDot,
+  EmptyState,
+  PinIcon,
   Screen,
+  SkeletonList,
   sharedStyles,
   spacing,
   TextField,
@@ -61,8 +63,8 @@ export function OpenRequestsScreen() {
   return (
     <Screen title={t('driver.openRequests')}>
       {requests.isPending ? (
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.content}>
+          <SkeletonList count={4} variant="card" />
         </View>
       ) : requests.isError ? (
         <View style={sharedStyles.centered}>
@@ -91,10 +93,11 @@ export function OpenRequestsScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t('driver.openRequestsEmpty')}</Text>
-              <Text style={styles.body}>{t('driver.openRequestsEmptyBody')}</Text>
-            </View>
+            <EmptyState
+              icon={<PinIcon color={theme.text.brand} size={28} />}
+              title={t('driver.openRequestsEmpty')}
+              body={t('driver.openRequestsEmptyBody')}
+            />
           }
           renderItem={({ item }) => (
             <RequestCard request={item} onOffer={() => setOffering(item)} />

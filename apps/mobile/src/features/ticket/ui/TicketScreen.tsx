@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { formatDate, formatTime, ticketStatusLabels } from '@motoboy/shared'
 import {
   Button,
@@ -11,6 +11,7 @@ import {
   RouteDot,
   Screen,
   sharedStyles,
+  SkeletonList,
   spacing,
   theme,
 } from '../../../shared/ui'
@@ -46,8 +47,8 @@ export function TicketScreen() {
   if (ticket.isPending) {
     return (
       <Screen title={t('ticket.title')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={2} variant="card" />
         </View>
       </Screen>
     )
@@ -235,6 +236,11 @@ function Detail({
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   content: {
     padding: spacing.md,
     gap: spacing.md,

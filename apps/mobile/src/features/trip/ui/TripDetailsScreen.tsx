@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { formatDate, formatDuration, formatMoney, formatTime } from '@motoboy/shared'
 import {
   Button,
@@ -13,6 +13,7 @@ import {
   RouteDot,
   Screen,
   sharedStyles,
+  SkeletonList,
   spacing,
   TabIcon,
   theme,
@@ -44,8 +45,8 @@ export function TripDetailsScreen() {
   if (trip.isPending) {
     return (
       <Screen title={t('trip.details')}>
-        <View style={sharedStyles.centered}>
-          <ActivityIndicator color={theme.text.brand} />
+        <View style={styles.skeleton}>
+          <SkeletonList count={3} variant="card" />
         </View>
       </Screen>
     )
@@ -275,6 +276,11 @@ function initialsOf(name: string): string {
 }
 
 const styles = StyleSheet.create({
+  /* L'enveloppe des squelettes : même gouttière que le contenu réel. */
+  skeleton: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   content: {
     padding: spacing.md,
     gap: spacing.sm,
