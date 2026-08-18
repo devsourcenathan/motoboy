@@ -90,9 +90,21 @@ final class NotchPayGateway implements PaymentGateway
                 'description' => 'MOTOBOY '.$intent->reference,
             ]);
 
-            $reference = $this->stringOf($this->body($created), 'transaction');
+            $reference = $this->transactionOf($this->body($created));
 
             if (!$created->successful() || $reference === null) {
+                /*
+                 * Le corps entier est journalise ici. La premiere mise en
+                 * production a rendu « Payment initialized » comme motif d'echec —
+                 * c'est-a-dire leur message de **succes** : l'appel avait abouti
+                 * et c'est la lecture de la reference qui avait echoue. Sans le
+                 * corps sous les yeux, ce genre d'erreur se devine.
+                 */
+                Log::warning('NotchPay : création de paiement inexploitable.', [
+                    'status' => $created->status(),
+                    'body' => $this->body($created),
+                ]);
+
                 return GatewayCharge::rejected($this->errorOf($this->body($created), $created->status()));
             }
 
@@ -202,6 +214,34 @@ final class NotchPayGateway implements PaymentGateway
         // Le rapprochement se fera quand leur endpoint de liste aura ete lu.
         // Rendre vide plutot qu'inventer un chemin.
         return [];
+    }
+
+    /**
+     * La reference de transaction, quelle que soit la forme rendue.
+     *
+     * Leur documentation annonce `transaction` comme une chaine. Ce n'en est pas
+     * toujours une : la reponse peut l'imbriquer dans un objet. Lire les deux
+     * formes coute trois lignes ; ne lire que l'une refusait un paiement pourtant
+     * accepte, avec leur message de succes en guise de motif d'echec.
+     *
+     * @param  array<string, mixed>  $body
+     */
+    private function transactionOf(array $body): ?string
+    {
+        $direct = $this->stringOf($body, 'transaction');
+
+        if ($direct !== null) {
+            return $direct;
+        }
+
+        $nested = $body['transaction'] ?? null;
+
+        if (is_array($nested)) {
+            return $this->stringOf($nested, 'reference') ?? $this->stringOf($nested, 'id');
+        }
+
+        // Certaines reponses portent la reference a la racine.
+        return $this->stringOf($body, 'reference');
     }
 
     /**
