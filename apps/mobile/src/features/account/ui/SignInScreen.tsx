@@ -14,14 +14,15 @@ import {
   Button,
   fontSize,
   lineHeight,
-  radius,
   Screen,
   sharedStyles,
   spacing,
   TextField,
   theme,
+  TOUCH_TARGET,
 } from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
+import { markAuthChoiceMade } from '../../onboarding'
 import { useRequestOtp } from '../api/useAuth'
 import {
   DIALLING_CODE,
@@ -154,6 +155,31 @@ export function SignInScreen() {
             disabled={error !== null}
             busy={request.isPending}
           />
+
+          {/*
+            **L'entrée sans compte, offerte et non cachée.**
+
+            Chercher un départ fonctionne sans session (§35) : c'est la promesse
+            du produit, et l'enfermer derrière une inscription perdrait les gens
+            sur une question qu'ils ne se posaient pas encore. Le compte devient
+            nécessaire au moment de réserver, et c'est là qu'on le demandera.
+
+            Proposé seulement quand on arrive **par le lancement** : si la
+            connexion a été demandée pour continuer une action précise — `next`
+            est alors renseigné —, contourner ne mènerait nulle part.
+          */}
+          {next === undefined ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                void markAuthChoiceMade()
+                router.replace('/search')
+              }}
+              style={styles.guest}
+            >
+              <Text style={styles.guestLabel}>{t('account.continueAsGuest')}</Text>
+            </Pressable>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </Screen>
@@ -165,20 +191,46 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    /*
+     * **De l'air en haut, et une gouttière plus large.**
+     *
+     * La maquette respire : le titre commence loin du bord, et les blocs sont
+     * nettement séparés. C'est ce qui distingue un écran d'accueil d'un
+     * formulaire administratif — et c'est le premier écran que voit quelqu'un
+     * qui télécharge l'application.
+     */
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.lg,
+  },
+  guest: {
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    minHeight: TOUCH_TARGET,
+  },
+  guestLabel: {
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    color: theme.text.secondary,
+    textDecorationLine: 'underline',
   },
   heading: {
-    gap: spacing.xs,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.base,
+    gap: spacing.base,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xs,
   },
   title: {
-    fontSize: fontSize['2xl'],
-    lineHeight: lineHeight['2xl'],
-    fontWeight: '700',
+    /*
+     * Marine et non noir : c'est la couleur d'identité, et le premier écran est
+     * l'endroit où la marque doit se voir sans crier. L'orange reste réservé à
+     * l'action — ici, le bouton.
+     */
+    fontSize: fontSize['3xl'],
+    lineHeight: lineHeight['3xl'],
+    fontWeight: '800',
     letterSpacing: -0.5,
-    color: theme.text.primary,
+    color: theme.text.ink,
   },
   subtitle: {
     fontSize: fontSize.base,
@@ -191,8 +243,10 @@ const styles = StyleSheet.create({
    */
   card: {
     ...sharedStyles.card,
-    gap: spacing.sm,
-    padding: spacing.md,
+    // Plus généreux que les cartes de contenu : un champ qu'on remplit au
+    // clavier a besoin de marge autour, sinon la saisie touche les bords.
+    gap: spacing.md,
+    padding: spacing.lg,
   },
   switch: {
     alignSelf: 'center',

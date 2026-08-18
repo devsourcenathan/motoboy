@@ -173,19 +173,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
-    gap: spacing.md,
+    /*
+     * **De l'air en haut, et une gouttière plus large.**
+     *
+     * La maquette respire : le titre commence loin du bord, et les blocs sont
+     * nettement séparés. C'est ce qui distingue un écran d'accueil d'un
+     * formulaire administratif — et c'est le premier écran que voit quelqu'un
+     * qui télécharge l'application.
+     */
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.lg,
   },
   heading: {
     gap: spacing.xs,
     paddingTop: spacing.base,
   },
   title: {
-    fontSize: fontSize['2xl'],
-    lineHeight: lineHeight['2xl'],
-    fontWeight: '700',
+    /*
+     * Marine et non noir : c'est la couleur d'identité, et le premier écran est
+     * l'endroit où la marque doit se voir sans crier. L'orange reste réservé à
+     * l'action — ici, le bouton.
+     */
+    fontSize: fontSize['3xl'],
+    lineHeight: lineHeight['3xl'],
+    fontWeight: '800',
     letterSpacing: -0.5,
-    color: theme.text.primary,
+    color: theme.text.ink,
   },
   subtitle: {
     fontSize: fontSize.base,
@@ -194,8 +209,10 @@ const styles = StyleSheet.create({
   },
   card: {
     ...sharedStyles.card,
-    gap: spacing.sm,
-    padding: spacing.md,
+    // Plus généreux que les cartes de contenu : un champ qu'on remplit au
+    // clavier a besoin de marge autour, sinon la saisie touche les bords.
+    gap: spacing.md,
+    padding: spacing.lg,
   },
   switch: {
     alignSelf: 'center',

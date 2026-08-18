@@ -54,7 +54,9 @@ export function Onboarding() {
 
   async function finish() {
     await markOnboardingSeen()
-    router.replace('/search')
+    // Vers le choix, non vers la recherche : l'introduction dit ce que fait
+    // MOTOBOY, l'écran suivant demande si on veut un compte pour s'en servir.
+    router.replace('/account/sign-in')
   }
 
   function advance() {

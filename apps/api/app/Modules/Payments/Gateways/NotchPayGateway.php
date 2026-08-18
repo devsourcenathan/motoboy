@@ -9,9 +9,11 @@ use App\Modules\Payments\Data\GatewayCharge;
 use App\Modules\Payments\Data\GatewayRefund;
 use App\Modules\Payments\Data\GatewayTransaction;
 use App\Modules\Payments\Data\PaymentIntent;
+use App\Modules\Payments\Data\RefundEvent;
 use App\Modules\Payments\Data\RefundIntent;
 use App\Modules\Payments\Data\WebhookEvent;
 use App\Modules\Payments\Enums\PaymentStatus;
+use App\Modules\Payments\Enums\RefundStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -128,22 +130,56 @@ final class NotchPayGateway implements PaymentGateway
         }
     }
 
+    /**
+     * Rembourse un paiement.
+     *
+     * **Le montant est toujours envoye**, meme pour un remboursement integral.
+     * Leur API l'accepte comme facultatif — l'omettre rembourserait « tout »,
+     * c'est-a-dire ce que *leur* systeme croit avoir encaisse. Sur une annulation
+     * partielle, ces deux nombres different, et c'est le notre qui fait foi
+     * puisque c'est lui que le grand livre a ecrit.
+     *
+     * `pending` ou `processing` sont des reponses normales : comme l'encaissement,
+     * le denouement arrive par webhook. On rend donc `accepted` et non `settled` —
+     * dire « rembourse » avant que l'argent soit parti ferait mentir l'ecran du
+     * passager.
+     */
     public function refund(RefundIntent $intent): GatewayRefund
     {
-        /*
-         * Leur documentation decrit des remboursements, mais pas le chemin d'API
-         * exact. Tant qu'il n'est pas lu, on refuse : rendre un succes dirait a un
-         * passager qu'il est rembourse alors que rien n'aurait bouge, et
-         * `RetryFailedRefunds` garde l'echec visible.
-         */
-        Log::error('NotchPay : remboursement non implémenté.', [
-            'refund' => $intent->reference,
-            'payment' => $intent->paymentReference,
-        ]);
+        try {
+            $response = $this->post('/refunds', [
+                'payment' => $intent->paymentReference,
+                'amount' => $intent->amount,
+                'reason' => $intent->reference,
+            ]);
+        } catch (Throwable $cause) {
+            return GatewayRefund::rejected('Agrégateur injoignable : '.$cause->getMessage());
+        }
 
-        return GatewayRefund::rejected(
-            'Remboursement automatique indisponible : à traiter manuellement.',
-        );
+        $body = $this->body($response);
+        $refund = is_array($body['refund'] ?? null) ? $body['refund'] : $body;
+
+        $reference = $this->stringOf($refund, 'id') ?? $this->stringOf($refund, 'reference');
+
+        if (!$response->successful() || $reference === null) {
+            Log::warning('NotchPay : remboursement refusé.', [
+                'refund' => $intent->reference,
+                'status' => $response->status(),
+                'body' => $body,
+            ]);
+
+            return GatewayRefund::rejected($this->errorOf($body, $response->status()));
+        }
+
+        /*
+         * Un remboursement deja abouti dans la reponse est rare mais possible :
+         * on l'honore plutot que d'attendre un webhook qui ne viendra pas.
+         */
+        if ($this->stringOf($refund, 'status') === 'complete') {
+            return GatewayRefund::settled($reference);
+        }
+
+        return GatewayRefund::accepted($reference);
     }
 
     /**
@@ -158,7 +194,7 @@ final class NotchPayGateway implements PaymentGateway
      * caracteres corrects, ce qui permet de reconstituer une signature valide
      * essai apres essai.
      */
-    public function parseWebhook(string $payload, array $headers): ?WebhookEvent
+    public function parseWebhook(string $payload, array $headers): WebhookEvent|RefundEvent|null
     {
         $signature = $this->headerOf($headers, 'x-notch-signature');
         $expected = hash_hmac('sha256', $payload, $this->webhookHash);
@@ -207,6 +243,23 @@ final class NotchPayGateway implements PaymentGateway
 
         $event = $this->stringOf($decoded, 'event') ?? '';
 
+        /*
+         * **Un remboursement n'est pas un paiement.** Les deux arrivent par la
+         * meme URL et la meme signature, mais ils avancent des machines a etats
+         * differentes : confondre `refund.complete` avec `payment.complete`
+         * marquerait un paiement encaisse au moment ou l'argent en repart.
+         */
+        if (str_starts_with($event, 'refund.')) {
+            return new RefundEvent(
+                eventId: $this->stringOf($decoded, 'id') ?? $reference,
+                providerReference: $reference,
+                status: $this->refundStatusOf($event, $this->stringOf($data, 'status')),
+                failureReason: $event === 'refund.failed'
+                    ? ($this->stringOf($data, 'message') ?? 'Remboursement refusé.')
+                    : null,
+            );
+        }
+
         return new WebhookEvent(
             eventId: $this->stringOf($decoded, 'id') ?? $reference,
             providerReference: $reference,
@@ -215,6 +268,26 @@ final class NotchPayGateway implements PaymentGateway
                 ? ($this->stringOf($data, 'message') ?? 'Paiement refusé.')
                 : null,
         );
+    }
+
+    /**
+     * Le vocabulaire des remboursements, traduit dans le notre.
+     *
+     * `refund.created` n'est **pas** un aboutissement : il dit que la demande est
+     * enregistree, pas que l'argent est reparti. Le traiter comme un succes
+     * afficherait « remboursé » a quelqu'un qui n'a encore rien recu.
+     */
+    private function refundStatusOf(string $event, ?string $status): RefundStatus
+    {
+        if ($event === 'refund.complete' || $status === 'complete') {
+            return RefundStatus::Completed;
+        }
+
+        if ($event === 'refund.failed' || $status === 'failed') {
+            return RefundStatus::Failed;
+        }
+
+        return RefundStatus::Processing;
     }
 
     /**
