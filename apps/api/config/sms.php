@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Notifications\Senders\LogSmsSender;
+use App\Modules\Notifications\Senders\TechSoftSmsSender;
 
 return [
 
@@ -23,6 +24,20 @@ return [
 
     'drivers' => [
         'log' => LogSmsSender::class,
+        'techsoft' => TechSoftSmsSender::class,
+    ],
+
+    /*
+     * TechSoft — https://app.techsoft-sms.com/developers/http-docs
+     *
+     * Le `sender_id` doit avoir ete **valide dans le compte** avant tout envoi,
+     * et onze caracteres au plus. C'est la demarche la plus longue de
+     * l'integration : la lancer avant d'avoir besoin du reste.
+     */
+    'techsoft' => [
+        'base_url' => env('TECHSOFT_BASE_URL', 'https://app.techsoft-sms.com/api/http'),
+        'api_token' => env('TECHSOFT_API_KEY', ''),
+        'sender_id' => env('TECHSOFT_SENDER_ID', ''),
     ],
 
     /*
