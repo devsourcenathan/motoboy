@@ -99,7 +99,9 @@ final class TranzakGatewayTest extends TestCase
     {
         $event = $this->gateway()->parseWebhook(
             json_encode(['eventId' => 'evt-1', 'requestId' => 'REQ-1', 'status' => 'SUCCESSFUL']) ?: '',
-            ['x-quelque-chose' => 'valeur'],
+            // Une liste par en-tete : c'est la forme que PSR-7 impose, un
+            // meme en-tete pouvant apparaitre plusieurs fois.
+            ['x-quelque-chose' => ['valeur']],
         );
 
         $this->assertFalse($event->signatureValid);
