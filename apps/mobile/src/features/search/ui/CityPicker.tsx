@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -12,7 +11,16 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import type { PlaceSuggestion } from '@motoboy/api-client/types'
-import { Button, fontSize, radius, spacing, theme, TOUCH_TARGET } from '../../../shared/ui'
+import {
+  EmptyState,
+  fontSize,
+  PinIcon,
+  radius,
+  SkeletonList,
+  spacing,
+  theme,
+  TOUCH_TARGET,
+} from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { MIN_QUERY_LENGTH, usePlaceSuggestions } from '../api/usePlaceSuggestions'
 import { toCityChoice, type CityChoice } from '../model/searchForm'
@@ -37,9 +45,13 @@ export function CityPicker({ visible, title, onClose, onSelect }: CityPickerProp
   const [query, setQuery] = useState('')
   const { suggestions, isFetching, error, refetch } = usePlaceSuggestions(query)
 
-  // Vrai aussi **champ vide**, et pas seulement après une lettre : sans cela,
-  // ouvrir le sélecteur montrait un écran blanc sans rien expliquer.
-  const tooShort = query.trim().length < MIN_QUERY_LENGTH
+  /*
+   * Plus de branche « tapez davantage » : le serveur rend les villes les plus
+   * utiles quand rien n'est saisi. Le sélecteur s'ouvrait auparavant sur une
+   * liste vide et une consigne — exact, et inutilisable pour qui ne sait pas
+   * encore ce que la plateforme dessert.
+   */
+  const searching = query.trim().length >= MIN_QUERY_LENGTH
 
   function choose(suggestion: PlaceSuggestion) {
     onSelect(toCityChoice(suggestion))
@@ -87,20 +99,23 @@ export function CityPicker({ visible, title, onClose, onSelect }: CityPickerProp
                 impossible de savoir s'il fallait taper plus ou réessayer.
               */}
               {isFetching ? (
-                <ActivityIndicator color={theme.text.brand} />
+                <SkeletonList count={8} />
               ) : error ? (
-                <>
-                  <Text style={styles.emptyLabel}>{describe(error)}</Text>
-                  <Button
-                    label={t('action.retry', { ns: 'common' })}
-                    onPress={() => void refetch()}
-                    variant="secondary"
-                  />
-                </>
-              ) : tooShort ? (
-                <Text style={styles.emptyLabel}>{t('search.typeMore')}</Text>
+                <EmptyState
+                  tone="problem"
+                  icon={<PinIcon color={theme.text.danger} size={28} />}
+                  title={describe(error)}
+                  action={{
+                    label: t('action.retry', { ns: 'common' }),
+                    onPress: () => void refetch(),
+                  }}
+                />
               ) : (
-                <Text style={styles.emptyLabel}>{t('search.noCity')}</Text>
+                <EmptyState
+                  icon={<PinIcon color={theme.text.brand} size={28} />}
+                  title={t('search.noCity')}
+                  body={searching ? t('search.noCityBody') : undefined}
+                />
               )}
             </View>
           }

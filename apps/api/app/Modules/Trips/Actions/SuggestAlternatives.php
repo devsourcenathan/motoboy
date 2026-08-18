@@ -25,7 +25,7 @@ final class SuggestAlternatives
 
     /**
      * @return array{
-     *     nearby_dates: list<array{date: string, trips_count: int, lowest_price: int, currency: string}>,
+     *     nearby_dates: list<array{date: string, trips_count: int, lowest_price: array{amount: int, currency: string}}>,
      *     routes_served: list<array{destination_city_id: int, destination_city: string, trips_count: int}>
      * }
      */
@@ -41,7 +41,7 @@ final class SuggestAlternatives
      * Dates proches sur le **même axe** : c'est la suggestion la plus utile,
      * puisqu'elle garde l'intention du passager intacte.
      *
-     * @return list<array{date: string, trips_count: int, lowest_price: int, currency: string}>
+     * @return list<array{date: string, trips_count: int, lowest_price: array{amount: int, currency: string}}>
      */
     private function nearbyDates(SearchCriteria $criteria): array
     {
@@ -68,12 +68,23 @@ final class SuggestAlternatives
             ->get()
             ->all();
 
+        /*
+         * **Un `Money`, comme le contrat le promet.**
+         *
+         * Le montant partait en entier nu, la devise dans un champ voisin, alors
+         * que `docs/openapi.yaml` declare `lowest_price: Money`. Le mobile faisait
+         * confiance au contrat et lisait `.amount` sur un entier : l'ecran des
+         * resultats vides affichait « des NaN undefined ». Le contrat etant
+         * normatif, c'est l'implementation qui avait tort.
+         */
         return array_values(array_map(
             static fn (object $row): array => [
                 'date' => $row->day,
                 'trips_count' => (int) $row->trips_count,
-                'lowest_price' => (int) $row->lowest_price,
-                'currency' => $row->currency,
+                'lowest_price' => [
+                    'amount' => (int) $row->lowest_price,
+                    'currency' => (string) $row->currency,
+                ],
             ],
             array_filter($rows, static fn (object $row): bool => $row->day !== ''),
         ));

@@ -6,7 +6,7 @@ import { Session } from './session.js'
 /**
  * Client HTTP typé par le contrat OpenAPI.
  *
- * Ce point d'entrée requiert la `lib` DOM pour `fetch` et `crypto`. Les
+ * Ce point d'entrée requiert la `lib` DOM pour `fetch`. Les
  * consommateurs qui n'ont besoin que des types doivent importer
  * `@motoboy/api-client/types`, qui n'exige rien.
  */
@@ -161,5 +161,40 @@ export function createApiClient(options: CreateApiClientOptions) {
  * d'idempotence du tout.
  */
 export function newIdempotencyKey(): string {
-  return crypto.randomUUID()
+  /*
+   * ⚠️ **`crypto` n'existe pas sous Hermes.**
+   *
+   * `crypto.randomUUID()` levait « Property 'crypto' doesn't exist » à la
+   * première réservation — sur l'appareil seulement, jamais à la compilation
+   * puisque les types du DOM le déclarent, ni en Node qui l'expose depuis la 19.
+   * Même famille que les pièges `AbortSignal.timeout` et `onResponse` plus haut :
+   * React Native n'a pas les objets globaux du navigateur, et rien ne le dit
+   * avant l'exécution.
+   *
+   * On l'utilise **quand il est là** — navigateur, Node, et React Native le jour
+   * où un polyfill est installé — et on retombe sinon sur `Math.random`.
+   */
+  const provided = globalThis.crypto
+
+  if (typeof provided?.randomUUID === 'function') {
+    return provided.randomUUID()
+  }
+
+  /*
+   * Repli. **Aucune propriété cryptographique n'est requise ici** : cette clé
+   * n'autorise rien, elle dédoublonne. Le serveur la lit dans la portée d'un
+   * seul utilisateur, sur quelques minutes ; la deviner ne donne accès à rien,
+   * et une collision entre deux appareils n'aurait aucun effet puisque les
+   * portées sont disjointes.
+   *
+   * Format d'UUID v4 conservé : le serveur ne l'impose pas, mais une clé qui
+   * ressemble à ce qu'elle a toujours été évite qu'un journal ou une validation
+   * future ne trébuche dessus.
+   */
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.trunc(Math.random() * 16)
+    const value = char === 'x' ? random : (random & 0x3) | 0x8
+
+    return value.toString(16)
+  })
 }

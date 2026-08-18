@@ -1603,8 +1603,14 @@ export interface paths {
          */
         get: {
             parameters: {
-                query: {
-                    q: string;
+                query?: {
+                    /**
+                     * @description **Facultative.** Sans elle, l'endpoint rend les villes les plus utiles,
+                     *     par ordre alphabetique. Un selecteur qui s'ouvre sur une liste vide est
+                     *     exact et inutilisable : le passager qui ne sait pas quoi taper ne
+                     *     decouvre jamais ce que la plateforme dessert.
+                     */
+                    q?: string;
                     limit?: number;
                 };
                 header?: never;

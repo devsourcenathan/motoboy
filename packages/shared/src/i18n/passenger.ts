@@ -44,6 +44,7 @@ export interface PassengerMessages {
     readonly passengers: string
     readonly searchCity: string
     readonly noCity: string
+    readonly noCityBody: string
     readonly typeMore: string
     readonly sameCity: string
     readonly greeting: string
@@ -467,6 +468,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       passengers: 'Passagers',
       searchCity: 'Ville ou gare',
       noCity: 'Aucune ville trouvée',
+      noCityBody: 'Vérifiez l’orthographe, ou essayez le nom de la ville plutôt que celui du quartier.',
       typeMore: 'Saisissez au moins deux lettres',
       sameCity: 'Le départ et l’arrivée doivent être différents',
       greeting: 'Bonjour 👋',
@@ -912,6 +914,7 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       passengers: 'Passengers',
       searchCity: 'City or station',
       noCity: 'No city found',
+      noCityBody: 'Check the spelling, or try the city name rather than the neighbourhood.',
       typeMore: 'Type at least two letters',
       sameCity: 'Origin and destination must differ',
       greeting: 'Hello 👋',

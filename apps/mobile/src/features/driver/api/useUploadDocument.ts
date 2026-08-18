@@ -31,16 +31,28 @@ export function useUploadDocument() {
       const body = new FormData()
 
       body.append('type', upload.type)
+
       /*
-       * Le triplet attendu par React Native. Le cast est nécessaire : la
-       * signature DOM de `FormData.append` n'accepte que `string | Blob`, et le
-       * polyfill de React Native accepte en plus cette forme.
+       * ⚠️ **Le fichier passe par un `Blob`, pas par le triplet.**
+       *
+       * `{uri, name, type}` est la forme historique de React Native, comprise
+       * par son propre `fetch`. Expo SDK 57 installe une implémentation conforme
+       * à WinterCG, qui ne la connaît pas : chaque dépôt levait « Unsupported
+       * FormDataPart implementation », une erreur du module natif qui ne dit
+       * rien de la cause.
+       *
+       * Lire l'URI en `Blob` fonctionne des deux côtés — c'est la forme que la
+       * spécification impose, et celle que React Native accepte aussi. Le coût
+       * est un passage du fichier en mémoire, acceptable pour une pièce
+       * d'identité photographiée.
        */
-      body.append('file', {
-        uri: upload.file.uri,
-        name: upload.file.name,
-        type: upload.file.mimeType,
-      } as unknown as Blob)
+      const file = await fetch(upload.file.uri)
+
+      if (!file.ok) {
+        throw new Error(`Fichier illisible : ${upload.file.uri}`)
+      }
+
+      body.append('file', await file.blob(), upload.file.name)
 
       const token = await session.token()
 
