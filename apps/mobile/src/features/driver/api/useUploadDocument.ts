@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { File } from 'expo-file-system'
 import { toApiError } from '@motoboy/api-client'
 import { API_BASE_URL } from '../../../shared/api/client'
 import { session } from '../../../shared/session/session'
@@ -33,29 +34,27 @@ export function useUploadDocument() {
       body.append('type', upload.type)
 
       /*
-       * ⚠️ **Le fichier passe par un `Blob`, pas par le triplet.**
+       * ⚠️ **Le fichier doit porter son nom, et lui seul le porte.**
        *
-       * `{uri, name, type}` est la forme historique de React Native, comprise
-       * par son propre `fetch`. Expo SDK 57 installe une implémentation conforme
-       * à WinterCG, qui ne la connaît pas : chaque dépôt levait « Unsupported
-       * FormDataPart implementation », une erreur du module natif qui ne dit
-       * rien de la cause.
+       * Trois formes ont été essayées avant celle-ci, et les deux premières
+       * échouaient sur l'appareil :
        *
-       * Lire l'URI en `Blob` fonctionne des deux côtés — c'est la forme que la
-       * spécification impose, et celle que React Native accepte aussi. Le coût
-       * est un passage du fichier en mémoire, acceptable pour une pièce
-       * d'identité photographiée.
+       * 1. Le triplet `{uri, name, type}` — la forme historique de React Native.
+       *    Expo SDK 57 sérialise le corps lui-même et ne la connaît pas :
+       *    « Unsupported FormDataPart implementation ».
+       * 2. Un `Blob` avec le nom en troisième argument d'`append`. Le `FormData`
+       *    de React Native n'accepte que **deux** paramètres — le nom était donc
+       *    jeté en silence, la partie partait sans `filename=`, et Laravel voit
+       *    alors un champ texte et non un fichier. D'où le 422 « file must be a
+       *    file », vérifié en rejouant la requête à la main sans `filename`.
+       * 3. `File` d'`expo-file-system`, qui **implémente `Blob` et porte un
+       *    `name`** : le nom voyage avec l'objet, sans dépendre de la signature
+       *    d'`append`.
+       *
+       * Elle évite au passage le passage en base64 que `Response.blob()`
+       * imposait — l'avertissement que l'appareil affichait.
        */
-      /*
-       * **Pas de contrôle sur `ok`.** Une réponse `file://` porte le statut 0,
-       * donc `ok` vaut `false` même quand la lecture a parfaitement réussi : le
-       * garde que j'avais écrit rejetait tous les fichiers, y compris valides.
-       * C'est `blob()` qui échoue si le fichier est réellement illisible, et son
-       * erreur est plus précise que celle que je fabriquais.
-       */
-      const blob = await (await fetch(upload.file.uri)).blob()
-
-      body.append('file', blob, upload.file.name)
+      body.append('file', new File(upload.file.uri))
 
       const token = await session.token()
 

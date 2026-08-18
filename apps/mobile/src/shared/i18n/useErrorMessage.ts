@@ -27,7 +27,20 @@ export function useErrorMessage(): (error: unknown) => string {
   const locale = useLocale()
 
   return (error: unknown) => {
-    if (error instanceof ApiError) return errorLabel(error.code, locale)
+    if (error instanceof ApiError) {
+      /*
+       * En développement, le champ fautif s'ajoute au libellé. « Vérifiez votre
+       * saisie » est correct pour l'utilisateur et muet pour qui doit corriger,
+       * et sur un téléphone il n'y a pas de console à portée — la même leçon que
+       * la branche de repli plus bas.
+       */
+      if (__DEV__ && Object.keys(error.details).length > 0) {
+        return `${errorLabel(error.code, locale)}
+[dev] ${JSON.stringify(error.details)}`
+      }
+
+      return errorLabel(error.code, locale)
+    }
 
     if (error instanceof NetworkError) {
       /*
