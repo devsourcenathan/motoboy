@@ -28,6 +28,7 @@ import { MoneyPage } from './features/agency/MoneyPage'
 import { StaffPage } from './features/agency/StaffPage'
 import { StationsPage } from './features/agency/StationsPage'
 import { VehiclesPage } from './features/agency/VehiclesPage'
+import { Logo } from './shared/ui'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -226,7 +227,11 @@ function AdminLayout() {
       <header className="bg-ink-700 px-6 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <nav className="flex items-center gap-6">
-            <Link to="/admin/drivers" className="font-bold text-neutral-0">
+            <Link
+              to="/admin/drivers"
+              className="flex items-center gap-2 font-bold text-neutral-0"
+            >
+              <Logo variant="mark" size={26} />
               MOTOBOY
             </Link>
             <NavLink to="/admin/drivers">Dossiers</NavLink>

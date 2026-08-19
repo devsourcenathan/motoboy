@@ -14,6 +14,7 @@ import {
   Button,
   fontSize,
   lineHeight,
+  Logo,
   Screen,
   sharedStyles,
   spacing,
@@ -89,6 +90,11 @@ export function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.heading}>
+            {/*
+              La marque avant le titre : c'est le premier écran de l'application,
+              et rien d'autre ne dit encore où l'on est.
+            */}
+            <Logo size={52} />
             <Text style={styles.title} accessibilityRole="header">
               {t('account.signUp')}
             </Text>
@@ -104,14 +110,18 @@ export function SignUpScreen() {
             <TextField
               label={t('account.firstName')}
               value={form.firstName}
-              onChangeText={(firstName) => setForm((current) => ({ ...current, firstName }))}
+              onChangeText={(firstName) =>
+                setForm((current) => ({ ...current, firstName }))
+              }
               autoCapitalize="words"
               textContentType="givenName"
             />
             <TextField
               label={t('account.lastName')}
               value={form.lastName}
-              onChangeText={(lastName) => setForm((current) => ({ ...current, lastName }))}
+              onChangeText={(lastName) =>
+                setForm((current) => ({ ...current, lastName }))
+              }
               autoCapitalize="words"
               textContentType="familyName"
             />

@@ -14,6 +14,7 @@ import {
   Button,
   fontSize,
   lineHeight,
+  Logo,
   Screen,
   sharedStyles,
   spacing,
@@ -107,6 +108,11 @@ export function SignInScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.heading}>
+            {/*
+              La marque avant le titre : c'est le premier écran de l'application,
+              et rien d'autre ne dit encore où l'on est.
+            */}
+            <Logo size={52} />
             <Text style={styles.title} accessibilityRole="header">
               {t('account.welcome')}
             </Text>
@@ -116,20 +122,20 @@ export function SignInScreen() {
           </View>
 
           <View style={styles.card}>
-          <TextField
-            label={t('account.phone')}
-            hint={t('account.phoneHint')}
-            prefix={DIALLING_CODE}
-            value={form.phone}
-            onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
-            keyboardType="phone-pad"
-            textContentType="telephoneNumber"
-            autoComplete="tel"
-          />
+            <TextField
+              label={t('account.phone')}
+              hint={t('account.phoneHint')}
+              prefix={DIALLING_CODE}
+              value={form.phone}
+              onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              autoComplete="tel"
+            />
 
-          {request.error ? (
-            <Text style={styles.error}>{describe(request.error)}</Text>
-          ) : null}
+            {request.error ? (
+              <Text style={styles.error}>{describe(request.error)}</Text>
+            ) : null}
           </View>
 
           <Pressable
@@ -142,9 +148,7 @@ export function SignInScreen() {
             }
             style={styles.switch}
           >
-            <Text style={styles.switchLabel}>
-              {t('account.noAccount')}
-            </Text>
+            <Text style={styles.switchLabel}>{t('account.noAccount')}</Text>
           </Pressable>
         </ScrollView>
 
@@ -237,10 +241,6 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.base,
     color: theme.text.secondary,
   },
-  /*
-   * Un monogramme, pas un logotype : aucun fichier de marque n'existe encore,
-   * et une image absente laisserait un carré vide au premier écran vu.
-   */
   card: {
     ...sharedStyles.card,
     // Plus généreux que les cartes de contenu : un champ qu'on remplit au

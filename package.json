@@ -9,6 +9,7 @@
   "scripts": {
     "api:types": "pnpm --filter @motoboy/api-client generate",
     "check:shared": "node scripts/check-shared-purity.mjs",
+    "brand": "node scripts/build-brand-assets.mjs",
     "typecheck": "pnpm -r --parallel typecheck",
     "lint": "pnpm -r --parallel lint",
     "format": "prettier --write .",
@@ -19,6 +20,7 @@
     "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "sharp": "^0.35.3"
   }
 }

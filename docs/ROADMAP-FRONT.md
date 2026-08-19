@@ -429,7 +429,52 @@ problème d'exploitation deviendrait du bruit.
 
 | Sujet | Pourquoi ça n'est pas tranché |
 |---|---|
-| **Agrégateur de paiement** | L'écran de paiement se construit contre le pilote factice ; le vrai flux ne changera pas sa forme, mais rien ne s'encaisse tant que le choix n'est pas fait |
-| **Fournisseur SMS** | Les codes partent dans les journaux — suffisant pour développer, pas pour lancer |
+| **Décaissement** | `PAYOUT_GATEWAY=fake` : le pilote factice **simule** un succès, donc l'écran des reversements annoncerait de l'argent parti alors que rien n'a bougé. C'est le dernier chemin d'argent non réel |
 | **Suivi d'erreurs et supervision** | [I7](BRIEF.md) les dit non négociables sur un produit qui encaisse de l'argent |
 | **Liste des villes** | Seedée, jamais validée sur le terrain. La recherche ne vaudra que ce qu'elle vaut |
+
+---
+
+## 8. Identité visuelle
+
+Le logo est arrivé en JPEG : 669 × 631, bruit de compression dans le marine,
+vignettage qui assombrit le bas, et **aucune transparence**. Il a été redessiné
+en tracé — non pas réinterprété : les proportions ont été relevées au pixel sur
+l'image d'origine, piste par piste. La marque est franchement asymétrique (bosse
+gauche haute, bosse droite basse et courte, creux profond), et c'est ce qui la
+rend reconnaissable ; un « M » symétrique dessiné de mémoire n'y ressemble pas.
+
+La géométrie vit dans `packages/shared/src/brand.ts`, sans DOM ni React Native,
+donc partagée telle quelle par le web, le mobile et le script d'icônes. Les onze
+rasters que réclament Expo, le manifeste PWA et iOS sont **générés** :
+
+```
+pnpm brand
+```
+
+Aucun PNG ne se maintient à la main. Le script vérifie ensuite son propre rendu :
+il compte les pixels du dessin tombant hors du carré arrondi et échoue s'il y en
+a — un sommet remonté déborderait sans que rien ne le dise avant l'écran
+d'accueil d'un téléphone.
+
+**Deux couleurs, deux raisonnements.** Le marine est celui de l'interface
+(`#10314f`) et non celui du fichier (`#031a60`, bleu roi) : un logo bleu roi posé
+sur un en-tête `bg-ink-700` donne un rectangle légèrement violet au milieu du
+marine, ce qui se lit comme un export raté plutôt que comme une marque. L'or
+(`#fcb50d`) reste en revanche celui de la marque : l'orange `#f4661b` est réservé
+à l'action et à elle seule, et habiller l'identité de la couleur de l'action lui
+ferait porter un vêtement qui veut dire « touchez ici ».
+
+Deux vestiges de gabarit ont été trouvés au passage et corrigés : le favicon du
+web était **le logo violet de Vite** — donc l'embarquement installé sur l'écran
+d'accueil d'un agent portait la marque de Vite — et `<title>web</title>` était
+resté. Côté mobile, `backgroundColor: "#E6F4FE"` venait du gabarit Expo, et
+`splash-icon.png` existait sans être référencé nulle part : l'écran de démarrage
+n'était pas branché.
+
+### Ce qui n'est pas fait
+
+Il n'existe pas de **logotype** — le mot « MOTOBOY » reste composé en gras dans
+la fonte de l'interface, à côté de la marque. Un vrai dessin du mot demanderait
+un choix typographique qui n'a pas été fait, et l'inventer ici aurait produit une
+identité que personne n'a validée.

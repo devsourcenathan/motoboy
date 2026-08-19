@@ -1,3 +1,11 @@
+import {
+  BRAND_COLORS,
+  BRAND_MARK_BOX,
+  BRAND_MARK_PATH,
+  BRAND_MARK_WIDTH,
+  BRAND_SQUARE,
+  BRAND_STREAK_PATH,
+} from '@motoboy/shared'
 import type { ReactNode } from 'react'
 
 /**
@@ -32,8 +40,16 @@ export function PageHeader({
   )
 }
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl bg-neutral-0 p-5 shadow-sm ${className}`}>{children}</div>
+export function Card({
+  children,
+  className = '',
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={`rounded-xl bg-neutral-0 p-5 shadow-sm ${className}`}>{children}</div>
+  )
 }
 
 const VARIANTS = {
@@ -107,7 +123,13 @@ export const INPUT = 'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2
  * large : sans ce cadre, c'est la page entière qui défile latéralement, et
  * l'en-tête part avec.
  */
-export function Table({ head, children }: { head: readonly string[]; children: ReactNode }) {
+export function Table({
+  head,
+  children,
+}: {
+  head: readonly string[]
+  children: ReactNode
+}) {
   return (
     <div className="overflow-x-auto rounded-xl bg-neutral-0 shadow-sm">
       <table className="w-full text-left text-sm">
@@ -126,7 +148,13 @@ export function Table({ head, children }: { head: readonly string[]; children: R
   )
 }
 
-export function Cell({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function Cell({
+  children,
+  className = '',
+}: {
+  children: ReactNode
+  className?: string
+}) {
   return <td className={`px-4 py-3 ${className}`}>{children}</td>
 }
 
@@ -217,5 +245,70 @@ export function Panel({
         {children}
       </section>
     </div>
+  )
+}
+
+/**
+ * La marque MOTOBOY.
+ *
+ * Le tracé vient de `@motoboy/shared`, partagé avec le mobile et avec les PNG
+ * générés par `pnpm brand` : il n'existe qu'une seule définition du dessin.
+ *
+ * `mark` (sans le carré marine) est la variante des bandeaux : le carré posé sur
+ * un en-tête `bg-ink-700` donnerait un carré marine sur du marine, dessiné par
+ * son seul arrondi.
+ *
+ * `aria-hidden` par défaut, et c'est volontaire : partout où la marque apparaît,
+ * le mot « MOTOBOY » est écrit juste à côté. L'annoncer deux fois ferait entendre
+ * « MOTOBOY MOTOBOY » à un lecteur d'écran. Passez un `title` là où la marque est
+ * seule.
+ */
+export function Logo({
+  size = 32,
+  variant = 'icon',
+  title,
+}: {
+  size?: number
+  variant?: 'icon' | 'mark'
+  title?: string
+}) {
+  const box =
+    variant === 'icon'
+      ? '0 0 512 512'
+      : `${BRAND_MARK_BOX.x} ${BRAND_MARK_BOX.y} ${BRAND_MARK_BOX.width} ${BRAND_MARK_BOX.height}`
+
+  return (
+    <svg
+      width={size}
+      height={
+        variant === 'icon'
+          ? size
+          : Math.round((size * BRAND_MARK_BOX.height) / BRAND_MARK_BOX.width)
+      }
+      viewBox={box}
+      role={title ? 'img' : undefined}
+      aria-hidden={title ? undefined : true}
+    >
+      {title ? <title>{title}</title> : null}
+      {variant === 'icon' ? (
+        <rect
+          x={BRAND_SQUARE.x}
+          y={BRAND_SQUARE.y}
+          width={BRAND_SQUARE.size}
+          height={BRAND_SQUARE.size}
+          rx={BRAND_SQUARE.radius}
+          fill={BRAND_COLORS.navy}
+        />
+      ) : null}
+      <path
+        d={BRAND_MARK_PATH}
+        fill="none"
+        stroke={BRAND_COLORS.mark}
+        strokeWidth={BRAND_MARK_WIDTH}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d={BRAND_STREAK_PATH} fill={BRAND_COLORS.accent} />
+    </svg>
   )
 }
