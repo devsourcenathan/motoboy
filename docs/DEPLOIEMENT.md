@@ -286,6 +286,34 @@ quelques secondes.
 
 ---
 
+## 6 quater. Éprouver un paiement en bac à sable
+
+**NotchPay en mode test n'accepte que cinq numéros.** Tout autre numéro — y
+compris le vôtre — est refusé avant le moindre prélèvement, avec pour motif la
+liste ci-dessous. Chacun force un dénouement :
+
+| Numéro | Ce qu'il provoque |
+|---|---|
+| `+237670000000` | Paiement réussi |
+| `+237670000001` | Solde insuffisant |
+| `+237670000002` | Échec |
+| `+237670000003` | Délai dépassé |
+| `+237670000004` | Annulation par le payeur |
+
+Le dénouement arrive par webhook **une seconde plus tard**, sans qu'aucune
+sollicitation ne parte sur un téléphone : en bac à sable il n'y a pas de code à
+saisir. Un parcours qui semble « trop rapide » est donc normal ici, et ne le sera
+plus en production.
+
+Ces cinq numéros couvrent les quatre échecs que le parcours doit savoir montrer,
+et pas seulement le succès. `+237670000003` est le plus utile des quatre : c'est
+celui qui laisse un paiement en attente et met la reprise à l'épreuve.
+
+⚠️ **Ces numéros ne valent qu'en bac à sable.** Avec des clés `live`, le
+prélèvement partira réellement.
+
+---
+
 ## 7. Ce qui n'est pas fait
 
 - **Aucun prestataire n'est branché.** Les pilotes factices restent actifs :
