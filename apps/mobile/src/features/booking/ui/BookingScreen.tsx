@@ -1,25 +1,19 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { ApiError } from '@motoboy/api-client'
 import {
   Button,
   fontSize,
+  KeyboardForm,
   lineHeight,
   radius,
   Screen,
   sharedStyles,
   spacing,
-  theme,
   TextField,
+  theme,
 } from '../../../shared/ui'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { HoldBanner, Stepper, useHoldCountdown } from '../../../shared/booking'
@@ -163,80 +157,83 @@ export function BookingScreen() {
 
   return (
     <Screen title={t('booking.title')} subtitle={t('booking.subtitle')}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <KeyboardForm
+        contentContainerStyle={styles.body}
+        footer={
+          <Button
+            label={t('booking.submit')}
+            onPress={submit}
+            disabled={error !== null}
+            busy={create.isPending}
+          />
+        }
       >
-        <ScrollView
-          contentContainerStyle={styles.body}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Stepper current="details" />
+        <Stepper current="details" />
 
-          <HoldBanner countdown={countdown} />
+        <HoldBanner countdown={countdown} />
 
-          {form.passengers.map((passenger, index) => (
-            <View key={index} style={styles.group}>
-              <View style={styles.groupHead}>
-                {/*
+        {form.passengers.map((passenger, index) => (
+          <View key={index} style={styles.group}>
+            <View style={styles.groupHead}>
+              {/*
                   Le premier voyageur porte une pastille or : c'est lui qui
                   reçoit le SMS et dont le nom figure sur le contact, ce qui
                   n'est évident pour personne sans le dire.
                 */}
-                <View style={[styles.rank, index === 0 ? styles.rankFirst : null]}>
-                  <Text
-                    style={[styles.rankLabel, index === 0 ? styles.rankLabelFirst : null]}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
-                <Text style={styles.groupTitle}>
-                  {index === 0
-                    ? t('booking.mainPassenger')
-                    : t('booking.passenger', { index: index + 1 })}
+              <View style={[styles.rank, index === 0 ? styles.rankFirst : null]}>
+                <Text
+                  style={[styles.rankLabel, index === 0 ? styles.rankLabelFirst : null]}
+                >
+                  {index + 1}
                 </Text>
-                {passenger.seatId === null ? null : (
-                  <View style={styles.seatChip}>
-                    <Text style={styles.seatChipLabel}>{seats[index]?.label ?? ''}</Text>
-                  </View>
-                )}
               </View>
-
-              <TextField
-                label={t('booking.firstName')}
-                value={passenger.firstName}
-                onChangeText={(value) =>
-                  setForm((f) => setPassenger(f, index, { firstName: value }))
-                }
-                autoCapitalize="words"
-                textContentType="givenName"
-              />
-              <TextField
-                label={t('booking.lastName')}
-                value={passenger.lastName}
-                onChangeText={(value) =>
-                  setForm((f) => setPassenger(f, index, { lastName: value }))
-                }
-                autoCapitalize="words"
-                textContentType="familyName"
-              />
+              <Text style={styles.groupTitle}>
+                {index === 0
+                  ? t('booking.mainPassenger')
+                  : t('booking.passenger', { index: index + 1 })}
+              </Text>
+              {passenger.seatId === null ? null : (
+                <View style={styles.seatChip}>
+                  <Text style={styles.seatChipLabel}>{seats[index]?.label ?? ''}</Text>
+                </View>
+              )}
             </View>
-          ))}
 
-          <View style={styles.group}>
-            <View style={styles.groupHead}>
-              <Text style={styles.groupTitle}>{t('booking.contact')}</Text>
-            </View>
             <TextField
-              label={t('booking.contactPhone')}
-              hint={t('booking.contactHint')}
-              value={form.contactPhone}
-              onChangeText={(value) => setForm((f) => ({ ...f, contactPhone: value }))}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
+              label={t('booking.firstName')}
+              value={passenger.firstName}
+              onChangeText={(value) =>
+                setForm((f) => setPassenger(f, index, { firstName: value }))
+              }
+              autoCapitalize="words"
+              textContentType="givenName"
             />
+            <TextField
+              label={t('booking.lastName')}
+              value={passenger.lastName}
+              onChangeText={(value) =>
+                setForm((f) => setPassenger(f, index, { lastName: value }))
+              }
+              autoCapitalize="words"
+              textContentType="familyName"
+            />
+          </View>
+        ))}
 
-            {/*
+        <View style={styles.group}>
+          <View style={styles.groupHead}>
+            <Text style={styles.groupTitle}>{t('booking.contact')}</Text>
+          </View>
+          <TextField
+            label={t('booking.contactPhone')}
+            hint={t('booking.contactHint')}
+            value={form.contactPhone}
+            onChangeText={(value) => setForm((f) => ({ ...f, contactPhone: value }))}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+          />
+
+          {/*
               La pièce du voyageur principal se saisit ici, sous le contact,
               plutôt que dans le bloc du premier passager : c'est une formalité
               unique, et la placer au milieu d'une liste de noms laisserait croire
@@ -246,32 +243,22 @@ export function BookingScreen() {
               le remplacer par l'autre sous les doigts est pire que d'attendre une
               réponse qui arrive en une fraction de seconde.
             */}
-            {policy.data === undefined ? null : (
-              <IdDocumentField
-                mode={policy.data.id_document_mode}
-                required={policy.data.id_document_required}
-                number={form.idNumber}
-                path={form.idPath}
-                onChangeNumber={(idNumber) => setForm((f) => ({ ...f, idNumber }))}
-                onChangePath={(idPath) => setForm((f) => ({ ...f, idPath }))}
-              />
-            )}
-          </View>
-
-          {create.error ? (
-            <Conflict error={create.error} onPickAnother={() => router.back()} />
-          ) : null}
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Button
-            label={t('booking.submit')}
-            onPress={submit}
-            disabled={error !== null}
-            busy={create.isPending}
-          />
+          {policy.data === undefined ? null : (
+            <IdDocumentField
+              mode={policy.data.id_document_mode}
+              required={policy.data.id_document_required}
+              number={form.idNumber}
+              path={form.idPath}
+              onChangeNumber={(idNumber) => setForm((f) => ({ ...f, idNumber }))}
+              onChangePath={(idPath) => setForm((f) => ({ ...f, idPath }))}
+            />
+          )}
         </View>
-      </KeyboardAvoidingView>
+
+        {create.error ? (
+          <Conflict error={create.error} onPickAnother={() => router.back()} />
+        ) : null}
+      </KeyboardForm>
     </Screen>
   )
 }
@@ -322,9 +309,6 @@ function Conflict({
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   body: {
     padding: spacing.md,
     gap: spacing.md,
@@ -379,12 +363,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '700',
     color: theme.text.brand,
-  },
-  footer: {
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   conflict: {
     gap: spacing.sm,

@@ -1,14 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { ApiError } from '@motoboy/api-client'
 import {
   Button,
@@ -24,6 +17,8 @@ import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { markAuthChoiceMade } from '../../onboarding'
 import { useResendOtp, useVerifyOtp } from '../api/useAuth'
 import {
+  destinationAfterAuth,
+  HOME_ROUTE,
   maskPhone,
   normaliseCode,
   OTP_LENGTH,
@@ -84,11 +79,21 @@ export function VerifyOtpScreen() {
            */
           void markAuthChoiceMade()
 
-          // `replace` : revenir en arrière sur un écran de code déjà consommé
-          // ne mène nulle part.
-          router.replace(
-            params.next === undefined ? '/account' : (params.next as '/account'),
-          )
+          /*
+           * `replace` : revenir en arrière sur un écran de code déjà consommé ne
+           * mène nulle part.
+           *
+           * **La recherche, pas le profil.** `next` porte l'endroit d'où l'on a
+           * été renvoyé ici — le plan de sièges, le plus souvent — et c'est là
+           * qu'il faut revenir. En son absence, on arrive du lancement de
+           * l'application : la destination est alors l'accueil, exactement comme
+           * pour l'entrée sans compte. Déposer quelqu'un sur sa fiche de profil
+           * après une connexion lui fait croire qu'il reste une étape, alors
+           * qu'il voulait chercher un départ.
+           */
+          // Le transtypage reste ici : les routes typées d'Expo Router n'admettent
+          // pas une chaîne quelconque, et `next` vient de l'URL.
+          router.replace(destinationAfterAuth(params.next) as typeof HOME_ROUTE)
         },
         onError: (error) => {
           // Le serveur décompte les tentatives : les afficher évite au passager

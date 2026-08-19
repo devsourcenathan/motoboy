@@ -1,19 +1,12 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   Button,
   Field,
   fontSize,
+  KeyboardForm,
   lineHeight,
   PersonIcon,
   PinIcon,
@@ -81,112 +74,105 @@ export function ServiceCallScreen() {
 
   return (
     <Screen title={t('serviceCall.title')} subtitle={t('serviceCall.subtitle')}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            <Field
-              bare
-              label={t('serviceCall.from')}
-              value={form.from?.label ?? null}
-              placeholder={t('search.pickCity')}
-              icon={<PinIcon color={theme.route.origin} size={20} />}
-              onPress={() => setPicking('from')}
-            />
-
-            <View style={styles.rule} />
-
-            <TextField
-              label={t('serviceCall.landmark')}
-              hint={t('serviceCall.landmarkHint')}
-              value={form.fromLandmark}
-              onChangeText={(fromLandmark) =>
-                setForm((current) => ({ ...current, fromLandmark }))
-              }
-              maxLength={160}
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Field
-              bare
-              label={t('serviceCall.to')}
-              value={form.to?.label ?? null}
-              placeholder={t('search.pickCity')}
-              icon={<PinIcon color={theme.route.destination} size={20} />}
-              onPress={() => setPicking('to')}
-            />
-
-            <View style={styles.rule} />
-
-            <TextField
-              label={t('serviceCall.landmarkOptional')}
-              value={form.toLandmark}
-              onChangeText={(toLandmark) =>
-                setForm((current) => ({ ...current, toLandmark }))
-              }
-              maxLength={160}
-            />
-          </View>
-
-          <View style={styles.card}>
-            <View style={styles.travellers}>
-              <PersonIcon color={theme.text.secondary} size={20} />
-              <View style={styles.travellersText}>
-                <Text style={styles.travellersLabel}>{t('serviceCall.passengers')}</Text>
-                <Text style={styles.travellersValue}>{form.travellers}</Text>
-              </View>
-              <Step
-                sign="−"
-                disabled={form.travellers <= 1}
-                onPress={() =>
-                  setForm((current) => ({ ...current, travellers: current.travellers - 1 }))
-                }
-              />
-              <Step
-                sign="+"
-                disabled={form.travellers >= MAX_TRAVELLERS}
-                onPress={() =>
-                  setForm((current) => ({ ...current, travellers: current.travellers + 1 }))
-                }
-              />
-            </View>
-
-            <View style={styles.rule} />
-
-            <TextField
-              label={t('serviceCall.note')}
-              hint={t('serviceCall.noteHint')}
-              value={form.note}
-              onChangeText={(note) => setForm((current) => ({ ...current, note }))}
-              multiline
-              maxLength={500}
-            />
-          </View>
-
-          {error === 'SAME_CITY' ? (
-            <Text style={styles.error}>{t('serviceCall.sameCity')}</Text>
-          ) : null}
-          {error === 'MISSING_LANDMARK' ? (
-            <Text style={styles.error}>{t('serviceCall.missingLandmark')}</Text>
-          ) : null}
-          {open.error ? <Text style={styles.error}>{describe(open.error)}</Text> : null}
-        </ScrollView>
-
-        <View style={styles.footer}>
+      <KeyboardForm
+        contentContainerStyle={styles.content}
+        footer={
           <Button
             label={t('serviceCall.submit')}
             onPress={submit}
             disabled={error !== null}
             busy={open.isPending}
           />
+        }
+      >
+        <View style={styles.card}>
+          <Field
+            bare
+            label={t('serviceCall.from')}
+            value={form.from?.label ?? null}
+            placeholder={t('search.pickCity')}
+            icon={<PinIcon color={theme.route.origin} size={20} />}
+            onPress={() => setPicking('from')}
+          />
+
+          <View style={styles.rule} />
+
+          <TextField
+            label={t('serviceCall.landmark')}
+            hint={t('serviceCall.landmarkHint')}
+            value={form.fromLandmark}
+            onChangeText={(fromLandmark) =>
+              setForm((current) => ({ ...current, fromLandmark }))
+            }
+            maxLength={160}
+          />
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.card}>
+          <Field
+            bare
+            label={t('serviceCall.to')}
+            value={form.to?.label ?? null}
+            placeholder={t('search.pickCity')}
+            icon={<PinIcon color={theme.route.destination} size={20} />}
+            onPress={() => setPicking('to')}
+          />
+
+          <View style={styles.rule} />
+
+          <TextField
+            label={t('serviceCall.landmarkOptional')}
+            value={form.toLandmark}
+            onChangeText={(toLandmark) =>
+              setForm((current) => ({ ...current, toLandmark }))
+            }
+            maxLength={160}
+          />
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.travellers}>
+            <PersonIcon color={theme.text.secondary} size={20} />
+            <View style={styles.travellersText}>
+              <Text style={styles.travellersLabel}>{t('serviceCall.passengers')}</Text>
+              <Text style={styles.travellersValue}>{form.travellers}</Text>
+            </View>
+            <Step
+              sign="−"
+              disabled={form.travellers <= 1}
+              onPress={() =>
+                setForm((current) => ({ ...current, travellers: current.travellers - 1 }))
+              }
+            />
+            <Step
+              sign="+"
+              disabled={form.travellers >= MAX_TRAVELLERS}
+              onPress={() =>
+                setForm((current) => ({ ...current, travellers: current.travellers + 1 }))
+              }
+            />
+          </View>
+
+          <View style={styles.rule} />
+
+          <TextField
+            label={t('serviceCall.note')}
+            hint={t('serviceCall.noteHint')}
+            value={form.note}
+            onChangeText={(note) => setForm((current) => ({ ...current, note }))}
+            multiline
+            maxLength={500}
+          />
+        </View>
+
+        {error === 'SAME_CITY' ? (
+          <Text style={styles.error}>{t('serviceCall.sameCity')}</Text>
+        ) : null}
+        {error === 'MISSING_LANDMARK' ? (
+          <Text style={styles.error}>{t('serviceCall.missingLandmark')}</Text>
+        ) : null}
+        {open.error ? <Text style={styles.error}>{describe(open.error)}</Text> : null}
+      </KeyboardForm>
 
       <CityPicker
         visible={picking !== null}
@@ -223,9 +209,6 @@ function Step({
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   content: {
     padding: spacing.md,
     gap: spacing.sm,
@@ -275,12 +258,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: '700',
     color: theme.text.brand,
-  },
-  footer: {
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   error: {
     fontSize: fontSize.sm,

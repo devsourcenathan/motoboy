@@ -1,18 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   Button,
   fontSize,
+  KeyboardForm,
   lineHeight,
   Logo,
   Screen,
@@ -99,101 +92,93 @@ export function SignInScreen() {
 
   return (
     <Screen chrome={false}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.heading}>
+      <KeyboardForm
+        contentContainerStyle={styles.content}
+        footer={
+          <>
+            <Button
+              label={t('account.continue')}
+              onPress={submit}
+              disabled={error !== null}
+              busy={request.isPending}
+            />
+
             {/*
+                  **L'entrée sans compte, offerte et non cachée.**
+
+                  Chercher un départ fonctionne sans session (§35) : c'est la promesse
+                  du produit, et l'enfermer derrière une inscription perdrait les gens
+                  sur une question qu'ils ne se posaient pas encore. Le compte devient
+                  nécessaire au moment de réserver, et c'est là qu'on le demandera.
+
+                  Proposé seulement quand on arrive **par le lancement** : si la
+                  connexion a été demandée pour continuer une action précise — `next`
+                  est alors renseigné —, contourner ne mènerait nulle part.
+                */}
+            {next === undefined ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  void markAuthChoiceMade()
+                  router.replace('/search')
+                }}
+                style={styles.guest}
+              >
+                <Text style={styles.guestLabel}>{t('account.continueAsGuest')}</Text>
+              </Pressable>
+            ) : null}
+          </>
+        }
+      >
+        <View style={styles.heading}>
+          {/*
               La marque avant le titre : c'est le premier écran de l'application,
               et rien d'autre ne dit encore où l'on est.
             */}
-            <Logo size={52} />
-            <Text style={styles.title} accessibilityRole="header">
-              {t('account.welcome')}
-            </Text>
-            <Text style={styles.subtitle}>
-              {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
-            </Text>
-          </View>
+          <Logo size={52} />
+          <Text style={styles.title} accessibilityRole="header">
+            {t('account.welcome')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {next === undefined ? t('account.authBody') : t('account.whyNeeded')}
+          </Text>
+        </View>
 
-          <View style={styles.card}>
-            <TextField
-              label={t('account.phone')}
-              hint={t('account.phoneHint')}
-              prefix={DIALLING_CODE}
-              value={form.phone}
-              onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              autoComplete="tel"
-            />
-
-            {request.error ? (
-              <Text style={styles.error}>{describe(request.error)}</Text>
-            ) : null}
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              router.push({
-                pathname: '/account/sign-up',
-                ...(next === undefined ? {} : { params: { next } }),
-              })
-            }
-            style={styles.switch}
-          >
-            <Text style={styles.switchLabel}>{t('account.noAccount')}</Text>
-          </Pressable>
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Button
-            label={t('account.continue')}
-            onPress={submit}
-            disabled={error !== null}
-            busy={request.isPending}
+        <View style={styles.card}>
+          <TextField
+            label={t('account.phone')}
+            hint={t('account.phoneHint')}
+            prefix={DIALLING_CODE}
+            value={form.phone}
+            onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
           />
 
-          {/*
-            **L'entrée sans compte, offerte et non cachée.**
-
-            Chercher un départ fonctionne sans session (§35) : c'est la promesse
-            du produit, et l'enfermer derrière une inscription perdrait les gens
-            sur une question qu'ils ne se posaient pas encore. Le compte devient
-            nécessaire au moment de réserver, et c'est là qu'on le demandera.
-
-            Proposé seulement quand on arrive **par le lancement** : si la
-            connexion a été demandée pour continuer une action précise — `next`
-            est alors renseigné —, contourner ne mènerait nulle part.
-          */}
-          {next === undefined ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                void markAuthChoiceMade()
-                router.replace('/search')
-              }}
-              style={styles.guest}
-            >
-              <Text style={styles.guestLabel}>{t('account.continueAsGuest')}</Text>
-            </Pressable>
+          {request.error ? (
+            <Text style={styles.error}>{describe(request.error)}</Text>
           ) : null}
         </View>
-      </KeyboardAvoidingView>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push({
+              pathname: '/account/sign-up',
+              ...(next === undefined ? {} : { params: { next } }),
+            })
+          }
+          style={styles.switch}
+        >
+          <Text style={styles.switchLabel}>{t('account.noAccount')}</Text>
+        </Pressable>
+      </KeyboardForm>
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   content: {
     /*
      * **De l'air en haut, et une gouttière plus large.**
@@ -257,12 +242,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: '600',
     color: theme.text.brand,
-  },
-  footer: {
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   error: {
     fontSize: fontSize.sm,

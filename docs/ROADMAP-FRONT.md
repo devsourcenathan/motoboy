@@ -478,3 +478,36 @@ Il n'existe pas de **logotype** — le mot « MOTOBOY » reste composé en gras 
 la fonte de l'interface, à côté de la marque. Un vrai dessin du mot demanderait
 un choix typographique qui n'a pas été fait, et l'inventer ici aurait produit une
 identité que personne n'a validée.
+
+---
+
+## 9. Saisie au clavier
+
+Les cinq écrans de saisie portaient chacun leur copie de
+`behavior={Platform.OS === 'ios' ? 'padding' : undefined}`. Sur Android,
+`behavior` absent ne signifie pas « comportement par défaut » : `KeyboardAvoidingView`
+s'y réduit alors à une `View`, sans rien faire. Tout reposait donc sur
+`adjustResize`.
+
+Or l'affichage bord à bord, activé d'office depuis le SDK 54, neutralise
+précisément ce redimensionnement — c'est écrit dans le README de
+`react-native-edge-to-edge`, que le SDK embarque : « Enabling edge-to-edge display
+disrupts Android keyboard management ». Le clavier se posait donc par-dessus les
+champs **et** par-dessus le bouton d'envoi, obligeant à le refermer pour valider.
+
+`KeyboardForm` remplace les cinq copies. `padding` sur les deux plateformes prend
+la place de ce que le système ne fait plus ; iOS ne change pas, il l'utilisait
+déjà. Le défilement vers le champ actif revient tout seul : le `ScrollView`
+d'Android amène de lui-même l'élément qui prend le focus dans la partie visible,
+mais il lui fallait une partie visible à calculer — tant qu'il gardait sa hauteur
+pleine, il n'avait rien à faire défiler.
+
+`react-native-keyboard-controller` ferait mieux et c'est la recommandation
+d'Expo, mais c'est un module natif : il ne fonctionne pas dans Expo Go, où se
+fait tout le test aujourd'hui. À reconsidérer le jour où il y aura une
+construction de développement.
+
+**À vérifier sur un vrai téléphone.** Le clavier ne se reproduit ni en test ni en
+émulateur de rendu ; si un écart apparaît, il se verra comme un espace vide trop
+grand au-dessus du clavier — signe que `adjustResize` fonctionne encore et que
+l'ajustement se ferait deux fois.
