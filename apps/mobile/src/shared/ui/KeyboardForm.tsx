@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import {
-  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -21,27 +22,60 @@ export interface KeyboardFormProps {
 }
 
 /**
+ * La hauteur qu'occupe le clavier, telle que le système l'annonce.
+ *
+ * **Annoncée, et non déduite.** `KeyboardAvoidingView` ne lit pas cette hauteur :
+ * il la calcule, en retranchant le haut du clavier de sa propre position mesurée.
+ * Les deux valeurs viennent de repères différents — la position de la vue est
+ * mesurée dans la fenêtre, celle du clavier dans l'écran — et sous l'affichage
+ * bord à bord ces deux repères cessent de coïncider : ils diffèrent de la hauteur
+ * de la barre de navigation. Le rembourrage obtenu était donc trop court d'autant,
+ * ce qui laissait le dernier champ caché et le défilement à court de course.
+ *
+ * `endCoordinates.height` ne se déduit de rien : c'est ce que le clavier occupe.
+ *
+ * iOS émet les événements `Will`, ce qui permet de suivre l'animation d'ouverture
+ * plutôt que de sauter à son terme ; Android n'émet que les `Did`.
+ */
+function useKeyboardHeight(): number {
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const opening = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
+    const closing = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
+
+    const shown = Keyboard.addListener(opening, (event) => {
+      setHeight(event.endCoordinates.height)
+    })
+    const hidden = Keyboard.addListener(closing, () => setHeight(0))
+
+    return () => {
+      shown.remove()
+      hidden.remove()
+    }
+  }, [])
+
+  return height
+}
+
+/**
  * Un formulaire qui laisse voir ce qu'on saisit.
  *
  * **Ce qui n'allait pas.** Les cinq écrans de saisie portaient chacun leur copie
  * de `behavior={Platform.OS === 'ios' ? 'padding' : undefined}` — et sur Android
  * `behavior` absent ne veut pas dire « comportement par défaut », ça veut dire
  * **aucun comportement** : `KeyboardAvoidingView` s'y réduit à une `View`. Tout
- * reposait donc sur `adjustResize`, le redimensionnement natif de la fenêtre.
+ * reposait donc sur `adjustResize`, le redimensionnement natif de la fenêtre, que
+ * l'affichage bord à bord — activé d'office depuis le SDK 54 — neutralise.
  *
- * Or l'affichage bord à bord, activé d'office depuis le SDK 54, neutralise
- * précisément ce redimensionnement : la fenêtre ne rétrécit plus quand le
- * clavier s'ouvre. Résultat, sur Android le clavier se posait par-dessus les
- * champs et par-dessus le bouton, et il fallait le refermer pour valider.
- *
- * `padding` sur les deux plateformes remplace ce que le système ne fait plus.
- * Rien ne change sur iOS, qui l'utilisait déjà.
+ * On retranche donc nous-mêmes la hauteur du clavier au cadre du formulaire. Le
+ * `ScrollView` rétrécit d'autant, le pied de page remonte avec lui, et la course
+ * de défilement couvre alors la totalité des champs.
  *
  * **Le défilement vers le champ actif vient en prime.** Le `ScrollView` d'Android
- * amène de lui-même l'élément qui prend le focus dans la partie visible — mais
- * seulement s'il y a une partie visible à calculer. Tant qu'il gardait sa hauteur
- * pleine, il n'avait rien à faire défiler : le champ était hors de l'écran sans
- * que rien ne le sache.
+ * amène de lui-même l'élément qui prend le focus dans la partie visible — mais il
+ * lui faut une partie visible à calculer. À hauteur pleine, il n'avait rien à
+ * faire défiler : le champ était hors de l'écran sans que rien ne le sache.
  *
  * **Un seul exemplaire, et c'est le sujet.** Cinq copies d'un même réglage, c'est
  * cinq occasions de n'en corriger que quatre.
@@ -51,8 +85,12 @@ export function KeyboardForm({
   footer,
   contentContainerStyle,
 }: KeyboardFormProps) {
+  const keyboard = useKeyboardHeight()
+
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior="padding">
+    // Le `testID` est là pour que la hauteur retirée soit mesurable : c'est la
+    // seule chose que ce composant fait, et elle est invisible autrement.
+    <View testID="keyboard-form" style={[styles.flex, { paddingBottom: keyboard }]}>
       <ScrollView
         contentContainerStyle={contentContainerStyle}
         /*
@@ -66,7 +104,7 @@ export function KeyboardForm({
       </ScrollView>
 
       {footer === undefined ? null : <View style={styles.footer}>{footer}</View>}
-    </KeyboardAvoidingView>
+    </View>
   )
 }
 

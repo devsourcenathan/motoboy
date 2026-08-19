@@ -507,7 +507,24 @@ d'Expo, mais c'est un module natif : il ne fonctionne pas dans Expo Go, où se
 fait tout le test aujourd'hui. À reconsidérer le jour où il y aura une
 construction de développement.
 
-**À vérifier sur un vrai téléphone.** Le clavier ne se reproduit ni en test ni en
-émulateur de rendu ; si un écart apparaît, il se verra comme un espace vide trop
-grand au-dessus du clavier — signe que `adjustResize` fonctionne encore et que
-l'ajustement se ferait deux fois.
+### Deuxième passe : la hauteur annoncée, pas déduite
+
+`padding` a partiellement corrigé le tir — le clavier remontait, mais les derniers
+champs restaient masqués et le défilement s'arrêtait avant la fin. « Partiellement »
+était l'indice : le rembourrage s'appliquait, mais trop court.
+
+`KeyboardAvoidingView` ne lit pas la hauteur du clavier, il la déduit en
+retranchant le haut du clavier de sa propre position mesurée. Ces deux valeurs
+viennent de repères différents — la vue est mesurée dans la fenêtre, le clavier
+dans l'écran — et sous le bord à bord ces repères cessent de coïncider : ils
+diffèrent de la hauteur de la barre de navigation. D'où un rembourrage trop court
+d'autant, et une course de défilement amputée de la même quantité.
+
+`Keyboard.addListener` annonce `endCoordinates.height`, qui ne se déduit de rien.
+C'est cette valeur qui est désormais retirée au cadre.
+
+Quatre tests la verrouillent, en interceptant les abonnements plutôt qu'en
+nommant les événements : le composant s'abonne aux `Will` sur iOS et aux `Did`
+sur Android, et un test qui les écrirait en dur passerait sur une plateforme en
+mentant sur l'autre. Amputer le rembourrage de 48 unités fait échouer deux d'entre
+eux — c'est ainsi qu'on sait qu'ils regardent la bonne chose.
