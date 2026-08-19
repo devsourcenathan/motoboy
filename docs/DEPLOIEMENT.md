@@ -136,6 +136,45 @@ C'est arrivé le 19 août 2026 sur l'envoi d'une pièce d'identité de chauffeur
 
 ---
 
+## 4 bis. Le web, sur Vercel
+
+L'API est sur Render, le web sur Vercel : **deux origines distinctes**. Les
+requêtes du navigateur sont donc croisées. Elles passent — le défaut de Laravel
+autorise toutes les origines — mais c'est un défaut, pas une décision : n'importe
+quel site peut appeler l'API. Sans risque immédiat, les jetons voyageant en
+en-tête `Authorization` et non en cookie, donc rien n'est envoyé automatiquement
+par le navigateur d'un tiers. À resserrer le jour où l'API portera autre chose.
+
+### Réglages du projet Vercel
+
+| Réglage | Valeur |
+|---|---|
+| Root Directory | `apps/web` |
+| Framework | Vite |
+| `VITE_API_URL` | `https://motoboy.sekuu.com/api` |
+
+**`VITE_API_URL` est lue à la construction, pas à l'exécution.** Vite l'inscrit
+dans le paquet : l'ajouter après coup ne change rien tant qu'on n'a pas
+reconstruit. Absente, sa valeur par défaut est `http://localhost:8000/api`, et le
+site déployé appelle la machine du visiteur — l'erreur ressemble alors à une
+panne réseau, jamais à une variable oubliée.
+
+### Ce que `vercel.json` règle
+
+**La réécriture vers `index.html`.** Le routage se fait côté client : sans elle,
+ouvrir directement `/agency/money`, ou simplement recharger la page, donne un 404
+de Vercel. La navigation interne fonctionne pourtant très bien, ce qui rend le
+défaut invisible tant qu'on ne recharge pas. Vercel consulte les fichiers avant
+d'appliquer les réécritures, donc `sw.js`, le manifeste et les icônes continuent
+d'être servis tels quels.
+
+**`sw.js` servi sans cache.** Un service worker mis en cache par le navigateur
+fige la version installée : le site se met à jour, les agents gardent l'ancienne,
+et rien ne le signale. C'est le piège classique des PWA — la seule ressource qu'il
+ne faut jamais laisser en cache est celle qui gère le cache.
+
+---
+
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.
