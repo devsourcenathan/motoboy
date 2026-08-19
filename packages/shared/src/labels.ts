@@ -133,6 +133,7 @@ export const ticketStatusLabels: Record<Locale, Record<TicketStatus, string>> = 
 export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
   fr: {
     VALIDATION_FAILED: 'Certaines informations sont incorrectes.',
+    SERVER_ERROR: 'Le service rencontre un incident. Réessayez dans un instant.',
     UNAUTHENTICATED: 'Votre session a expiré, reconnectez-vous.',
     FORBIDDEN: "Vous n'avez pas accès à cette ressource.",
     NOT_FOUND: 'Élément introuvable.',
@@ -169,6 +170,7 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
   },
   en: {
     VALIDATION_FAILED: 'Some of the details are incorrect.',
+    SERVER_ERROR: 'The service is having trouble. Try again in a moment.',
     UNAUTHENTICATED: 'Your session has expired, please sign in again.',
     FORBIDDEN: 'You do not have access to this resource.',
     NOT_FOUND: 'Not found.',
@@ -212,5 +214,7 @@ export function errorLabel(code: ErrorCode, locale: Locale = DEFAULT_LOCALE): st
 
 /** Vrai si l'utilisateur peut réessayer sans repartir de zéro. */
 export function isRetryable(code: ErrorCode): boolean {
-  return code === 'PAYMENT_FAILED' || code === 'RATE_LIMITED'
+  // Une panne de notre côté se réessaie : c'est le cas où insister a le plus
+  // de chances d'aboutir, et où repartir de zéro n'aiderait en rien.
+  return code === 'PAYMENT_FAILED' || code === 'RATE_LIMITED' || code === 'SERVER_ERROR'
 }
