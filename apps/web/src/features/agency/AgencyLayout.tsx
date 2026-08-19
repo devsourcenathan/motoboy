@@ -1,5 +1,6 @@
 import { NavLink as RouterNavLink, Outlet } from 'react-router'
 import type { ReactNode } from 'react'
+import { Logo } from '../../shared/ui'
 
 /**
  * Le bandeau de l'espace agence.
@@ -27,7 +28,10 @@ export function AgencyLayout({ onSignOut }: { onSignOut: () => void }) {
     <div className="min-h-screen">
       <header className="bg-ink-700">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-          <span className="font-bold text-neutral-0">MOTOBOY — agence</span>
+          <span className="flex items-center gap-2 font-bold text-neutral-0">
+            <Logo variant="mark" size={26} />
+            MOTOBOY — agence
+          </span>
           <button
             type="button"
             onClick={onSignOut}

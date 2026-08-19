@@ -105,3 +105,26 @@ export type OtpError = 'OTP_INVALID' | 'OTP_EXPIRED' | 'OTP_TOO_MANY_ATTEMPTS'
 export function normaliseCode(input: string): string {
   return input.replace(/\D/g, '')
 }
+
+/** L'accueil : la recherche d'un départ, ce pour quoi l'application est ouverte. */
+export const HOME_ROUTE = '/search'
+
+/**
+ * Où atterrir une fois le code validé.
+ *
+ * `next` porte l'endroit d'où l'on a été renvoyé vers la connexion — le plan de
+ * sièges, le plus souvent. En son absence, on vient du lancement de
+ * l'application, et la destination est l'accueil : la même que pour l'entrée
+ * sans compte.
+ *
+ * **Le profil n'est jamais la réponse.** Y déposer quelqu'un après une connexion
+ * lui laisse croire qu'il reste une étape à faire, alors qu'il voulait
+ * simplement chercher un départ.
+ *
+ * La chaîne vide est traitée comme une absence : un paramètre de navigation
+ * effacé arrive sous cette forme, et le distinguer de `undefined` renverrait
+ * vers nulle part.
+ */
+export function destinationAfterAuth(next: string | undefined): string {
+  return next === undefined || next.trim() === '' ? HOME_ROUTE : next
+}

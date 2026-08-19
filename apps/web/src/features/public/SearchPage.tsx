@@ -5,7 +5,16 @@ import { unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
-import { Button, Card, EmptyState, ErrorNote, Field, INPUT, Skeleton } from '../../shared/ui'
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorNote,
+  Field,
+  INPUT,
+  Logo,
+  Skeleton,
+} from '../../shared/ui'
 import { CityField, type CityChoice } from '../agency/CityField'
 
 /**
@@ -29,7 +38,9 @@ export function SearchPage() {
 
   const [from, setFrom] = useState<CityChoice | null>(null)
   const [to, setTo] = useState<CityChoice | null>(null)
-  const [date, setDate] = useState(params.get('date') ?? new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(
+    params.get('date') ?? new Date().toISOString().slice(0, 10),
+  )
   const [passengers, setPassengers] = useState(Number(params.get('passengers') ?? '1'))
 
   const criteria = {
@@ -71,7 +82,10 @@ export function SearchPage() {
       */}
       <header className="bg-ink-700 px-6 pt-6 pb-10">
         <div className="mx-auto max-w-4xl">
-          <p className="text-xl font-bold text-neutral-0">MOTOBOY</p>
+          <p className="flex items-center gap-2.5 text-xl font-bold text-neutral-0">
+            <Logo variant="mark" size={32} />
+            MOTOBOY
+          </p>
           <h1 className="mt-4 max-w-lg text-2xl font-bold text-neutral-0 sm:text-3xl">
             Comparez les départs de toutes les agences, sur un seul écran.
           </h1>
@@ -120,7 +134,11 @@ export function SearchPage() {
             </Field>
 
             <div className="sm:col-span-2">
-              <Button type="submit" label="Chercher" disabled={from === null || to === null} />
+              <Button
+                type="submit"
+                label="Chercher"
+                disabled={from === null || to === null}
+              />
             </div>
           </form>
         </Card>

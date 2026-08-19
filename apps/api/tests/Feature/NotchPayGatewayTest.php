@@ -12,6 +12,7 @@ use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Enums\RefundStatus;
 use App\Modules\Payments\Gateways\NotchPayGateway;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -35,7 +36,7 @@ final class NotchPayGatewayTest extends TestCase
         );
     }
 
-    private function intent(string $operator = 'MTN'): PaymentIntent
+    private function intent(string $operator = 'MTN', string $payerPhone = '+237690000001'): PaymentIntent
     {
         return new PaymentIntent(
             reference: 'PAY-ABC123',
@@ -43,9 +44,18 @@ final class NotchPayGatewayTest extends TestCase
             currency: 'XAF',
             method: PaymentMethod::MobileMoney,
             operator: $operator,
-            payerPhone: '+237690000001',
+            payerPhone: $payerPhone,
             idempotencyKey: 'cle-test',
         );
+    }
+
+    /** Les deux appels de l'encaissement : creation, puis prelevement. */
+    private function fakeCharge(): void
+    {
+        Http::fake([
+            'api.notchpay.co/payments/*' => Http::response(['status' => 'Accepted']),
+            'api.notchpay.co/payments' => Http::response(['transaction' => 'trx_1'], 201),
+        ]);
     }
 
     /**
@@ -76,14 +86,17 @@ final class NotchPayGatewayTest extends TestCase
         $this->assertSame(PaymentStatus::Processing, $charge->status);
         $this->assertSame('trx_1', $charge->providerReference);
 
-        Http::assertSent(function ($request): bool {
-            if (!str_contains($request->url(), '/payments/trx_1')) {
-                return true;
-            }
-
-            return $request->data()['channel'] === 'cm.mtn'
-                && $request->data()['data']['account_number'] === '+237690000001';
-        });
+        /*
+         * **Le prelevement, et lui seul.**
+         *
+         * `assertSent` passe des qu'*une* requete satisfait le rappel. Ecarter la
+         * creation en renvoyant `true` la faisait donc satisfaire l'assertion a
+         * elle seule : le test ne regardait rien et ne pouvait pas echouer. Le
+         * bug du champ `account_number` a survecu a ce test pour cette raison.
+         */
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), '/payments/trx_1')
+            && $request->data()['channel'] === 'cm.mtn'
+            && ($request->data()['data']['phone'] ?? null) === '237690000001');
     }
 
     /**
@@ -149,6 +162,63 @@ final class NotchPayGatewayTest extends TestCase
         $this->assertSame(PaymentStatus::Failed, $this->gateway()->charge($this->intent('VISA'))->status);
 
         Http::assertNothingSent();
+    }
+
+    /**
+     * **Le numero part dans `phone`, pas dans `account_number`.**
+     *
+     * C'est ce second appel qui pousse la sollicitation sur le telephone du
+     * passager. Il partait dans `account_number`, que l'exemple de leur reference
+     * laisse vide — le numero n'arrivait donc jamais dans le champ qu'ils lisent,
+     * et le paiement restait en attente d'un geste qu'on n'avait demande a
+     * personne.
+     */
+    public function test_the_charge_puts_the_number_where_the_provider_reads_it(): void
+    {
+        $this->fakeCharge();
+
+        $this->gateway()->charge($this->intent(payerPhone: '+237690000001'));
+
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), '/payments/trx_1')
+            && ($request->data()['data']['phone'] ?? null) === '237690000001'
+            && ($request->data()['data']['country'] ?? null) === 'CM');
+    }
+
+    /**
+     * Trois saisies pour un meme abonne, une seule forme envoyee.
+     *
+     * Rien n'imposait de format : le mobile transmettait ce qui avait ete tape,
+     * l'API n'en verifiait que la longueur. Un refus du prestataire sur un format
+     * de numero ne ressemble pas a une erreur de format — il ressemble a un
+     * paiement qui n'aboutit pas.
+     *
+     * @return list<array{string}>
+     */
+    public static function messyNumbers(): array
+    {
+        return [['+237690000001'], ['237 690 000 001'], ['690000001'], ['00237690000001']];
+    }
+
+    #[DataProvider('messyNumbers')]
+    public function test_any_way_of_writing_the_number_reaches_the_provider_the_same(string $typed): void
+    {
+        $this->fakeCharge();
+
+        $this->gateway()->charge($this->intent(payerPhone: $typed));
+
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), '/payments/trx_1')
+            && ($request->data()['data']['phone'] ?? null) === '237690000001');
+    }
+
+    /** La creation, elle, veut la forme internationale — signe compris. */
+    public function test_the_creation_call_keeps_the_plus_sign(): void
+    {
+        $this->fakeCharge();
+
+        $this->gateway()->charge($this->intent(payerPhone: '690000001'));
+
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/payments')
+            && ($request->data()['phone'] ?? null) === '+237690000001');
     }
 
     /**

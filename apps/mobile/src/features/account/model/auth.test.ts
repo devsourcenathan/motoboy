@@ -1,9 +1,10 @@
 import {
+  destinationAfterAuth,
   normaliseCode,
   normalisePhone,
   toInternational,
-  validate,
   type CredentialsForm,
+  validate,
 } from './auth'
 
 describe('normalisePhone', () => {
@@ -40,30 +41,24 @@ describe('validate', () => {
    * qui n'arrivera jamais.
    */
   it('exige le format international', () => {
-    expect(validate(form({ phone: '690000001' }), 'signIn')).toBe(
-      'PHONE_INVALID',
-    )
-    expect(
-      validate(form({ phone: '00237690000001' }), 'signIn'),
-    ).toBe('PHONE_INVALID')
+    expect(validate(form({ phone: '690000001' }), 'signIn')).toBe('PHONE_INVALID')
+    expect(validate(form({ phone: '00237690000001' }), 'signIn')).toBe('PHONE_INVALID')
     expect(validate(form({ phone }), 'signIn')).toBeNull()
   })
 
   it('accepte un numéro saisi avec des espaces', () => {
-    expect(
-      validate(form({ phone: '+237 690 00 00 01' }), 'signIn'),
-    ).toBeNull()
+    expect(validate(form({ phone: '+237 690 00 00 01' }), 'signIn')).toBeNull()
   })
 
   it('n’exige les noms qu’à l’inscription', () => {
     expect(validate(form({ phone }), 'signIn')).toBeNull()
-    expect(validate(form({ phone }), 'signUp')).toBe(
-      'NAME_MISSING',
-    )
+    expect(validate(form({ phone }), 'signUp')).toBe('NAME_MISSING')
     expect(validate(form({ phone, firstName: 'Awa', lastName: '  ' }), 'signUp')).toBe(
       'NAME_MISSING',
     )
-    expect(validate(form({ phone, firstName: 'Awa', lastName: 'Nkeng' }), 'signUp')).toBeNull()
+    expect(
+      validate(form({ phone, firstName: 'Awa', lastName: 'Nkeng' }), 'signUp'),
+    ).toBeNull()
   })
 
   /**
@@ -71,12 +66,8 @@ describe('validate', () => {
    * refuserait des numéros valides qu'on ne connaît pas encore (§29).
    */
   it('accepte d’autres indicatifs que le Cameroun', () => {
-    expect(
-      validate(form({ phone: '+33612345678' }), 'signIn'),
-    ).toBeNull()
-    expect(
-      validate(form({ phone: '+15551234567' }), 'signIn'),
-    ).toBeNull()
+    expect(validate(form({ phone: '+33612345678' }), 'signIn')).toBeNull()
+    expect(validate(form({ phone: '+15551234567' }), 'signIn')).toBeNull()
   })
 })
 
@@ -103,5 +94,35 @@ describe('toInternational', () => {
   it('tolère les espaces et les tirets de la saisie', () => {
     expect(toInternational('6 90 00 00 01')).toBe('+237690000001')
     expect(toInternational('690-000-001')).toBe('+237690000001')
+  })
+})
+
+/**
+ * Où l'on atterrit après le code.
+ *
+ * Le bug qui a motivé ces cas : sans destination d'origine, la connexion
+ * déposait sur la fiche de profil. Quelqu'un qui ouvre l'application pour
+ * chercher un départ se retrouvait devant ses paramètres, sans rien à y faire.
+ */
+describe('destinationAfterAuth', () => {
+  it('ramène à l’accueil quand la connexion vient du lancement', () => {
+    expect(destinationAfterAuth(undefined)).toBe('/search')
+  })
+
+  /**
+   * Le cas inverse compte autant : renvoyé ici depuis le plan de sièges, on doit
+   * y revenir — sinon la réservation entamée est perdue et tout est à refaire.
+   */
+  it('revient là d’où l’on a été renvoyé', () => {
+    expect(destinationAfterAuth('/trip/42/seats')).toBe('/trip/42/seats')
+  })
+
+  /**
+   * Un paramètre de navigation effacé n'arrive pas en `undefined` mais en chaîne
+   * vide. Le distinguer enverrait vers nulle part.
+   */
+  it('traite une destination vide comme une absence', () => {
+    expect(destinationAfterAuth('')).toBe('/search')
+    expect(destinationAfterAuth('   ')).toBe('/search')
   })
 })

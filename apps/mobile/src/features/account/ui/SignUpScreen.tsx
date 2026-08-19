@@ -1,19 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   Button,
   fontSize,
+  KeyboardForm,
   lineHeight,
+  Logo,
   Screen,
   sharedStyles,
   spacing,
@@ -80,98 +74,95 @@ export function SignUpScreen() {
 
   return (
     <Screen>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.heading}>
-            <Text style={styles.title} accessibilityRole="header">
-              {t('account.signUp')}
-            </Text>
-            <Text style={styles.subtitle}>{t('account.signUpBody')}</Text>
-          </View>
-
-          <View style={styles.card}>
-            {/*
-              Prénom et nom séparés, là où la maquette montre « Nom complet » :
-              le contrat les veut distincts, et découper une chaîne à l'espace se
-              trompe dès le premier nom composé.
-            */}
-            <TextField
-              label={t('account.firstName')}
-              value={form.firstName}
-              onChangeText={(firstName) => setForm((current) => ({ ...current, firstName }))}
-              autoCapitalize="words"
-              textContentType="givenName"
-            />
-            <TextField
-              label={t('account.lastName')}
-              value={form.lastName}
-              onChangeText={(lastName) => setForm((current) => ({ ...current, lastName }))}
-              autoCapitalize="words"
-              textContentType="familyName"
-            />
-            <TextField
-              label={t('account.phone')}
-              hint={t('account.phoneHint')}
-              prefix={DIALLING_CODE}
-              value={form.phone}
-              onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              autoComplete="tel"
-            />
-            <TextField
-              label={t('account.emailOptional')}
-              value={form.email}
-              onChangeText={(email) => setForm((current) => ({ ...current, email }))}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="emailAddress"
-              autoComplete="email"
-            />
-
-            {request.error ? (
-              <Text style={styles.error}>{describe(request.error)}</Text>
-            ) : null}
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() =>
-              router.replace({
-                pathname: '/account/sign-in',
-                ...(next === undefined ? {} : { params: { next } }),
-              })
-            }
-            style={styles.switch}
-          >
-            <Text style={styles.switchLabel}>{t('account.haveAccount')}</Text>
-          </Pressable>
-        </ScrollView>
-
-        <View style={styles.footer}>
+      <KeyboardForm
+        contentContainerStyle={styles.content}
+        footer={
           <Button
             label={t('account.continue')}
             onPress={submit}
             disabled={error !== null}
             busy={request.isPending}
           />
+        }
+      >
+        <View style={styles.heading}>
+          {/*
+              La marque avant le titre : c'est le premier écran de l'application,
+              et rien d'autre ne dit encore où l'on est.
+            */}
+          <Logo size={52} />
+          <Text style={styles.title} accessibilityRole="header">
+            {t('account.signUp')}
+          </Text>
+          <Text style={styles.subtitle}>{t('account.signUpBody')}</Text>
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.card}>
+          {/*
+              Prénom et nom séparés, là où la maquette montre « Nom complet » :
+              le contrat les veut distincts, et découper une chaîne à l'espace se
+              trompe dès le premier nom composé.
+            */}
+          <TextField
+            label={t('account.firstName')}
+            value={form.firstName}
+            onChangeText={(firstName) =>
+              setForm((current) => ({ ...current, firstName }))
+            }
+            autoCapitalize="words"
+            textContentType="givenName"
+          />
+          <TextField
+            label={t('account.lastName')}
+            value={form.lastName}
+            onChangeText={(lastName) => setForm((current) => ({ ...current, lastName }))}
+            autoCapitalize="words"
+            textContentType="familyName"
+          />
+          <TextField
+            label={t('account.phone')}
+            hint={t('account.phoneHint')}
+            prefix={DIALLING_CODE}
+            value={form.phone}
+            onChangeText={(phone) => setForm((current) => ({ ...current, phone }))}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+            autoComplete="tel"
+          />
+          <TextField
+            label={t('account.emailOptional')}
+            value={form.email}
+            onChangeText={(email) => setForm((current) => ({ ...current, email }))}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="emailAddress"
+            autoComplete="email"
+          />
+
+          {request.error ? (
+            <Text style={styles.error}>{describe(request.error)}</Text>
+          ) : null}
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.replace({
+              pathname: '/account/sign-in',
+              ...(next === undefined ? {} : { params: { next } }),
+            })
+          }
+          style={styles.switch}
+        >
+          <Text style={styles.switchLabel}>{t('account.haveAccount')}</Text>
+        </Pressable>
+      </KeyboardForm>
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   content: {
     /*
      * **De l'air en haut, et une gouttière plus large.**
@@ -223,12 +214,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: '700',
     color: theme.text.brand,
-  },
-  footer: {
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   error: {
     fontSize: fontSize.sm,

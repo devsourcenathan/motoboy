@@ -1,19 +1,12 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import {
   Button,
   Field,
   fontSize,
+  KeyboardForm,
   lineHeight,
   PinIcon,
   radius,
@@ -75,126 +68,119 @@ export function DriverApplicationScreen() {
 
   return (
     <Screen title={t('driver.start')}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t('driver.form.licence')}</Text>
-
-            <TextField
-              label={t('driver.form.licenceNumber')}
-              value={form.licenceNumber}
-              onChangeText={(licenceNumber) =>
-                setForm((current) => ({ ...current, licenceNumber }))
-              }
-              autoCapitalize="characters"
-              maxLength={64}
-            />
-
-            <View style={styles.rule} />
-
-            <TextField
-              label={t('driver.form.licenceExpiry')}
-              hint="AAAA-MM-JJ"
-              value={form.licenceExpiresAt}
-              onChangeText={(licenceExpiresAt) =>
-                setForm((current) => ({ ...current, licenceExpiresAt }))
-              }
-              error={error === 'EXPIRED_LICENCE' ? t('driver.form.expiredLicence') : null}
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>{t('driver.form.vehicle')}</Text>
-
-            <TextField
-              label={t('driver.form.plate')}
-              value={form.plate}
-              onChangeText={(plate) => setForm((current) => ({ ...current, plate }))}
-              autoCapitalize="characters"
-              maxLength={32}
-            />
-
-            <View style={styles.rule} />
-
-            <View style={styles.types}>
-              {VEHICLE_TYPES.map((type) => (
-                <Choice
-                  key={type}
-                  label={type === 'CAR' ? t('driver.form.typeCar') : t('driver.form.typeBus')}
-                  selected={form.vehicleType === type}
-                  onPress={() => setForm((current) => ({ ...current, vehicleType: type }))}
-                />
-              ))}
-            </View>
-
-            <View style={styles.rule} />
-
-            <TextField
-              label={t('driver.form.model')}
-              value={form.model}
-              onChangeText={(model) => setForm((current) => ({ ...current, model }))}
-              maxLength={120}
-            />
-
-            <View style={styles.rule} />
-
-            <View style={styles.seats}>
-              <View style={styles.seatsText}>
-                <Text style={styles.seatsLabel}>{t('driver.form.seats')}</Text>
-                <Text style={styles.seatsValue}>{form.seats}</Text>
-              </View>
-              <Step
-                sign="−"
-                disabled={form.seats <= 1}
-                onPress={() => setForm((c) => ({ ...c, seats: c.seats - 1 }))}
-              />
-              <Step
-                sign="+"
-                disabled={form.seats >= MAX_SEATS}
-                onPress={() => setForm((c) => ({ ...c, seats: c.seats + 1 }))}
-              />
-            </View>
-          </View>
-
-          <View style={styles.card}>
-            <Field
-              bare
-              label={t('driver.form.city')}
-              value={form.city?.label ?? null}
-              placeholder={t('search.pickCity')}
-              icon={<PinIcon color={theme.route.origin} size={20} />}
-              onPress={() => setPicking(true)}
-            />
-            {/*
-              La ville n'est pas un détail administratif : c'est elle qui décide
-              quelles demandes il verra. Le dire ici évite un dossier validé sur
-              la mauvaise ville.
-            */}
-            <Text style={styles.hint}>{t('driver.form.cityHint')}</Text>
-          </View>
-
-          {submit.error ? (
-            <Text style={styles.error}>{describe(submit.error)}</Text>
-          ) : null}
-        </ScrollView>
-
-        <View style={styles.footer}>
+      <KeyboardForm
+        contentContainerStyle={styles.content}
+        footer={
           <Button
             label={t('driver.form.submit')}
             onPress={send}
             disabled={error !== null}
             busy={submit.isPending}
           />
+        }
+      >
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('driver.form.licence')}</Text>
+
+          <TextField
+            label={t('driver.form.licenceNumber')}
+            value={form.licenceNumber}
+            onChangeText={(licenceNumber) =>
+              setForm((current) => ({ ...current, licenceNumber }))
+            }
+            autoCapitalize="characters"
+            maxLength={64}
+          />
+
+          <View style={styles.rule} />
+
+          <TextField
+            label={t('driver.form.licenceExpiry')}
+            hint="AAAA-MM-JJ"
+            value={form.licenceExpiresAt}
+            onChangeText={(licenceExpiresAt) =>
+              setForm((current) => ({ ...current, licenceExpiresAt }))
+            }
+            error={error === 'EXPIRED_LICENCE' ? t('driver.form.expiredLicence') : null}
+            keyboardType="numbers-and-punctuation"
+            maxLength={10}
+          />
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>{t('driver.form.vehicle')}</Text>
+
+          <TextField
+            label={t('driver.form.plate')}
+            value={form.plate}
+            onChangeText={(plate) => setForm((current) => ({ ...current, plate }))}
+            autoCapitalize="characters"
+            maxLength={32}
+          />
+
+          <View style={styles.rule} />
+
+          <View style={styles.types}>
+            {VEHICLE_TYPES.map((type) => (
+              <Choice
+                key={type}
+                label={
+                  type === 'CAR' ? t('driver.form.typeCar') : t('driver.form.typeBus')
+                }
+                selected={form.vehicleType === type}
+                onPress={() => setForm((current) => ({ ...current, vehicleType: type }))}
+              />
+            ))}
+          </View>
+
+          <View style={styles.rule} />
+
+          <TextField
+            label={t('driver.form.model')}
+            value={form.model}
+            onChangeText={(model) => setForm((current) => ({ ...current, model }))}
+            maxLength={120}
+          />
+
+          <View style={styles.rule} />
+
+          <View style={styles.seats}>
+            <View style={styles.seatsText}>
+              <Text style={styles.seatsLabel}>{t('driver.form.seats')}</Text>
+              <Text style={styles.seatsValue}>{form.seats}</Text>
+            </View>
+            <Step
+              sign="−"
+              disabled={form.seats <= 1}
+              onPress={() => setForm((c) => ({ ...c, seats: c.seats - 1 }))}
+            />
+            <Step
+              sign="+"
+              disabled={form.seats >= MAX_SEATS}
+              onPress={() => setForm((c) => ({ ...c, seats: c.seats + 1 }))}
+            />
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Field
+            bare
+            label={t('driver.form.city')}
+            value={form.city?.label ?? null}
+            placeholder={t('search.pickCity')}
+            icon={<PinIcon color={theme.route.origin} size={20} />}
+            onPress={() => setPicking(true)}
+          />
+          {/*
+              La ville n'est pas un détail administratif : c'est elle qui décide
+              quelles demandes il verra. Le dire ici évite un dossier validé sur
+              la mauvaise ville.
+            */}
+          <Text style={styles.hint}>{t('driver.form.cityHint')}</Text>
+        </View>
+
+        {submit.error ? <Text style={styles.error}>{describe(submit.error)}</Text> : null}
+      </KeyboardForm>
 
       <CityPicker
         visible={picking}
@@ -255,9 +241,6 @@ function Step({
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   content: {
     padding: spacing.md,
     gap: spacing.sm,
@@ -342,12 +325,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: theme.text.muted,
-  },
-  footer: {
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   error: {
     fontSize: fontSize.sm,

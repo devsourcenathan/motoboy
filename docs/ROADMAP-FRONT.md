@@ -429,7 +429,139 @@ problème d'exploitation deviendrait du bruit.
 
 | Sujet | Pourquoi ça n'est pas tranché |
 |---|---|
-| **Agrégateur de paiement** | L'écran de paiement se construit contre le pilote factice ; le vrai flux ne changera pas sa forme, mais rien ne s'encaisse tant que le choix n'est pas fait |
-| **Fournisseur SMS** | Les codes partent dans les journaux — suffisant pour développer, pas pour lancer |
+| **Décaissement** | `PAYOUT_GATEWAY=fake` : le pilote factice **simule** un succès, donc l'écran des reversements annoncerait de l'argent parti alors que rien n'a bougé. C'est le dernier chemin d'argent non réel |
 | **Suivi d'erreurs et supervision** | [I7](BRIEF.md) les dit non négociables sur un produit qui encaisse de l'argent |
 | **Liste des villes** | Seedée, jamais validée sur le terrain. La recherche ne vaudra que ce qu'elle vaut |
+
+---
+
+## 8. Identité visuelle
+
+Le logo est arrivé en JPEG : 669 × 631, bruit de compression dans le marine,
+vignettage qui assombrit le bas, et **aucune transparence**. Il a été redessiné
+en tracé — non pas réinterprété : les proportions ont été relevées au pixel sur
+l'image d'origine, piste par piste. La marque est franchement asymétrique (bosse
+gauche haute, bosse droite basse et courte, creux profond), et c'est ce qui la
+rend reconnaissable ; un « M » symétrique dessiné de mémoire n'y ressemble pas.
+
+La géométrie vit dans `packages/shared/src/brand.ts`, sans DOM ni React Native,
+donc partagée telle quelle par le web, le mobile et le script d'icônes. Les onze
+rasters que réclament Expo, le manifeste PWA et iOS sont **générés** :
+
+```
+pnpm brand
+```
+
+Aucun PNG ne se maintient à la main. Le script vérifie ensuite son propre rendu :
+il compte les pixels du dessin tombant hors du carré arrondi et échoue s'il y en
+a — un sommet remonté déborderait sans que rien ne le dise avant l'écran
+d'accueil d'un téléphone.
+
+**Deux couleurs, deux raisonnements.** Le marine est celui de l'interface
+(`#10314f`) et non celui du fichier (`#031a60`, bleu roi) : un logo bleu roi posé
+sur un en-tête `bg-ink-700` donne un rectangle légèrement violet au milieu du
+marine, ce qui se lit comme un export raté plutôt que comme une marque. L'or
+(`#fcb50d`) reste en revanche celui de la marque : l'orange `#f4661b` est réservé
+à l'action et à elle seule, et habiller l'identité de la couleur de l'action lui
+ferait porter un vêtement qui veut dire « touchez ici ».
+
+Deux vestiges de gabarit ont été trouvés au passage et corrigés : le favicon du
+web était **le logo violet de Vite** — donc l'embarquement installé sur l'écran
+d'accueil d'un agent portait la marque de Vite — et `<title>web</title>` était
+resté. Côté mobile, `backgroundColor: "#E6F4FE"` venait du gabarit Expo, et
+`splash-icon.png` existait sans être référencé nulle part : l'écran de démarrage
+n'était pas branché.
+
+### Ce qui n'est pas fait
+
+Il n'existe pas de **logotype** — le mot « MOTOBOY » reste composé en gras dans
+la fonte de l'interface, à côté de la marque. Un vrai dessin du mot demanderait
+un choix typographique qui n'a pas été fait, et l'inventer ici aurait produit une
+identité que personne n'a validée.
+
+---
+
+## 9. Saisie au clavier
+
+Les cinq écrans de saisie portaient chacun leur copie de
+`behavior={Platform.OS === 'ios' ? 'padding' : undefined}`. Sur Android,
+`behavior` absent ne signifie pas « comportement par défaut » : `KeyboardAvoidingView`
+s'y réduit alors à une `View`, sans rien faire. Tout reposait donc sur
+`adjustResize`.
+
+Or l'affichage bord à bord, activé d'office depuis le SDK 54, neutralise
+précisément ce redimensionnement — c'est écrit dans le README de
+`react-native-edge-to-edge`, que le SDK embarque : « Enabling edge-to-edge display
+disrupts Android keyboard management ». Le clavier se posait donc par-dessus les
+champs **et** par-dessus le bouton d'envoi, obligeant à le refermer pour valider.
+
+`KeyboardForm` remplace les cinq copies. `padding` sur les deux plateformes prend
+la place de ce que le système ne fait plus ; iOS ne change pas, il l'utilisait
+déjà. Le défilement vers le champ actif revient tout seul : le `ScrollView`
+d'Android amène de lui-même l'élément qui prend le focus dans la partie visible,
+mais il lui fallait une partie visible à calculer — tant qu'il gardait sa hauteur
+pleine, il n'avait rien à faire défiler.
+
+`react-native-keyboard-controller` ferait mieux et c'est la recommandation
+d'Expo, mais c'est un module natif : il ne fonctionne pas dans Expo Go, où se
+fait tout le test aujourd'hui. À reconsidérer le jour où il y aura une
+construction de développement.
+
+### Deuxième passe : la hauteur annoncée, pas déduite
+
+`padding` a partiellement corrigé le tir — le clavier remontait, mais les derniers
+champs restaient masqués et le défilement s'arrêtait avant la fin. « Partiellement »
+était l'indice : le rembourrage s'appliquait, mais trop court.
+
+`KeyboardAvoidingView` ne lit pas la hauteur du clavier, il la déduit en
+retranchant le haut du clavier de sa propre position mesurée. Ces deux valeurs
+viennent de repères différents — la vue est mesurée dans la fenêtre, le clavier
+dans l'écran — et sous le bord à bord ces repères cessent de coïncider : ils
+diffèrent de la hauteur de la barre de navigation. D'où un rembourrage trop court
+d'autant, et une course de défilement amputée de la même quantité.
+
+`Keyboard.addListener` annonce `endCoordinates.height`, qui ne se déduit de rien.
+C'est cette valeur qui est désormais retirée au cadre.
+
+Quatre tests la verrouillent, en interceptant les abonnements plutôt qu'en
+nommant les événements : le composant s'abonne aux `Will` sur iOS et aux `Did`
+sur Android, et un test qui les écrirait en dur passerait sur une plateforme en
+mentant sur l'autre. Amputer le rembourrage de 48 unités fait échouer deux d'entre
+eux — c'est ainsi qu'on sait qu'ils regardent la bonne chose.
+
+---
+
+## 10. L'encaissement mobile
+
+Le paiement n'aboutissait pas, et la cause n'etait pas dans le parcours : le
+numero du payeur n'arrivait jamais dans le champ que l'agregateur lit.
+
+L'encaissement NotchPay se fait en deux appels. Le second — celui qui pousse la
+sollicitation sur le telephone — envoyait `data.account_number`. Or l'exemple de
+leur reference remplit `data.phone` (`237680000000`) et **laisse
+`account_number` vide**. Le numero partait donc dans un champ ignore, et rien
+n'etait jamais demande a personne.
+
+Aucun format n'etait impose non plus, d'un bout a l'autre de la chaine : le
+mobile envoyait la saisie telle quelle, l'API n'en verifiait que la longueur,
+l'adaptateur la transmettait sans y toucher. « 690 00 00 01 », « +237690000001 »
+et « 00237690000001 » designent le meme abonne et arrivaient sous trois formes,
+dont deux refusees. C'est le meme accroc que sur les SMS, ou le `+` avait suffi
+a ce que rien ne parte — et un refus sur un format de numero ne ressemble pas a
+une erreur de format, il ressemble a un paiement qui n'aboutit pas.
+
+Les deux formes coexistent chez eux, chacune a son endroit : `+237…` a la
+creation, `237…` au prelevement. L'adaptateur normalise desormais lui-meme, et le
+champ de saisie porte l'indicatif comme celui de la connexion.
+
+**Le test existant verrouillait le bug.** Il affirmait `account_number ===
+'+237690000001'` : il encodait l'hypothese fausse, donc il ne pouvait pas la
+contredire. Pire, son `Http::assertSent` renvoyait `true` pour toute requete
+autre que celle visee — et comme l'assertion passe des qu'*une* requete satisfait
+le rappel, celle de creation la satisfaisait a elle seule. Le test ne regardait
+rien. Resserre, il fait echouer six cas quand on remet le defaut, contre un seul
+auparavant.
+
+L'ecran de paiement n'avait par ailleurs **aucune** gestion du clavier — il ne
+figurait pas dans le releve precedent, qui cherchait les `KeyboardAvoidingView`
+existants et non les formulaires qui en manquaient. Il passe a `KeyboardForm`.

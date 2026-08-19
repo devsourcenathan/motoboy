@@ -3,9 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      iOS ne lit pas le manifeste pour l'icône d'accueil : sans ce nom exact, il
+      met une capture de la page à la place du logo.
+    -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
-      <!--
+    <title>MOTOBOY</title>
+    <!--
       Le manifeste rend l'embarquement installable : un agent l'ajoute à son
       écran d'accueil et l'ouvre en plein écran, sans barre d'adresse à côté de
       laquelle viser.

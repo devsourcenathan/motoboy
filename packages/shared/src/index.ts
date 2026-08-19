@@ -17,6 +17,7 @@ export * from './money.js'
 export * from './datetime.js'
 export * from './labels.js'
 export * from './tokens.js'
+export * from './brand.js'
 
 /*
  * Les catalogues de traduction ne sont **pas** réexportés ici.

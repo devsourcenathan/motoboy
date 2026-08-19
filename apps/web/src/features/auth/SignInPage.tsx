@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { describeError } from '../../lib/errors'
 import { useRequestOtp, useVerifyOtp } from './useAuth'
+import { Logo } from '../../shared/ui'
 
 /**
  * Connexion au back-office.
@@ -33,7 +34,12 @@ export function SignInPage() {
           else request.mutate(phone.trim())
         }}
       >
-        <h1 className="text-xl font-bold text-ink-700">MOTOBOY — administration</h1>
+        {/*
+          Ici la vignette complète, carré compris : la page est claire, et c'est
+          le seul repère avant d'avoir saisi quoi que ce soit.
+        */}
+        <Logo size={44} title="MOTOBOY" />
+        <h1 className="mt-3 text-xl font-bold text-ink-700">MOTOBOY — administration</h1>
         <p className="mt-1 mb-6 text-sm text-neutral-500">
           {awaitingCode
             ? 'Saisissez le code reçu par SMS.'
@@ -58,7 +64,10 @@ export function SignInPage() {
 
         {awaitingCode ? (
           <>
-            <label className="mt-4 block text-xs font-medium text-neutral-700" htmlFor="code">
+            <label
+              className="mt-4 block text-xs font-medium text-neutral-700"
+              htmlFor="code"
+            >
               Code à six chiffres
             </label>
             <input
