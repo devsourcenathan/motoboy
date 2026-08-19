@@ -232,4 +232,39 @@ final class PaymentTest extends TestCase
             failureReason: $reason,
         ));
     }
+
+    /**
+     * **Un refus n'est pas une panne.**
+     *
+     * Le motif d'echec vient du prestataire et sa longueur ne nous appartient
+     * pas. La colonne en tenait cent ; « Agregateur injoignable : cURL error 28…
+     * » les depasse a lui seul. PostgreSQL refusait l'ecriture, et un refus de
+     * paiement — le cas le plus banal en Mobile Money — remontait en 500 apres
+     * que la sollicitation soit deja partie chez l'agregateur.
+     *
+     * Le passager voyait alors « Certaines informations sont incorrectes » sur ce
+     * qui etait une erreur serveur.
+     */
+    public function test_a_long_refusal_is_recorded_instead_of_crashing(): void
+    {
+        // Un vrai message de dépassement de délai, tel que cURL le rend, suivi de
+        // l'URL appelée : c'est la forme exacte qui a fait sauter la colonne.
+        $verbose = 'Agrégateur injoignable : cURL error 28: Operation timed out after '
+            .'20001 milliseconds with 0 bytes received (see https://curl.haxx.se/libcurl/c/'
+            .'libcurl-errors.html) pour https://api.notchpay.co/payments/'
+            .'trx_test_N6ZkLVvZzrDGnCeoNrbM6dlv — aucune réponse reçue de '
+            ."l'agrégateur avant expiration du délai configuré de vingt secondes.";
+
+        $this->assertGreaterThan(255, mb_strlen($verbose), 'Le motif doit dépasser la colonne.');
+
+        FakePaymentGateway::willReject($verbose);
+
+        $payment = $this->initiate($this->book());
+
+        $this->assertSame(PaymentStatus::Failed, $payment->status);
+        $this->assertNotNull($payment->failure_reason);
+        $this->assertLessThanOrEqual(255, mb_strlen($payment->failure_reason));
+        // Le début du motif survit : c'est lui qui renseigne le support.
+        $this->assertStringStartsWith('Agrégateur injoignable', $payment->failure_reason);
+    }
 }

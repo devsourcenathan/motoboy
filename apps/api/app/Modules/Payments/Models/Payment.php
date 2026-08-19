@@ -8,6 +8,7 @@ use App\Modules\Bookings\Models\Booking;
 use App\Modules\Payments\Enums\PaymentMethod;
 use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Rides\Models\Ride;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -37,6 +38,33 @@ final class Payment extends Model
         'status' => PaymentStatus::class,
         'paid_at' => 'immutable_datetime',
     ];
+
+    /**
+     * Le motif d'echec, borne a la largeur de sa colonne.
+     *
+     * **Un refus ne doit jamais devenir une panne.** Le motif vient du
+     * prestataire : sa longueur ne nous appartient pas, et « Agregateur
+     * injoignable : cURL error 28: Operation timed out after 20001
+     * milliseconds… » depasse a lui seul les cent caracteres d'origine. La
+     * colonne refusait alors l'ecriture, et un simple refus de paiement — le cas
+     * le plus banal en Mobile Money — remontait en 500.
+     *
+     * C'est arrive en production : la sollicitation partait chez l'agregateur,
+     * notre code echouait juste apres a l'enregistrer, et le passager voyait un
+     * message de validation sur ce qui etait une erreur serveur.
+     *
+     * Borner ici plutot qu'a chaque ecriture : trois actions ecrivent ce champ,
+     * et la quatrieme s'ecrira sans y penser. Le corps complet de la reponse est
+     * de toute facon journalise par l'adaptateur, ou le diagnostic se fait.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function failureReason(): Attribute
+    {
+        return Attribute::set(
+            fn (?string $value): ?string => $value === null ? null : mb_substr($value, 0, 255),
+        );
+    }
 
     /** @return BelongsTo<Booking, $this> */
     public function booking(): BelongsTo

@@ -565,3 +565,41 @@ auparavant.
 L'ecran de paiement n'avait par ailleurs **aucune** gestion du clavier — il ne
 figurait pas dans le releve precedent, qui cherchait les `KeyboardAvoidingView`
 existants et non les formulaires qui en manquaient. Il passe a `KeyboardForm`.
+
+### Le 500 derriere le message de validation
+
+Les journaux ont donne la reponse : `POST /bookings/…/payments` en **500** apres
+2,6 s — la duree de deux appels a l'agregateur — puis un webhook NotchPay une
+seconde plus tard. La transaction etait donc bien creee chez eux ; c'est notre
+code qui echouait juste apres.
+
+`payments.failure_reason` etait une colonne de **cent caracteres**, et trois
+actions y ecrivaient brut le motif rendu par le prestataire. « Agregateur
+injoignable : cURL error 28: Operation timed out after 20001 milliseconds… » la
+depasse a lui seul. PostgreSQL refusait l'ecriture, et **un refus de paiement — le
+cas le plus banal en Mobile Money — remontait en erreur serveur.**
+
+Le depot le savait a moitie : `SendPayout` bornait deja son motif a 255, mais
+localement, a un seul appel. `ConfirmPayout` ecrivait brut, et tout le cote
+paiement aussi. La borne vit desormais dans les modeles `Payment` et `Payout` :
+trois actions ecrivent ce champ, la quatrieme s'ecrira sans y penser. La colonne
+des paiements passe par ailleurs a 255, pour s'aligner sur celle des
+reversements.
+
+Ce correctif a fait remonter un defaut dormant : le pont `Payout::booted()`
+derivait un beneficiaire depuis `agency_id` en affirmant en commentaire que la
+colonne n'etait pas nullable. Elle l'est devenue avec la generalisation des
+reversements — un chauffeur independant ne releve d'aucune agence.
+
+### Ce qui reste faux
+
+`fallbackCode` (`packages/api-client/src/errors.ts`) rabat **tout statut non
+traite sur `VALIDATION_FAILED`**, 500 compris : le passager lit « Certaines
+informations sont incorrectes » sur une panne serveur. Le commentaire juste
+au-dessus decrit pourtant l'inverse — « le code de repli suit donc le statut
+HTTP » — et cite exactement ce piege. La fonction ne traite que 401, 403, 404 et
+429.
+
+Corriger demande un code d'erreur de plus, donc la chaine complete : `openapi.yaml`,
+regeneration des types, enum PHP pour `EnumParityTest`, libelles fr et en. Non
+fait ici.
