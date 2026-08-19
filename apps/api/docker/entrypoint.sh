@@ -62,6 +62,40 @@ if [ -n "${DB_URL}" ] && { [ -n "${DB_HOST}" ] || [ -n "${DB_PORT}" ]; }; then
     exit 1
 fi
 
+# Le stockage des documents, verifie avant d'en avoir besoin.
+#
+# Le disque `r2` est du S3 standard a deux reglages pres : la region `auto` et
+# l'endpoint de compte. **Sans endpoint, le SDK ne proteste pas** — il compose le
+# domaine d'Amazon a partir de la region et envoie la piece d'identite d'un
+# chauffeur a `s3.auto.amazonaws.com`, un hote qui n'existe pas.
+#
+# L'echec arrive alors au tout dernier moment : apres l'envoi du fichier, apres
+# son tamponnage par nginx dans un fichier temporaire, sous la forme d'une erreur
+# DNS que rien ne relie a une variable oubliee. C'est arrive le 19 aout 2026, et
+# le document etait perdu.
+#
+# On refuse donc de demarrer, comme pour APP_KEY : une variable absente se
+# corrige en trente secondes, un document perdu ne se recupere pas.
+if [ "${DOCUMENTS_DISK}" = "r2" ]; then
+    missing=""
+
+    for name in R2_ENDPOINT R2_BUCKET R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+        eval "value=\${$name}"
+        [ -z "${value}" ] && missing="${missing} ${name}"
+    done
+
+    if [ -n "${missing}" ]; then
+        echo "DOCUMENTS_DISK vaut « r2 » mais il manque :${missing}" >&2
+        echo "" >&2
+        echo "L'endpoint a la forme https://<account_id>.r2.cloudflarestorage.com" >&2
+        echo "et se lit dans le tableau de bord Cloudflare, page R2." >&2
+        echo "" >&2
+        echo "Sans lui, le SDK vise s3.<region>.amazonaws.com sans se plaindre :" >&2
+        echo "l'envoi echoue sur une erreur DNS, apres que le fichier a ete recu." >&2
+        exit 1
+    fi
+fi
+
 # ─────────────────────────────── Préparation ───────────────────────────────
 
 cd /var/www/html

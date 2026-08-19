@@ -600,6 +600,21 @@ au-dessus decrit pourtant l'inverse — « le code de repli suit donc le statut
 HTTP » — et cite exactement ce piege. La fonction ne traite que 401, 403, 404 et
 429.
 
-Corriger demande un code d'erreur de plus, donc la chaine complete : `openapi.yaml`,
-regeneration des types, enum PHP pour `EnumParityTest`, libelles fr et en. Non
-fait ici.
+C'est corrige : `SERVER_ERROR` traverse desormais la chaine — specification, types
+generes, enum PHP, libelles fr et en — et `fallbackCode` traite les 5xx. Le code
+n'est **jamais emis par l'API** : une erreur serveur ne passe pas par le rendu
+d'erreur metier. Il existe pour que le client ait quelque chose d'honnete a
+afficher quand la reponse ne porte aucun code. `isRetryable` le compte comme
+reessayable : c'est le cas ou insister a le plus de chances d'aboutir.
+
+**Et le `202` ne ment plus.** Le controleur le rendait quel que soit le statut,
+refus compris : le journal montrait « accepte » pendant que l'ecran affichait
+« paiement non abouti ». Un refus immediat de l'agregateur clot la tentative —
+rien n'arrivera par webhook — et se rend donc en `200`. Le `202` reste reserve a
+ce qui attend encore un code du payeur.
+
+### La chaine complete, eprouvee
+
+Le 19 aout 2026 : reservation, paiement, encaissement chez NotchPay, webhook,
+rapprochement, **billet `TKT-T98HLQ` emis avec sa signature**. C'est le premier
+parcours d'argent complet du projet.

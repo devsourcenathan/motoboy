@@ -27,6 +27,18 @@ enum ErrorCode: string
     case NotFound = 'NOT_FOUND';
     case RateLimited = 'RATE_LIMITED';
 
+    /**
+     * Panne de notre côté.
+     *
+     * **N'est jamais émis par l'API** : une erreur serveur n'atteint pas le
+     * rendu d'erreur métier, elle sort du gestionnaire d'exceptions. Ce cas
+     * existe pour que les clients aient un code à afficher quand la réponse
+     * n'en porte aucun — sans lui, le repli rabattait tout statut inconnu sur
+     * `VALIDATION_FAILED`, et une panne serveur se lisait « vérifiez votre
+     * saisie ».
+     */
+    case ServerError = 'SERVER_ERROR';
+
     case OtpInvalid = 'OTP_INVALID';
     case OtpExpired = 'OTP_EXPIRED';
     case OtpTooManyAttempts = 'OTP_TOO_MANY_ATTEMPTS';
@@ -90,6 +102,7 @@ enum ErrorCode: string
              */
             self::AccountNotVerified => 409,
             self::RateLimited => 429,
+            self::ServerError => 500,
             self::OtpInvalid, self::OtpExpired, self::OtpTooManyAttempts => 422,
             default => 409,
         };

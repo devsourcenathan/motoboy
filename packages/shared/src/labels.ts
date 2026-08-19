@@ -133,11 +133,13 @@ export const ticketStatusLabels: Record<Locale, Record<TicketStatus, string>> = 
 export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
   fr: {
     VALIDATION_FAILED: 'Certaines informations sont incorrectes.',
+    SERVER_ERROR: 'Le service rencontre un incident. Réessayez dans un instant.',
     UNAUTHENTICATED: 'Votre session a expiré, reconnectez-vous.',
     FORBIDDEN: "Vous n'avez pas accès à cette ressource.",
     NOT_FOUND: 'Élément introuvable.',
     ACCOUNT_NOT_FOUND: 'Aucun compte pour ce numéro. Créez-en un.',
-    ACCOUNT_NOT_VERIFIED: 'Ce numéro est inscrit mais jamais confirmé. Reprenez l’inscription pour recevoir un nouveau code.',
+    ACCOUNT_NOT_VERIFIED:
+      'Ce numéro est inscrit mais jamais confirmé. Reprenez l’inscription pour recevoir un nouveau code.',
     RATE_LIMITED: 'Trop de tentatives, patientez un instant.',
     OTP_INVALID: 'Code incorrect.',
     OTP_EXPIRED: 'Ce code a expiré, demandez-en un nouveau.',
@@ -160,7 +162,8 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     DRIVER_NOT_APPROVED: 'Votre dossier de chauffeur n’est pas validé.',
     DRIVER_BUSY: 'Une course est déjà en cours.',
     OFFER_NOT_ACCEPTABLE: 'Cette offre n’est plus valable.',
-    OFFER_ALREADY_TAKEN: 'Ce chauffeur vient d’être retenu ailleurs. Choisissez une autre offre.',
+    OFFER_ALREADY_TAKEN:
+      'Ce chauffeur vient d’être retenu ailleurs. Choisissez une autre offre.',
     RIDE_NOT_PAID: 'Le passager n’a pas encore payé cette course.',
     PAYOUT_NOT_APPROVABLE: "Ce reversement n'est plus en attente de validation.",
     PAYOUT_NOT_SENDABLE: "Ce reversement doit être approuvé avant d'être envoyé.",
@@ -169,11 +172,13 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
   },
   en: {
     VALIDATION_FAILED: 'Some of the details are incorrect.',
+    SERVER_ERROR: 'The service is having trouble. Try again in a moment.',
     UNAUTHENTICATED: 'Your session has expired, please sign in again.',
     FORBIDDEN: 'You do not have access to this resource.',
     NOT_FOUND: 'Not found.',
     ACCOUNT_NOT_FOUND: 'No account for this number. Create one.',
-    ACCOUNT_NOT_VERIFIED: 'This number is registered but never confirmed. Start again to get a new code.',
+    ACCOUNT_NOT_VERIFIED:
+      'This number is registered but never confirmed. Start again to get a new code.',
     RATE_LIMITED: 'Too many attempts, please wait a moment.',
     OTP_INVALID: 'Incorrect code.',
     OTP_EXPIRED: 'This code has expired, request a new one.',
@@ -212,5 +217,7 @@ export function errorLabel(code: ErrorCode, locale: Locale = DEFAULT_LOCALE): st
 
 /** Vrai si l'utilisateur peut réessayer sans repartir de zéro. */
 export function isRetryable(code: ErrorCode): boolean {
-  return code === 'PAYMENT_FAILED' || code === 'RATE_LIMITED'
+  // Une panne de notre côté se réessaie : c'est le cas où insister a le plus
+  // de chances d'aboutir, et où repartir de zéro n'aiderait en rien.
+  return code === 'PAYMENT_FAILED' || code === 'RATE_LIMITED' || code === 'SERVER_ERROR'
 }

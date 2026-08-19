@@ -267,4 +267,49 @@ final class PaymentTest extends TestCase
         // Le début du motif survit : c'est lui qui renseigne le support.
         $this->assertStringStartsWith('Agrégateur injoignable', $payment->failure_reason);
     }
+
+    /**
+     * **Un refus immédiat n'est pas une acceptation.**
+     *
+     * `202` annonce « accepté, la suite arrivera » : le payeur doit saisir son
+     * code, et le webhook tranchera. Quand l'agrégateur refuse d'emblée, il n'y a
+     * plus de suite — rien n'arrivera par webhook, et la tentative est close.
+     *
+     * En production, le journal montrait un `202` rassurant pendant que l'écran
+     * affichait « paiement non abouti ». Le corps disait vrai, le code de statut
+     * mentait — et c'est le code de statut qu'on lit d'abord quand on cherche une
+     * panne.
+     */
+    public function test_an_outright_refusal_is_not_reported_as_accepted(): void
+    {
+        FakePaymentGateway::willReject('Numéro invalide.');
+
+        $booking = $this->book();
+
+        $response = $this->actingAs(User::query()->findOrFail($booking->user_id))
+            ->withHeader('Idempotency-Key', 'cle-refus-immediat')
+            ->postJson("/api/v1/bookings/{$booking->reference}/payments", [
+                'method' => 'MOBILE_MONEY',
+                'operator' => 'MTN',
+                'payer_phone' => '+237690000001',
+            ]);
+
+        $response->assertStatus(200)->assertJsonPath('status', 'FAILED');
+    }
+
+    /** Une sollicitation partie reste un `202` : le dénouement est à venir. */
+    public function test_a_charge_awaiting_its_code_stays_accepted(): void
+    {
+        $booking = $this->book();
+
+        $response = $this->actingAs(User::query()->findOrFail($booking->user_id))
+            ->withHeader('Idempotency-Key', 'cle-en-cours')
+            ->postJson("/api/v1/bookings/{$booking->reference}/payments", [
+                'method' => 'MOBILE_MONEY',
+                'operator' => 'MTN',
+                'payer_phone' => '+237690000001',
+            ]);
+
+        $response->assertStatus(202)->assertJsonPath('status', 'PROCESSING');
+    }
 }

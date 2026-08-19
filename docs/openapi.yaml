@@ -1498,8 +1498,22 @@ paths:
                     après coup.
       responses:
         default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: |
+            Tentative close d'emblée — l'agrégateur a refusé avant toute
+            sollicitation. `status` vaut `FAILED` et `failure_reason` porte son
+            motif.
+
+            Distinct du `202` : là, tout est joué, et rien n'arrivera par
+            webhook. Rendre `202` dans ce cas ferait attendre un dénouement déjà
+            connu.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
         '202':
-          description: Paiement initié
+          description: |
+            Sollicitation partie ; le payeur doit encore saisir son code.
+            `status` vaut `PROCESSING` et c'est le webhook qui tranchera.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Payment' }
@@ -3450,6 +3464,7 @@ components:
         l'affichage et peut changer sans préavis.
       enum:
         - VALIDATION_FAILED
+        - SERVER_ERROR
         - UNAUTHENTICATED
         - FORBIDDEN
         - NOT_FOUND

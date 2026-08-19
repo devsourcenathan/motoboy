@@ -7,6 +7,7 @@ namespace App\Modules\Payments\Http\Controllers;
 use App\Modules\Bookings\Models\Booking;
 use App\Modules\Payments\Actions\InitiatePayment;
 use App\Modules\Payments\Enums\PaymentMethod;
+use App\Modules\Payments\Enums\PaymentStatus;
 use App\Modules\Payments\Http\Requests\InitiatePaymentRequest;
 use App\Modules\Payments\Http\Resources\PaymentResource;
 use App\Modules\Payments\Models\Payment;
@@ -34,10 +35,22 @@ final class PaymentController
             idempotencyKey: $request->idempotencyKey(),
         );
 
-        // 202 et non 201 : le paiement est **accepté**, pas abouti. En Mobile
-        // Money le passager doit encore saisir son code, et c'est le webhook qui
-        // tranchera.
-        return response()->json((new PaymentResource($payment))->resolve(), 202);
+        /*
+         * 202 et non 201 : le paiement est **accepté**, pas abouti. En Mobile
+         * Money le passager doit encore saisir son code, et c'est le webhook qui
+         * tranchera.
+         *
+         * **Sauf quand tout est déjà joué.** Un refus immédiat de l'agrégateur —
+         * numéro invalide, opérateur indisponible — clôt la tentative avant
+         * qu'aucune sollicitation ne parte : rien n'arrivera plus par webhook.
+         * Rendre `202` dans ce cas fait lire « accepté » sur un échec, et c'est
+         * exactement ce qui s'est produit en production : le journal montrait un
+         * `202` rassurant pendant que l'écran affichait « paiement non abouti ».
+         * Le corps disait vrai, le code de statut mentait.
+         */
+        $settled = $payment->status === PaymentStatus::Failed;
+
+        return response()->json((new PaymentResource($payment))->resolve(), $settled ? 200 : 202);
     }
 
     public function show(Request $request, string $reference): JsonResponse

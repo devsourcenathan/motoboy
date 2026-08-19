@@ -133,6 +133,16 @@ function fallbackCode(status: number): ErrorCode {
   if (status === 403) return 'FORBIDDEN'
   if (status === 404) return 'NOT_FOUND'
   if (status === 429) return 'RATE_LIMITED'
+  /*
+   * **Le cas que le commentaire ci-dessus décrivait sans que le code le traite.**
+   *
+   * Tout statut non reconnu retombait sur `VALIDATION_FAILED`, 500 compris : une
+   * panne serveur s'affichait « Certaines informations sont incorrectes », et
+   * quelqu'un relisait sa saisie devant un formulaire parfaitement rempli. C'est
+   * arrivé sur un paiement, où le motif d'échec dépassait sa colonne : le 500
+   * était un vrai défaut de notre côté, et l'écran accusait le passager.
+   */
+  if (status >= 500) return 'SERVER_ERROR'
 
   return 'VALIDATION_FAILED'
 }
