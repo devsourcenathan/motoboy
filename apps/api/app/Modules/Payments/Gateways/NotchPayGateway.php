@@ -85,7 +85,9 @@ final class NotchPayGateway implements PaymentGateway
             $created = $this->post('/payments', [
                 'amount' => $intent->amount,
                 'currency' => $intent->currency,
-                'phone' => $intent->payerPhone,
+                // Format international, signe compris : c'est ce que montrent
+                // leurs exemples pour la creation (`+237670000000`).
+                'phone' => '+'.$this->msisdn($intent->payerPhone),
                 // Notre reference voyage jusqu'au webhook : c'est elle qui
                 // permettra de rapprocher sans dependre de leur identifiant.
                 'reference' => $intent->reference,
@@ -117,7 +119,25 @@ final class NotchPayGateway implements PaymentGateway
              */
             $charged = $this->post('/payments/'.$reference, [
                 'channel' => $channel,
-                'data' => ['account_number' => $intent->payerPhone],
+                'data' => [
+                    /*
+                     * **`phone`, et non `account_number`.**
+                     *
+                     * L'exemple de leur reference pour cet appel remplit `phone`
+                     * (`237680000000`) et laisse `account_number` vide. On
+                     * envoyait l'inverse : le numero partait dans le champ qu'ils
+                     * ne lisent pas, si bien que rien n'etait jamais pousse sur le
+                     * telephone du passager. C'est cet appel — pas le premier —
+                     * qui declenche la sollicitation.
+                     *
+                     * Ici **sans** le `+`, contrairement a la creation. Les deux
+                     * formes coexistent dans leur documentation, chacune a son
+                     * endroit, et les confondre s'est deja paye une fois sur les
+                     * SMS.
+                     */
+                    'phone' => $this->msisdn($intent->payerPhone),
+                    'country' => 'CM',
+                ],
             ]);
 
             if (!$charged->successful()) {
@@ -414,5 +434,36 @@ final class NotchPayGateway implements PaymentGateway
     {
         return $this->stringOf($data, 'message')
             ?? "Refus de l'agrégateur ({$status}).";
+    }
+
+    /**
+     * Le numero sous la forme attendue par l'agregateur : indicatif compris,
+     * sans signe ni separateur.
+     *
+     * **Aucun format n'etait impose jusqu'ici.** Le mobile envoyait ce qui avait
+     * ete saisi, l'API n'en verifiait que la longueur, et l'adaptateur le
+     * transmettait tel quel. « 690 00 00 01 », « +237690000001 » et
+     * « 00237690000001 » designent le meme abonne et arrivaient sous trois formes
+     * differentes — dont deux que le prestataire refuse.
+     *
+     * Un refus sur un format de numero ne ressemble pas a une erreur de format :
+     * il ressemble a un paiement qui n'aboutit pas. C'est exactement ce qui
+     * s'etait deja produit sur l'envoi des SMS.
+     */
+    private function msisdn(?string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone ?? '') ?? '';
+
+        // Forme internationale composee depuis l'etranger.
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+
+        // Deja precede de l'indicatif : rien a faire.
+        if (str_starts_with($digits, '237')) {
+            return $digits;
+        }
+
+        return '237'.$digits;
     }
 }

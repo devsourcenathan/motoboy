@@ -528,3 +528,40 @@ nommant les événements : le composant s'abonne aux `Will` sur iOS et aux `Did`
 sur Android, et un test qui les écrirait en dur passerait sur une plateforme en
 mentant sur l'autre. Amputer le rembourrage de 48 unités fait échouer deux d'entre
 eux — c'est ainsi qu'on sait qu'ils regardent la bonne chose.
+
+---
+
+## 10. L'encaissement mobile
+
+Le paiement n'aboutissait pas, et la cause n'etait pas dans le parcours : le
+numero du payeur n'arrivait jamais dans le champ que l'agregateur lit.
+
+L'encaissement NotchPay se fait en deux appels. Le second — celui qui pousse la
+sollicitation sur le telephone — envoyait `data.account_number`. Or l'exemple de
+leur reference remplit `data.phone` (`237680000000`) et **laisse
+`account_number` vide**. Le numero partait donc dans un champ ignore, et rien
+n'etait jamais demande a personne.
+
+Aucun format n'etait impose non plus, d'un bout a l'autre de la chaine : le
+mobile envoyait la saisie telle quelle, l'API n'en verifiait que la longueur,
+l'adaptateur la transmettait sans y toucher. « 690 00 00 01 », « +237690000001 »
+et « 00237690000001 » designent le meme abonne et arrivaient sous trois formes,
+dont deux refusees. C'est le meme accroc que sur les SMS, ou le `+` avait suffi
+a ce que rien ne parte — et un refus sur un format de numero ne ressemble pas a
+une erreur de format, il ressemble a un paiement qui n'aboutit pas.
+
+Les deux formes coexistent chez eux, chacune a son endroit : `+237…` a la
+creation, `237…` au prelevement. L'adaptateur normalise desormais lui-meme, et le
+champ de saisie porte l'indicatif comme celui de la connexion.
+
+**Le test existant verrouillait le bug.** Il affirmait `account_number ===
+'+237690000001'` : il encodait l'hypothese fausse, donc il ne pouvait pas la
+contredire. Pire, son `Http::assertSent` renvoyait `true` pour toute requete
+autre que celle visee — et comme l'assertion passe des qu'*une* requete satisfait
+le rappel, celle de creation la satisfaisait a elle seule. Le test ne regardait
+rien. Resserre, il fait echouer six cas quand on remet le defaut, contre un seul
+auparavant.
+
+L'ecran de paiement n'avait par ailleurs **aucune** gestion du clavier — il ne
+figurait pas dans le releve precedent, qui cherchait les `KeyboardAvoidingView`
+existants et non les formulaires qui en manquaient. Il passe a `KeyboardForm`.

@@ -12,10 +12,12 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { unwrap, type Booking } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
+import { DIALLING_CODE, toInternational } from '../../account/model/auth'
 import {
   Button,
   CheckIcon,
   fontSize,
+  KeyboardForm,
   lineHeight,
   radius,
   Screen,
@@ -177,9 +179,33 @@ export function PaymentScreen() {
 
   return (
     <Screen title={t('payment.title')}>
-      <ScrollView
+      <KeyboardForm
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+        footer={
+          <View style={styles.footerRow}>
+            {booking.data === undefined ? null : (
+              <View style={styles.footerAmount}>
+                <Text style={styles.footerLabel}>{t('payment.totalToPay')}</Text>
+                <Text style={styles.footerValue}>
+                  {formatMoney(booking.data.total, locale)}
+                </Text>
+              </View>
+            )}
+
+            <Button
+              style={styles.footerButton}
+              label={phase === 'failed' ? t('payment.failed.retry') : t('payment.submit')}
+              onPress={() => {
+                // Après un échec, on repart d'une tentative neuve : réutiliser la
+                // précédente renverrait le même refus.
+                if (phase === 'failed') initiate.retry()
+                initiate.mutate({ ...form, payerPhone: toInternational(form.payerPhone) })
+              }}
+              disabled={formError !== null}
+              busy={initiate.isPending}
+            />
+          </View>
+        }
       >
         <Stepper current="payment" />
 
@@ -235,6 +261,12 @@ export function PaymentScreen() {
         <TextField
           label={t('payment.payerPhone')}
           hint={t('payment.payerHint')}
+          /*
+           * L'indicatif affiché, comme sur la connexion. Sans lui chacun écrit le
+           * sien à sa façon — « 690… », « +237690… », « 00237690… » — et deux de
+           * ces trois formes étaient refusées par l'agrégateur.
+           */
+          prefix={DIALLING_CODE}
           value={form.payerPhone}
           onChangeText={(value) =>
             setForm((current) => ({ ...current, payerPhone: value }))
@@ -246,31 +278,7 @@ export function PaymentScreen() {
         {initiate.error ? (
           <Text style={styles.error}>{describe(initiate.error)}</Text>
         ) : null}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        {booking.data === undefined ? null : (
-          <View style={styles.footerAmount}>
-            <Text style={styles.footerLabel}>{t('payment.totalToPay')}</Text>
-            <Text style={styles.footerValue}>
-              {formatMoney(booking.data.total, locale)}
-            </Text>
-          </View>
-        )}
-
-        <Button
-          style={styles.footerButton}
-          label={phase === 'failed' ? t('payment.failed.retry') : t('payment.submit')}
-          onPress={() => {
-            // Après un échec, on repart d'une tentative neuve : réutiliser la
-            // précédente renverrait le même refus.
-            if (phase === 'failed') initiate.retry()
-            initiate.mutate(form)
-          }}
-          disabled={formError !== null}
-          busy={initiate.isPending}
-        />
-      </View>
+      </KeyboardForm>
     </Screen>
   )
 }
@@ -507,14 +515,12 @@ const styles = StyleSheet.create({
     color: theme.text.onDangerSoft,
   },
   /** Le total reste sous les yeux au moment d'appuyer : c'est ce qu'on engage. */
-  footer: {
+  footerRow: {
+    // La chrome du pied — fond, bordure, marge — vit dans `KeyboardForm` ; il ne
+    // reste ici que la mise en ligne du montant et du bouton.
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: theme.surface.card,
-    borderTopWidth: 1,
-    borderTopColor: theme.surface.border,
   },
   footerAmount: {
     gap: 1,
