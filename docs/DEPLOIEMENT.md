@@ -125,6 +125,15 @@ Le bucket doit rester **privé**. Un registre de commerce ou une pièce d'identi
 de dirigeant ne s'atteint pas par une URL permanente : la consultation passe par
 une URL signée à durée limitée.
 
+**Les quatre variables vont ensemble.** Le conteneur refuse de démarrer si
+`DOCUMENTS_DISK=r2` et qu'il en manque une — et c'est `R2_ENDPOINT` qui compte le
+plus : sans elle, le SDK ne proteste pas. Il compose le domaine d'Amazon à partir
+de la région (`s3.auto.amazonaws.com`) et y envoie le document. L'échec arrive au
+tout dernier moment, sous la forme d'une erreur DNS que rien ne relie à une
+variable oubliée — et le fichier est perdu.
+
+C'est arrivé le 19 août 2026 sur l'envoi d'une pièce d'identité de chauffeur.
+
 ---
 
 ## 5. Ce qui se passe au démarrage d'un conteneur
