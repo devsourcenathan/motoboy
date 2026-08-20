@@ -1,6 +1,7 @@
+import { useTranslation } from 'react-i18next'
 import { NavLink as RouterNavLink, Outlet } from 'react-router'
 import type { ReactNode } from 'react'
-import { Logo } from '../../shared/ui'
+import { LocaleSwitch, Logo } from '../../shared/ui'
 
 /**
  * Le bandeau de l'espace agence.
@@ -11,19 +12,28 @@ import { Logo } from '../../shared/ui'
  * véhicule — et une agence qui découvre l'outil suit les onglets de gauche à
  * droite sans qu'on ait à le lui expliquer.
  */
+/**
+ * Les onglets portent une **clé**, pas un libellé.
+ *
+ * Ecrire le texte ici le figerait dans la langue du fichier : la barre de
+ * navigation est visible sur chaque ecran de l'espace agence, et c'est le premier
+ * endroit ou une traduction manquante se verrait.
+ */
 const TABS = [
-  { to: '/agency/stations', label: 'Gares' },
-  { to: '/agency/vehicles', label: 'Véhicules' },
-  { to: '/agency/drivers', label: 'Chauffeurs' },
-  { to: '/agency/routes', label: 'Itinéraires' },
-  { to: '/agency/departures', label: 'Départs' },
-  { to: '/agency/counter', label: 'Guichet' },
-  { to: '/agency/boarding', label: 'Embarquement' },
-  { to: '/agency/money', label: 'Compte' },
-  { to: '/agency/staff', label: 'Personnel' },
+  { to: '/agency/stations', key: 'stations' },
+  { to: '/agency/vehicles', key: 'vehicles' },
+  { to: '/agency/drivers', key: 'drivers' },
+  { to: '/agency/routes', key: 'routes' },
+  { to: '/agency/departures', key: 'departures' },
+  { to: '/agency/counter', key: 'counter' },
+  { to: '/agency/boarding', key: 'boarding' },
+  { to: '/agency/money', key: 'money' },
+  { to: '/agency/staff', key: 'staff' },
+  { to: '/agency/documents', key: 'documents' },
 ] as const
 
 export function AgencyLayout({ onSignOut }: { onSignOut: () => void }) {
+  const { t } = useTranslation()
   return (
     <div className="min-h-screen">
       <header className="bg-ink-700">
@@ -32,19 +42,21 @@ export function AgencyLayout({ onSignOut }: { onSignOut: () => void }) {
             <Logo variant="mark" size={26} />
             MOTOBOY — agence
           </span>
+          <LocaleSwitch className="text-neutral-0" />
+
           <button
             type="button"
             onClick={onSignOut}
             className="text-sm text-neutral-0/80 hover:text-neutral-0"
           >
-            Se déconnecter
+            {t('agency:nav.signOut')}
           </button>
         </div>
 
         <nav className="mx-auto flex max-w-6xl gap-5 overflow-x-auto px-6">
           {TABS.map((tab) => (
             <Tab key={tab.to} to={tab.to}>
-              {tab.label}
+              {t(`agency:nav.${tab.key}`)}
             </Tab>
           ))}
         </nav>

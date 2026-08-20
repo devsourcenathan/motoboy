@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
 import { describeError } from '../../lib/errors'
-import { Button, Card, ErrorNote, Field, INPUT } from '../../shared/ui'
+import { Button, Card, ErrorNote, Field, INPUT, LocaleSwitch } from '../../shared/ui'
 import { referenceFrom } from './offline'
 import { Scanner } from './Scanner'
 import { scanningSupported } from './scanning'
@@ -26,6 +27,7 @@ type Outcome =
  * couleur, avec le nom du passager — pas une ligne de tableau.
  */
 export function BoardingScannerPage() {
+  const { t } = useTranslation()
   const [params, setParams] = useSearchParams()
   const reference = params.get('trip') ?? ''
 
@@ -75,7 +77,14 @@ export function BoardingScannerPage() {
   return (
     <main className="mx-auto min-h-screen max-w-lg space-y-4 p-4">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-bold text-ink-700">Embarquement</h1>
+        <h1 className="text-lg font-bold text-ink-700">{t('boarding:title')}</h1>
+
+        {/*
+          Le choix de la langue vit ici et nulle part ailleurs : la PWA
+          s'installe seule sur l'écran d'accueil d'un agent, souvent hors réseau,
+          et rien ne lui permettrait d'aller le chercher sur une autre page.
+        */}
+        <LocaleSwitch className="text-ink-700" />
         {/*
           L'état du réseau est visible en permanence : c'est lui qui explique
           pourquoi la file grandit, et sans lui l'agent croit à une panne.
@@ -87,12 +96,12 @@ export function BoardingScannerPage() {
               : 'rounded-full bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700'
           }
         >
-          {online ? 'En ligne' : 'Hors ligne'}
+          {online ? t('boarding:network.online') : t('boarding:network.offline')}
         </span>
       </header>
 
       <Card>
-        <Field label="Référence du départ">
+        <Field label={t('boarding:trip.reference')}>
           <input
             className={`${INPUT} font-mono uppercase`}
             value={reference}
@@ -103,7 +112,11 @@ export function BoardingScannerPage() {
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Button
-            label={boarding.downloading ? 'Téléchargement…' : 'Télécharger la liste'}
+            label={
+              boarding.downloading
+                ? t('boarding:trip.downloading')
+                : t('boarding:trip.download')
+            }
             onPress={() => void boarding.download()}
             disabled={reference === '' || boarding.downloading || !online}
             variant="secondary"
@@ -126,10 +139,7 @@ export function BoardingScannerPage() {
 
       {list === null ? (
         <Card>
-          <p className="text-sm text-neutral-500">
-            Téléchargez la liste au bureau, tant que vous avez du réseau. Sur le quai,
-            elle suffit à valider les billets.
-          </p>
+          <p className="text-sm text-neutral-500">{t('boarding:trip.downloadFirst')}</p>
         </Card>
       ) : (
         <>
@@ -150,12 +160,8 @@ export function BoardingScannerPage() {
             >
               <div className="flex-1">
                 <Field
-                  label="Saisie manuelle"
-                  hint={
-                    scanningSupported()
-                      ? undefined
-                      : 'Cet appareil ne sait pas lire les QR : tout passe par ici.'
-                  }
+                  label={t('boarding:manual.label')}
+                  hint={scanningSupported() ? undefined : t('boarding:manual.noCamera')}
                 >
                   <input
                     className={`${INPUT} font-mono uppercase`}
@@ -165,7 +171,11 @@ export function BoardingScannerPage() {
                   />
                 </Field>
               </div>
-              <Button type="submit" label="Valider" disabled={manual.trim() === ''} />
+              <Button
+                type="submit"
+                label={t('boarding:manual.submit')}
+                disabled={manual.trim() === ''}
+              />
             </form>
           </Card>
 
@@ -176,15 +186,18 @@ export function BoardingScannerPage() {
                 {boarding.queue.length > 1 ? 's' : ''} en attente d’envoi
               </p>
               <Button
-                label={boarding.syncing ? 'Envoi…' : 'Synchroniser'}
+                label={
+                  boarding.syncing
+                    ? t('boarding:queue.syncing')
+                    : t('boarding:queue.sync')
+                }
                 onPress={() => void boarding.sync()}
                 disabled={boarding.queue.length === 0 || boarding.syncing || !online}
               />
             </div>
             {boarding.queue.length === 0 ? null : (
               <p className="mt-2 text-xs text-neutral-500">
-                Elles restent sur cet appareil tant qu’elles n’ont pas été envoyées. Ne
-                videz pas les données du navigateur avant d’avoir synchronisé.
+                {t('boarding:queue.warning')}
               </p>
             )}
           </Card>
@@ -203,13 +216,16 @@ export function BoardingScannerPage() {
  * trois rangs plus loin.
  */
 function Verdict({ outcome }: { outcome: Outcome }) {
+  const { t } = useTranslation()
   if (outcome.kind === 'ACCEPTED') {
     return (
       <div className="rounded-xl bg-success-500 p-5 text-center text-neutral-0">
-        <p className="text-3xl font-bold">Montez</p>
+        <p className="text-3xl font-bold">{t('boarding:outcome.accepted')}</p>
         <p className="mt-1 text-lg">{outcome.name}</p>
         {outcome.seat === null ? null : (
-          <p className="text-sm opacity-90">Siège {outcome.seat}</p>
+          <p className="text-sm opacity-90">
+            {t('boarding:outcome.seat', { seat: outcome.seat })}
+          </p>
         )}
       </div>
     )
@@ -218,7 +234,7 @@ function Verdict({ outcome }: { outcome: Outcome }) {
   if (outcome.kind === 'UNKNOWN') {
     return (
       <div className="rounded-xl bg-danger p-5 text-center text-neutral-0">
-        <p className="text-3xl font-bold">Pas sur ce départ</p>
+        <p className="text-3xl font-bold">{t('boarding:outcome.notOnThisTrip')}</p>
         <p className="mt-1 font-mono text-sm">{outcome.reference}</p>
       </div>
     )
@@ -231,11 +247,9 @@ function Verdict({ outcome }: { outcome: Outcome }) {
    */
   return (
     <div className="rounded-xl bg-brand-500 p-5 text-center text-neutral-0">
-      <p className="text-3xl font-bold">Déjà embarqué</p>
+      <p className="text-3xl font-bold">{t('boarding:outcome.alreadyBoarded')}</p>
       <p className="mt-1 text-lg">{outcome.name}</p>
-      <p className="text-sm opacity-90">
-        Vérifiez qu’il ne s’agit pas d’une seconde personne.
-      </p>
+      <p className="text-sm opacity-90">{t('boarding:outcome.checkSecondPerson')}</p>
     </div>
   )
 }

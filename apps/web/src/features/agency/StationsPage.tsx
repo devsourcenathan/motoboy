@@ -1,7 +1,12 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { unwrap } from '@motoboy/api-client'
+import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
   Button,
+  Card,
   Cell,
   EmptyState,
   ErrorNote,
@@ -16,6 +21,107 @@ import { CityField, type CityChoice } from './CityField'
 import { useCreateStation, useStations } from './useInventory'
 
 /**
+ * Reclamer une ville absente du referentiel.
+ *
+ * **Une agence ne peut pas creer de ville elle-meme**, sinon on aurait trois
+ * orthographes de Bafoussam et une recherche qui ne trouve plus les departs qui
+ * existent. Elle demande, l'administration rattache au referentiel.
+ *
+ * Le pays vient de `/v1/config` et non d'une constante : l'ecrire en dur
+ * fonctionnerait tant qu'un seul pays est desservi, puis rattacherait
+ * silencieusement les demandes au mauvais des le second.
+ */
+function RequestCity() {
+  const { t } = useTranslation()
+  const config = useQuery({
+    queryKey: ['config'],
+    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/config', { signal })),
+  })
+
+  const countries = config.data?.countries ?? []
+
+  const [name, setName] = useState('')
+  const [countryId, setCountryId] = useState<number | null>(null)
+
+  const request = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/agency/city-requests', {
+          body: {
+            country_id: countryId ?? countries[0]?.id ?? 0,
+            requested_name: name.trim(),
+          } as never,
+        }),
+      ),
+    onSuccess: () => setName(''),
+  })
+
+  const selected = countryId ?? countries[0]?.id ?? null
+
+  return (
+    <Card>
+      <p className="mb-1 font-semibold text-neutral-900">
+        {t('agency:inventory.stations.requestCity')}
+      </p>
+      <p className="mb-3 text-sm text-neutral-500">
+        {t('agency:inventory.stations.requestCityHelp')}
+      </p>
+
+      {request.error ? <ErrorNote message={describeError(request.error)} /> : null}
+
+      {request.isSuccess ? (
+        <p className="mb-3 text-sm text-success-700">
+          {t('agency:inventory.stations.requestSent')}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-end gap-3">
+        {/*
+          Le sélecteur ne s'affiche qu'au-delà d'un pays : en proposer un seul
+          demanderait un choix qui n'en est pas un.
+        */}
+        {countries.length > 1 ? (
+          <div className="w-48">
+            <Field label={t('agency:inventory.stations.country')}>
+              <select
+                className={INPUT}
+                value={selected ?? ''}
+                onChange={(event) =>
+                  setCountryId(Number.parseInt(event.target.value, 10))
+                }
+              >
+                {countries.map((country) => (
+                  <option key={country.id} value={country.id}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        ) : null}
+
+        <div className="w-64">
+          <Field label={t('agency:inventory.stations.cityName')}>
+            <input
+              className={INPUT}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Button
+          label={t('agency:inventory.stations.sendRequest')}
+          variant="secondary"
+          disabled={name.trim().length < 2 || selected === null || request.isPending}
+          onPress={() => request.mutate()}
+        />
+      </div>
+    </Card>
+  )
+}
+
+/**
  * Les gares de l'agence.
  *
  * **Le premier maillon de l'inventaire** : un itinéraire relie deux gares, et
@@ -28,6 +134,7 @@ import { useCreateStation, useStations } from './useInventory'
  * ne la retrouvant pas.
  */
 export function StationsPage() {
+  const { t } = useTranslation()
   const stations = useStations()
   const [adding, setAdding] = useState(false)
 
@@ -36,24 +143,45 @@ export function StationsPage() {
   return (
     <div>
       <PageHeader
-        title="Gares"
-        subtitle="Les points de départ et d’arrivée de vos itinéraires. Une gare nouvelle est vérifiée par MOTOBOY avant d’apparaître dans la recherche."
-        action={<Button label="Ajouter une gare" onPress={() => setAdding(true)} />}
+        title={t('agency:inventory.stations.title')}
+        subtitle={t('agency:inventory.stations.subtitle')}
+        action={
+          <Button
+            label={t('agency:inventory.stations.add')}
+            onPress={() => setAdding(true)}
+          />
+        }
       />
 
       {stations.isPending ? <Skeleton /> : null}
       {stations.error ? <ErrorNote message={describeError(stations.error)} /> : null}
 
+      <div className="mb-6">
+        <RequestCity />
+      </div>
+
       {stations.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucune gare"
-          body="Commencez par déclarer une gare : tout le reste de l’inventaire s’y rattache."
-          action={<Button label="Ajouter une gare" onPress={() => setAdding(true)} />}
+          title={t('agency:inventory.stations.emptyTitle')}
+          body={t('agency:inventory.stations.emptyBody')}
+          action={
+            <Button
+              label={t('agency:inventory.stations.add')}
+              onPress={() => setAdding(true)}
+            />
+          }
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Nom', 'Ville', 'Adresse', 'État']}>
+        <Table
+          head={[
+            t('agency:inventory.stations.head.name'),
+            t('agency:inventory.stations.head.city'),
+            t('agency:inventory.stations.head.address'),
+            t('agency:inventory.stations.head.status'),
+          ]}
+        >
           {rows.map((station) => (
             <tr key={station.id}>
               <Cell className="font-medium">{station.name}</Cell>
@@ -105,13 +233,14 @@ function StationState({ moderated, active }: { moderated: boolean; active: boole
 }
 
 function StationPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateStation()
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState<CityChoice | null>(null)
 
   return (
-    <Panel title="Nouvelle gare" onClose={onClose}>
+    <Panel title={t('agency:inventory.stations.newTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -129,20 +258,24 @@ function StationPanel({ onClose }: { onClose: () => void }) {
           )
         }}
       >
-        <Field label="Nom de la gare">
+        <Field label={t('agency:inventory.stations.name')}>
           <input
             className={INPUT}
             required
             maxLength={150}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Gare de Bonabéri"
+            placeholder={t('agency:inventory.stations.namePlaceholder')}
           />
         </Field>
 
-        <CityField label="Ville" value={city} onChange={setCity} />
+        <CityField
+          label={t('agency:inventory.stations.city')}
+          value={city}
+          onChange={setCity}
+        />
 
-        <Field label="Adresse (facultatif)">
+        <Field label={t('agency:inventory.stations.address')}>
           <input
             className={INPUT}
             maxLength={255}
@@ -155,7 +288,7 @@ function StationPanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Créer la gare"
+          label={t('agency:inventory.stations.create')}
           disabled={city === null || name.trim() === '' || create.isPending}
         />
       </form>

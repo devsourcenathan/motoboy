@@ -132,5 +132,13 @@ export async function sentRequest(
   }
 
   // Cloné : le corps est un flux, et le lire ici le consommerait pour de bon.
-  return JSON.parse(await request.clone().text())
+  const body = await request.clone().text()
+
+  /*
+   * **Un corps vide est un résultat, pas une panne.** Certaines actions n'ont
+   * rien à transmettre — admettre une agence n'a rien à justifier — et `JSON.parse('')`
+   * lèverait. Rendre `null` permet d'affirmer « rien n'a été envoyé », ce qui est
+   * exactement ce qu'un test veut pouvoir dire de ces actions-là.
+   */
+  return body === '' ? null : JSON.parse(body)
 }

@@ -1,3 +1,33 @@
+import { configure } from '@testing-library/dom'
+/*
+ * i18n initialisé pour les tests aussi : sans lui, `useTranslation` rend les
+ * clés brutes et une assertion sur un texte visible échouerait en affichant
+ * « public:search.submit », ce qui ne dit pas que la traduction manque mais que
+ * l'initialisation manque.
+ */
+import { i18next } from '../lib/i18n'
+
+/*
+ * **La langue est fixée, pas devinée.** `initialLocale` interroge
+ * `navigator.language`, qui vaut `en-US` sous jsdom : les tests écrits en
+ * français se mettraient donc à échouer sur la machine du runner et à passer sur
+ * celle du développeur, ou l'inverse. Un test dont le résultat dépend des
+ * réglages de la machine ne prouve rien.
+ *
+ * Le français parce que c'est la langue de rédaction des tests existants ; ceux
+ * qui éprouvent l'anglais changent de langue eux-mêmes.
+ */
+beforeEach(async () => {
+  /*
+   * **Attendu, et non lancé sans suite.** `changeLanguage` rend une promesse ;
+   * la laisser courir fait atterrir le changement de langue au milieu du test
+   * suivant, où il déclenche un rendu à un instant arbitraire. Le symptôme est
+   * une poignée de tests qui passent seuls et échouent en suite — sans rapport
+   * apparent avec la langue.
+   */
+  await i18next.changeLanguage('fr')
+})
+
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
@@ -66,3 +96,16 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
 })
+
+/*
+ * **Cinq secondes au lieu d'une, et ce n'est pas masquer un défaut.**
+ *
+ * `findBy*` attend qu'un élément apparaisse ; son budget par défaut est d'une
+ * seconde. Une requête qui n'aboutira jamais échoue de toute façon — le délai ne
+ * change que le sort de celles qui aboutissent *tard*, sur une machine chargée.
+ *
+ * Le symptôme était net : deux tests passaient seuls et échouaient une fois sur
+ * cinq en suite, sur des assertions correctes. Un test dont le verdict dépend de
+ * la charge du runner apprend à relancer la CI jusqu'à ce qu'elle verdisse.
+ */
+configure({ asyncUtilTimeout: 5000 })

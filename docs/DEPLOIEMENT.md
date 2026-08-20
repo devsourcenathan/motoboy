@@ -222,12 +222,22 @@ donc un déploiement de code périmé, ce qui est pire que pas de déploiement d
 tout, parce que ça ressemble à un succès. À contrôler dans les deux tableaux de
 bord, avec la branche de production du service.
 
-**Un hook fonctionne-t-il vraiment avec l'auto-déploiement coupé ?** Ni la
-documentation de Render ni celle de Vercel ne le disent noir sur blanc. Le
-vocabulaire penche du bon côté — Vercel parle d'empêcher le déclenchement
-« upon commits », Render cite les environnements CI/CD comme cas d'usage d'un
-hook — mais ce n'est pas écrit. Déclenchez donc chaque hook une fois à la main
-avant de compter dessus.
+**Un hook fonctionne-t-il vraiment avec l'auto-déploiement coupé ? Oui.**
+Vérifié en production le 19 août 2026, chez les deux hébergeurs à la fois. Ni la
+documentation de Render ni celle de Vercel ne le disait noir sur blanc — la
+question s'est donc tranchée par l'épreuve, et voici comment, parce qu'un hook
+qui répond `200` ne prouve rien de ce qu'il a construit :
+
+| Ce qu'on interroge | Ce qui le prouve |
+|---|---|
+| L'API porte bien le dernier commit | Le contrat servi sur `/openapi.yaml` contient une phrase qui n'existe que dans le commit le plus récent |
+| Le web aussi | `/agency/money`, rechargée directement, rend `200 text/html` — c'était un `404` avant `vercel.json` |
+| La réécriture n'avale pas les webhooks | `/api/v1/ping` sur le domaine web reste un `404` franc |
+
+Le premier point est le seul qui distingue « le hook a répondu » de « le hook a
+déployé la bonne branche ». Un hook créé du temps où les hébergeurs suivaient la
+branche de travail reconstruirait celle-là, et la CI l'annoncerait comme un
+succès.
 
 ### La branche de déploiement
 

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { unwrap } from '@motoboy/api-client'
+import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
@@ -17,6 +18,7 @@ import { Card, ErrorNote, Skeleton } from '../../shared/ui'
  * Aucune action ici : la réservation vit dans l'application. Cette page informe.
  */
 export function TripPage() {
+  const { t } = useTranslation()
   const { reference = '' } = useParams()
 
   const trip = useQuery({
@@ -59,16 +61,27 @@ export function TripPage() {
               </p>
 
               <dl className="mt-5 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-                <Row label="Gare de départ" value={trip.data.origin_station.name} />
-                <Row label="Gare d’arrivée" value={trip.data.destination_station.name} />
-                <Row label="Prix" value={formatMoney(trip.data.price, 'fr')} />
-                <Row label="Places restantes" value={String(trip.data.seats_available)} />
+                <Row
+                  label={t('public:trip.originStation')}
+                  value={trip.data.origin_station.name}
+                />
+                <Row
+                  label={t('public:trip.destinationStation')}
+                  value={trip.data.destination_station.name}
+                />
+                <Row
+                  label={t('public:trip.price')}
+                  value={formatMoney(trip.data.price, 'fr')}
+                />
+                <Row
+                  label={t('public:trip.seatsLeft')}
+                  value={String(trip.data.seats_available)}
+                />
               </dl>
             </Card>
 
             <p className="text-center text-sm text-neutral-500">
-              Réservez depuis l’application MOTOBOY — la place n’est tenue qu’une fois la
-              réservation faite.
+              {t('public:trip.holdNotice')}
             </p>
           </>
         )}

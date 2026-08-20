@@ -678,3 +678,225 @@ Il était écrit ailleurs que le taux d'annulation par agence était « calculé
 l'API, jamais affiché ». **Il n'est calculé nulle part.** Le motif d'annulation
 est bien collecté, et la spécification comme le contrôleur le justifient par ce
 suivi — mais aucun code ne l'agrège. La donnée s'accumule sans lecteur.
+
+---
+
+## 11. L'administration, complétée — 19 août 2026
+
+Les 13 endpoints d'administration qui n'avaient pas d'écran en ont un. Le
+comptage de l'état des lieux tombe donc de « la moitié sans interface » à zéro.
+
+| Écran | Ce qu'il débloque |
+|---|---|
+| **Agences** | L'admission. Six routes desservaient le parcours d'entrée sans qu'aucun écran ne les appelle : une agence pouvait déposer son dossier et personne ne pouvait y répondre |
+| **Réglages** | Commission des courses et politique de pièce d'identité |
+| **Référentiel** | Modération des gares, réponse aux demandes de ville |
+| **Tableau de bord** | Ce qui attend une décision, séparé de ce qui décrit |
+| **Journal d'audit** | Il était écrit et jamais lu |
+| Reversements | Le bouton de construction manquait à la page existante |
+
+L'administration reste **en français seul**, conformément au brief : usage
+interne. Le rattrapage bilingue ne concerne que le public, l'agence et
+l'embarquement.
+
+### Deux points d'attention
+
+**Le tableau de bord ne compte pas les chauffeurs en attente.** L'API ne renvoie
+pas ce nombre. C'est aussi pourquoi il n'est pas devenu la page d'accueil du
+back-office : y arriver aurait fait disparaître la file des dossiers de
+chauffeur, décrite ailleurs comme « la seule barrière entre la plateforme et
+quelqu'un dont personne n'a vu le permis ». Le test de `App.tsx` défendait cette
+décision et a refusé la bascule — à juste titre.
+
+**Les conditions commerciales sont éditables.** Le formulaire des quatorze champs
+est écrit, et trois de ses champs changent de sens selon un autre — c'est tout
+son intérêt :
+
+- `commission_value` vaut des points de base ou des francs selon le mode ; le
+  même 500 se lit « 5 % » ou « 500 F ».
+- `cancellation_fee_value` de même, plafonné à 5 000 — soit 50 %, parce qu'une
+  agence ne peut pas rendre une réservation intégralement non remboursable à
+  l'intérieur de sa propre fenêtre d'annulation.
+- `payout_day` est un **jour du mois** en mensuel et un **jour de la semaine** en
+  hebdomadaire. La validation accepte 1 à 28 dans les deux cas : saisir 15 en
+  hebdomadaire passe la validation, puis `BuildDuePayouts` le ramène à dimanche
+  sans que rien ne le signale. D'où une liste de jours plutôt qu'un champ
+  numérique.
+
+**Seuls les champs modifiés sont transmis.** Toutes les règles de l'API sont en
+`sometimes` : renvoyer l'objet entier écraserait ce qu'un autre administrateur
+vient de changer entre le chargement de la page et l'enregistrement.
+
+### Ce qui reste sur le web
+
+Cinq endpoints d'agence sans écran — documents de l'agence, recherche de billet,
+annulation d'une réservation, relevé de reversement, demande de ville — puis le
+rattrapage bilingue et les composants encore sans test.
+
+---
+
+## 12. Les écrans d'agence — 19 août 2026
+
+Cinq endpoints d'agence n'avaient pas d'écran. Quatre en ont un ; le cinquième
+est écarté avec sa raison, et un sixième point reste bloqué côté API.
+
+**Pièces de l'agence** — un écran neuf, et le premier envoi de fichier du web.
+Sans lui, une agence pouvait s'inscrire et rester indéfiniment en attente sans
+comprendre ce qui lui manquait : l'API acceptait les fichiers, personne ne pouvait
+les envoyer. La liste énumère les types attendus **y compris ceux qui manquent**,
+et la taille est vérifiée avant l'envoi — huit mégaoctets sur une connexion de
+gare mettent une minute à monter pour être refusés à l'arrivée.
+
+**Relevé de reversement** — un bouton sur la page Compte. Pas un lien : l'endpoint
+est authentifié, et un `<a href>` partirait sans le jeton pour rapporter un 401
+affiché hors de l'application. Le CSV passe donc par le client authentifié, puis
+un objet mémoire qu'on révoque aussitôt.
+
+**Annulation d'une réservation** — au guichet, en deux temps. La référence vient
+du passager et non d'une liste : aucun endpoint d'agence ne liste les
+réservations, et la liste d'embarquement rend des références de *billet*.
+L'annulation est totale ; l'API accepte des `passenger_ids` pour n'annuler qu'une
+partie d'un groupe, mais choisir lesquels suppose de les voir, ce que cet écran ne
+permet pas encore.
+
+### `tickets/lookup` : écarté, et pourquoi
+
+La page d'embarquement porte déjà une saisie manuelle de référence, qui **valide**
+le billet. `tickets/lookup` ne fait que le *consulter*. Ajouter un second
+formulaire d'apparence identique à côté du premier, dont l'un embarque le passager
+et l'autre non, invite à se tromper de champ au moment où l'on est pressé. À
+reprendre le jour où le besoin de vérifier sans embarquer se manifestera vraiment.
+
+### `agency/city-requests` : débloqué en étendant `/v1/config`
+
+Le formulaire exige un `country_id` que rien n'exposait au client. Coder `1` en
+dur fonctionnerait aujourd'hui — un seul pays est semé — et casserait
+silencieusement à la première extension, en rattachant des demandes au mauvais
+pays.
+
+`/v1/config` rend donc maintenant les pays **actifs**, avec trois champs et pas un
+de plus : cet endpoint est public et sa spécification le dit « volontairement
+pauvre ». Le fuseau, la devise et l'indicatif ne changent rien à ce qui s'affiche.
+Les pays inactifs sont écartés — en proposer un où l'on ne vend pas ferait déposer
+une demande que personne n'accepterait, et l'agence attendrait une réponse qui ne
+viendrait jamais.
+
+Le sélecteur de pays ne s'affiche qu'au-delà d'un pays : en proposer un seul
+demanderait un choix qui n'en est pas un.
+
+`/v1/config` n'avait **aucun test**. Il en a trois.
+
+### La clé d'idempotence, une par annulation
+
+L'annulation exige un `Idempotency-Key`. Une clé unique par composant — le motif
+employé ailleurs — ferait traiter la **seconde** annulation comme un rejeu de la
+première : le serveur rendrait le résultat de l'autre réservation, et celle qu'on
+visait resterait intacte en ayant l'air annulée. La clé est donc fixée à
+l'ouverture de la confirmation, ce qui garde un second clic après coupure réseau
+sur la même opération. Un test l'éprouve, et il échoue si la clé est figée.
+
+---
+
+## 13. Le web bilingue — 19 août 2026
+
+Trois surfaces sur trois, conformément au brief : le comparateur public,
+l'embarquement et l'espace agence. **L'administration reste en français seul** —
+outil interne, décision du brief, et deux cents chaînes qu'on aurait traduites
+pour personne.
+
+| Catalogue | Ce qu'il couvre |
+|---|---|
+| `common` | Ce qui se lit à l'identique partout — existait déjà, partagé avec le mobile |
+| `public` | Le comparateur : recherche et fiche de départ |
+| `boarding` | La PWA du quai **et** la vue d'embarquement de l'agence |
+| `agency` | Les dix pages du back-office d'agence |
+
+### Ce qui rend la complétude vérifiable
+
+Le type croisé `Record<Locale, XMessages>` fait travailler le compilateur dans les
+deux dimensions : une clé présente en français et absente en anglais **casse la
+compilation**. Un `tsc` propre sur `@motoboy/shared` n'est donc pas une promesse
+de complétude, c'en est la preuve.
+
+### Ce que le web fait que le mobile ne fait pas
+
+**La langue survit au rechargement.** L'application garde son état ; un navigateur
+repart de zéro à chaque F5. Un agent qui bascule l'embarquement en anglais puis
+recharge — ce que fait précisément quelqu'un dont l'écran s'est figé — retrouverait
+du français sans comprendre son erreur. Le choix est stocké, et `document.lang`
+est posé : c'est ce qui fait prononcer la page correctement par un lecteur
+d'écran.
+
+Le sélecteur est **sur la première page vue** du public, et **dans l'en-tête de la
+PWA** : celle-ci s'installe seule sur un écran d'accueil et tourne hors réseau, il
+n'y a nulle part ailleurs où aller le chercher.
+
+### Trois défauts du harnais de test, trouvés en chemin
+
+1. Les tests affirmaient du français **par accident**, via `navigator.language`
+   qui vaut `en-US` sous jsdom. Un verdict qui dépend des réglages de la machine ne
+   prouve rien.
+2. `changeLanguage` lancé sans être attendu faisait atterrir un rendu au milieu du
+   test suivant : des tests passaient seuls et échouaient en suite, sans que rien
+   ne pointe vers la langue.
+3. Ce qui a révélé un défaut latent : `findBy*` disposait d'une seconde, et la
+   suite alourdie dépassait ce budget une fois sur cinq — sur des assertions
+   correctes.
+
+### Ce qui n'est volontairement pas traduit
+
+Les gabarits de référence (`TCK-XXXXXX`, `LT-4412-AB`, `MTB-XXXXXX`), les noms de
+villes et les noms d'opérateurs. Un format ne change pas de langue.
+
+---
+
+## 14. Le web, couvert — 19 août 2026
+
+**122 tests, zéro composant sans test** hormis le harnais lui-même. Les seize
+composants découverts au relevé sont couverts, et six chaînes françaises de plus
+ont été traduites au passage.
+
+### Ce que les tests ont trouvé, et qu'aucune relecture n'avait vu
+
+**`describeError` figeait la langue.** Elle était lue une seule fois, au
+chargement du module, depuis `navigator.language` — jamais depuis le choix de
+l'utilisateur. Quelqu'un qui basculait en anglais continuait de lire ses erreurs
+en français. Le défaut restait invisible tant qu'aucune erreur ne survenait,
+c'est-à-dire jusqu'au moment précis où l'on a besoin de comprendre.
+
+**Un test existant passait grâce à ce défaut** : il affirmait contre
+`resolveLocale(navigator.language)`, donc les deux côtés se trompaient de concert.
+
+**Un `bodySerializer` mort dans `DocumentsPage`**, accompagné d'un commentaire
+expliquant pourquoi il était nécessaire. Le test l'a démenti : la requête part en
+multipart dans les deux cas.
+
+**Six chaînes dans des ternaires**, invisibles à tout balayage orienté propriétés
+— le mode de placement d'un véhicule, l'indice de recherche d'une ville, l'état
+d'un siège tenu. Plus les libellés de type de pièce, logés dans une constante de
+module.
+
+### Deux limites de jsdom, écrites plutôt que combattues
+
+`Request.formData()` ne s'y résout jamais : l'assertion porte donc sur la
+frontière `multipart/form-data`, ce qui prouve davantage — elle n'existe que si le
+corps était bien un `FormData`.
+
+Le cas nominal du lecteur de QR exige de simuler `getUserMedia`,
+`HTMLMediaElement.play` **et** `BarcodeDetector`. À ce compte-là un test n'éprouve
+plus que ses propres simulacres : seuls les deux chemins d'échec sont couverts, et
+le fichier dit pourquoi.
+
+### Deux réglages du harnais
+
+`testTimeout` relevé **au-dessus** d'`asyncUtilTimeout` : tous deux à cinq
+secondes, un `findBy` sur le point d'aboutir se faisait tuer, en signalant un test
+trop long là où il n'y avait qu'une machine chargée.
+
+Et la langue est épinglée au français : `navigator.language` vaut `en-US` sous
+jsdom, donc les tests affirmaient du français **par accident**.
+
+### Ce qui n'est volontairement pas traduit
+
+Les gabarits de référence — `TCK-XXXXXX`, `TR-XXXXXX`, `LT-4412-AB` — et
+« Douala » comme exemple de saisie. Un format ne change pas de langue.

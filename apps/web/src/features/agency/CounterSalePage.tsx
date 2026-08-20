@@ -1,5 +1,9 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { newIdempotencyKey, unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
+import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
   Button,
@@ -14,6 +18,124 @@ import {
 import { useAgencyTrips, useCounterSale, useTripSeats } from './useOperations'
 
 /**
+ * Annuler une réservation apportée au guichet.
+ *
+ * **La référence vient du passager, pas d'une liste.** Aucun endpoint d'agence ne
+ * liste les réservations : la liste d'embarquement rend des références de
+ * *billet*, pas de réservation. Le geste réel est donc celui-ci — quelqu'un se
+ * présente avec le SMS ou l'écran de son téléphone, et on annule ce qu'il montre.
+ *
+ * L'annulation est **totale ici**. L'API accepte des `passenger_ids` pour n'annuler
+ * qu'une partie d'un groupe, mais choisir lesquels suppose de les avoir sous les
+ * yeux — ce que cet écran ne permet pas encore, faute de savoir lire une
+ * réservation. Annuler partiellement à l'aveugle serait pire que de ne pas le
+ * proposer.
+ */
+function CancelBooking() {
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
+  const [reference, setReference] = useState('')
+  const [confirming, setConfirming] = useState<string | null>(null)
+
+  const cancel = useMutation({
+    mutationFn: async ({ booking, key }: { booking: string; key: string }) =>
+      unwrap(
+        await api.POST('/v1/agency/bookings/{reference}/cancel', {
+          params: { path: { reference: booking }, header: { 'Idempotency-Key': key } },
+          body: { passenger_ids: [] } as never,
+        }),
+      ),
+    onSuccess: () => {
+      setReference('')
+      setConfirming(null)
+      // Les places redeviennent vendables : la liste des départs porte leur
+      // décompte, et la laisser périmée ferait refuser une vente possible.
+      void queryClient.invalidateQueries({ queryKey: ['agency', 'trips'] })
+    },
+  })
+
+  const result = cancel.data as
+    { refund?: { amount: number; currency: string } } | undefined
+
+  return (
+    <Card>
+      <p className="mb-1 font-semibold text-neutral-900">
+        {t('agency:counter.cancelSection')}
+      </p>
+      <p className="mb-3 text-sm text-neutral-500">{t('agency:counter.cancelHelp')}</p>
+
+      {cancel.error ? <ErrorNote message={describeError(cancel.error)} /> : null}
+
+      {result === undefined ? null : (
+        <p className="mb-3 text-sm text-success-700">
+          {result.refund === undefined
+            ? t('agency:counter.cancelled')
+            : t('agency:counter.cancelledWithRefund', {
+                amount: formatMoney(result.refund, i18n.language as 'fr' | 'en'),
+              })}
+        </p>
+      )}
+
+      <Field label={t('agency:counter.bookingReference')}>
+        <input
+          className={INPUT}
+          value={reference}
+          onChange={(event) => {
+            setReference(event.target.value.toUpperCase())
+            setConfirming(null)
+          }}
+          placeholder={t('agency:counter.bookingPlaceholder')}
+        />
+      </Field>
+
+      <div className="mt-3">
+        {confirming !== null ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {/*
+              Une confirmation, parce que l'annulation libère les places et
+              déclenche un remboursement : ce n'est pas un geste qu'on reprend.
+            */}
+            <span className="text-sm text-neutral-700">
+              {t('agency:counter.confirmQuestion', { reference })}
+            </span>
+            <Button
+              label={t('agency:counter.confirm')}
+              variant="danger"
+              disabled={cancel.isPending}
+              onPress={() =>
+                cancel.mutate({ booking: reference.trim(), key: confirming })
+              }
+            />
+            <Button
+              label={t('agency:counter.back')}
+              variant="secondary"
+              onPress={() => setConfirming(null)}
+            />
+          </div>
+        ) : (
+          <Button
+            label={t('agency:counter.cancelAction')}
+            variant="secondary"
+            disabled={reference.trim().length < 4}
+            /*
+             * **Une clé neuve par annulation, pas par composant.** Réutiliser la
+             * même ferait passer la seconde annulation pour un rejeu de la
+             * première : le serveur rendrait le résultat de l'autre réservation
+             * et celle qu'on vise resterait intacte, en ayant l'air annulée.
+             *
+             * Elle est fixée à l'ouverture de la confirmation et non à l'envoi,
+             * pour qu'un second clic après une coupure réseau reste la même
+             * opération plutôt qu'un second remboursement.
+             */
+            onPress={() => setConfirming(newIdempotencyKey())}
+          />
+        )}
+      </div>
+    </Card>
+  )
+}
+
+/**
  * La vente au guichet.
  *
  * **Le seul écran dont la vitesse est une exigence fonctionnelle.** Plus lente
@@ -26,6 +148,7 @@ import { useAgencyTrips, useCounterSale, useTripSeats } from './useOperations'
  * pendant que le plan de sièges charge, jamais après.
  */
 export function CounterSalePage() {
+  const { t } = useTranslation()
   const today = new Date().toISOString().slice(0, 10)
   const trips = useAgencyTrips({ from: today })
   const [reference, setReference] = useState<string | null>(null)
@@ -35,24 +158,30 @@ export function CounterSalePage() {
   return (
     <div>
       <PageHeader
-        title="Guichet"
-        subtitle="Vendre à quelqu’un qui est devant vous. Les places vendues ici disparaissent immédiatement de la recherche."
+        title={t('agency:counter.title')}
+        subtitle={t('agency:counter.subtitle')}
       />
+
+      <div className="mb-6">
+        <CancelBooking />
+      </div>
 
       {trips.isPending ? <Skeleton /> : null}
       {trips.error ? <ErrorNote message={describeError(trips.error)} /> : null}
 
       {trips.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun départ aujourd’hui"
-          body="Le guichet vend sur les départs à venir. Générez-les depuis l’onglet Itinéraires."
+          title={t('agency:counter.emptyTitle')}
+          body={t('agency:counter.emptyBody')}
         />
       ) : null}
 
       {rows.length === 0 ? null : (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
           <Card>
-            <p className="mb-3 font-semibold text-neutral-900">Départ</p>
+            <p className="mb-3 font-semibold text-neutral-900">
+              {t('agency:counter.departure')}
+            </p>
             <div className="space-y-1">
               {rows.map((trip) => (
                 <button
@@ -123,6 +252,7 @@ function seatClass(
 }
 
 function SaleForm({ reference }: { reference: string }) {
+  const { t } = useTranslation()
   const seats = useTripSeats(reference)
   const sale = useCounterSale()
 
@@ -175,7 +305,7 @@ function SaleForm({ reference }: { reference: string }) {
           charge, et l'inverse ferait attendre devant un formulaire figé.
         */}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prénom">
+          <Field label={t('agency:counter.firstName')}>
             <input
               className={INPUT}
               required
@@ -184,7 +314,7 @@ function SaleForm({ reference }: { reference: string }) {
               onChange={(event) => setFirstName(event.target.value)}
             />
           </Field>
-          <Field label="Nom">
+          <Field label={t('agency:counter.lastName')}>
             <input
               className={INPUT}
               required
@@ -194,14 +324,14 @@ function SaleForm({ reference }: { reference: string }) {
           </Field>
         </div>
 
-        <Field label="Téléphone" hint="Le billet part par SMS à ce numéro.">
+        <Field label={t('agency:counter.phone')} hint={t('agency:counter.phoneHint')}>
           <input
             className={INPUT}
             required
             type="tel"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            placeholder="+237 6XX XX XX XX"
+            placeholder={t('agency:counter.phonePlaceholder')}
           />
         </Field>
 
@@ -219,9 +349,7 @@ function SaleForm({ reference }: { reference: string }) {
                   type="button"
                   disabled={seat.status !== 'AVAILABLE'}
                   title={
-                    seat.status === 'HELD'
-                      ? 'Tenu par une réservation en cours'
-                      : undefined
+                    seat.status === 'HELD' ? t('agency:counter.seatHeld') : undefined
                   }
                   onClick={() => setSeatId(seat.id)}
                   className={seatClass(seat.status, seat.id === seatId)}
@@ -250,7 +378,7 @@ function SaleForm({ reference }: { reference: string }) {
 
         <Button
           type="submit"
-          label="Vendre"
+          label={t('agency:counter.sell')}
           disabled={
             sale.isPending ||
             firstName.trim() === '' ||

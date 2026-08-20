@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { unwrap } from '@motoboy/api-client'
+import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
@@ -12,6 +13,7 @@ import {
   ErrorNote,
   Field,
   INPUT,
+  LocaleSwitch,
   Logo,
   Skeleton,
 } from '../../shared/ui'
@@ -33,6 +35,7 @@ import { CityField, type CityChoice } from '../agency/CityField'
  * se perdre, et le bouton retour du navigateur fait ce qu'on attend de lui.
  */
 export function SearchPage() {
+  const { t } = useTranslation()
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
 
@@ -82,12 +85,21 @@ export function SearchPage() {
       */}
       <header className="bg-ink-700 px-6 pt-6 pb-10">
         <div className="mx-auto max-w-4xl">
-          <p className="flex items-center gap-2.5 text-xl font-bold text-neutral-0">
-            <Logo variant="mark" size={32} />
-            MOTOBOY
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <p className="flex items-center gap-2.5 text-xl font-bold text-neutral-0">
+              <Logo variant="mark" size={32} />
+              MOTOBOY
+            </p>
+            {/*
+              Le choix de la langue **sur la première page vue**, et non enfoui
+              dans un menu : un voyageur anglophone de Bamenda doit pouvoir
+              basculer avant d'avoir à comprendre le français pour trouver
+              comment le quitter.
+            */}
+            <LocaleSwitch className="text-neutral-0" />
+          </div>
           <h1 className="mt-4 max-w-lg text-2xl font-bold text-neutral-0 sm:text-3xl">
-            Comparez les départs de toutes les agences, sur un seul écran.
+            {t('public:hero.tagline')}
           </h1>
         </div>
       </header>
@@ -109,10 +121,10 @@ export function SearchPage() {
               })
             }}
           >
-            <CityField label="Départ" value={from} onChange={setFrom} />
-            <CityField label="Arrivée" value={to} onChange={setTo} />
+            <CityField label={t('public:search.from')} value={from} onChange={setFrom} />
+            <CityField label={t('public:search.to')} value={to} onChange={setTo} />
 
-            <Field label="Date">
+            <Field label={t('public:search.date')}>
               <input
                 className={INPUT}
                 type="date"
@@ -122,7 +134,7 @@ export function SearchPage() {
               />
             </Field>
 
-            <Field label="Voyageurs">
+            <Field label={t('public:search.travellers')}>
               <input
                 className={INPUT}
                 type="number"
@@ -136,7 +148,7 @@ export function SearchPage() {
             <div className="sm:col-span-2">
               <Button
                 type="submit"
-                label="Chercher"
+                label={t('public:search.submit')}
                 disabled={from === null || to === null}
               />
             </div>
@@ -149,8 +161,8 @@ export function SearchPage() {
 
           {results.data !== undefined && trips.length === 0 ? (
             <EmptyState
-              title="Aucun départ ce jour-là"
-              body="Essayez une date proche, ou une autre ville de la même région."
+              title={t('public:search.emptyTitle')}
+              body={t('public:search.emptyBody')}
             />
           ) : null}
 
@@ -187,7 +199,7 @@ export function SearchPage() {
                 </div>
 
                 <Button
-                  label="Voir"
+                  label={t('public:search.view')}
                   variant="secondary"
                   onPress={() => void navigate(`/trips/${trip.reference}`)}
                 />
@@ -202,7 +214,7 @@ export function SearchPage() {
           informe, l'application vend.
         */}
         <p className="mt-8 text-center text-sm text-neutral-500">
-          La réservation et le paiement se font depuis l’application MOTOBOY.
+          {t('public:trip.bookOnApp')}
         </p>
       </main>
     </div>
