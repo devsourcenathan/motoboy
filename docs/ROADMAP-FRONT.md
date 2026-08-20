@@ -678,3 +678,42 @@ Il était écrit ailleurs que le taux d'annulation par agence était « calculé
 l'API, jamais affiché ». **Il n'est calculé nulle part.** Le motif d'annulation
 est bien collecté, et la spécification comme le contrôleur le justifient par ce
 suivi — mais aucun code ne l'agrège. La donnée s'accumule sans lecteur.
+
+---
+
+## 11. L'administration, complétée — 19 août 2026
+
+Les 13 endpoints d'administration qui n'avaient pas d'écran en ont un. Le
+comptage de l'état des lieux tombe donc de « la moitié sans interface » à zéro.
+
+| Écran | Ce qu'il débloque |
+|---|---|
+| **Agences** | L'admission. Six routes desservaient le parcours d'entrée sans qu'aucun écran ne les appelle : une agence pouvait déposer son dossier et personne ne pouvait y répondre |
+| **Réglages** | Commission des courses et politique de pièce d'identité |
+| **Référentiel** | Modération des gares, réponse aux demandes de ville |
+| **Tableau de bord** | Ce qui attend une décision, séparé de ce qui décrit |
+| **Journal d'audit** | Il était écrit et jamais lu |
+| Reversements | Le bouton de construction manquait à la page existante |
+
+L'administration reste **en français seul**, conformément au brief : usage
+interne. Le rattrapage bilingue ne concerne que le public, l'agence et
+l'embarquement.
+
+### Deux points d'attention
+
+**Le tableau de bord ne compte pas les chauffeurs en attente.** L'API ne renvoie
+pas ce nombre. C'est aussi pourquoi il n'est pas devenu la page d'accueil du
+back-office : y arriver aurait fait disparaître la file des dossiers de
+chauffeur, décrite ailleurs comme « la seule barrière entre la plateforme et
+quelqu'un dont personne n'a vu le permis ». Le test de `App.tsx` défendait cette
+décision et a refusé la bascule — à juste titre.
+
+**Les conditions commerciales ne sont pas éditables depuis l'écran.** Le hook
+existe et la fiche affiche l'état, mais le formulaire des quatorze champs n'est
+pas écrit. Une agence est donc admise avec ses conditions par défaut.
+
+### Ce qui reste sur le web
+
+Cinq endpoints d'agence sans écran — documents de l'agence, recherche de billet,
+annulation d'une réservation, relevé de reversement, demande de ville — puis le
+rattrapage bilingue et les composants encore sans test.

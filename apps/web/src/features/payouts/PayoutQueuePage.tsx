@@ -5,6 +5,7 @@ import type { Payout } from '@motoboy/api-client/types'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
+import { Button } from '../../shared/ui'
 
 function usePayouts() {
   return useQuery({
@@ -54,6 +55,26 @@ function usePayoutAction(kind: 'approve' | 'send') {
 }
 
 /**
+ * Construire la file des reversements dus.
+ *
+ * **Le calcul est automatique, le déclenchement reste manuel** — c'est la raison
+ * d'être de ce bouton. L'API parcourt les grands livres, crée un reversement par
+ * agence qui a un solde, et **écarte les autres en disant pourquoi** : solde nul,
+ * pas de compte vérifié, minimum non atteint. Ces écarts comptent autant que les
+ * créations, parce qu'une agence qui attend son argent veut savoir ce qui bloque.
+ *
+ * Rejouable sans dégât : une agence ayant déjà un reversement ouvert est écartée.
+ */
+function useBuildPayouts() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST('/v1/admin/payouts/build', {})),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payouts'] }),
+  })
+}
+
+/**
  * La file des reversements.
  *
  * Le calcul est automatique, **le déclenchement est manuel** : les premiers mois
@@ -63,6 +84,11 @@ function usePayoutAction(kind: 'approve' | 'send') {
  */
 export function PayoutQueuePage() {
   const payouts = usePayouts()
+  const build = useBuildPayouts()
+
+  const result = build.data as
+    | { created?: unknown[]; skipped?: { agency_id?: number; reason?: string }[] }
+    | undefined
 
   return (
     <div>
@@ -72,6 +98,48 @@ export function PayoutQueuePage() {
           Vérifiez le bénéficiaire et la destination avant de valider. Un virement Mobile
           Money mal dirigé ne se récupère pas.
         </p>
+
+        <div className="mt-3">
+          <Button
+            label={
+              build.isPending ? 'Calcul en cours…' : 'Construire les reversements dus'
+            }
+            variant="secondary"
+            disabled={build.isPending}
+            onPress={() => build.mutate()}
+          />
+        </div>
+
+        {build.error ? (
+          <p className="mt-2 text-sm whitespace-pre-line text-danger">
+            {describeError(build.error)}
+          </p>
+        ) : null}
+
+        {result === undefined ? null : (
+          <div className="mt-2 text-sm">
+            <p className="text-ink-700">
+              {(result.created ?? []).length} reversement
+              {(result.created ?? []).length > 1 ? 's' : ''} créé
+              {(result.created ?? []).length > 1 ? 's' : ''}.
+            </p>
+            {/*
+              Les écartées sont nommées avec leur motif. Une agence absente de la
+              file sans explication ressemble à un oubli de la plateforme, alors
+              que c'est presque toujours un compte non vérifié.
+            */}
+            {(result.skipped ?? []).length === 0 ? null : (
+              <ul className="mt-1 flex flex-col gap-0.5 text-xs text-neutral-500">
+                {(result.skipped ?? []).map((row, index) => (
+                  <li key={row.agency_id ?? index}>
+                    Agence {row.agency_id ?? '—'} écartée :{' '}
+                    {row.reason ?? 'motif inconnu'}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </header>
 
       {payouts.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}

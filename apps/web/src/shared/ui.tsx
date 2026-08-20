@@ -172,7 +172,8 @@ export function EmptyState({
   action,
 }: {
   title: string
-  body?: string
+  /** `| undefined` explicitement, pour la même raison que `hint` sur `Field`. */
+  body?: string | undefined
   action?: ReactNode
 }) {
   return (

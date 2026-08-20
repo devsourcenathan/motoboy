@@ -29,6 +29,11 @@ import { StaffPage } from './features/agency/StaffPage'
 import { StationsPage } from './features/agency/StationsPage'
 import { VehiclesPage } from './features/agency/VehiclesPage'
 import { Logo } from './shared/ui'
+import { AgenciesPage } from './features/admin/AgenciesPage'
+import { AuditLogPage } from './features/admin/AuditLogPage'
+import { DashboardPage } from './features/admin/DashboardPage'
+import { ModerationPage } from './features/admin/ModerationPage'
+import { SettingsPage } from './features/admin/SettingsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -234,10 +239,20 @@ function AdminLayout() {
               <Logo variant="mark" size={26} />
               MOTOBOY
             </Link>
-            <NavLink to="/admin/drivers">Dossiers</NavLink>
+            {/*
+              L'ordre suit ce qui attend une décision. Le tableau de bord ouvre
+              parce qu'il dit *où* il y en a ; les agences le suivent parce que
+              c'est la file dont l'absence bloquait l'entrée sur la plateforme.
+            */}
+            <NavLink to="/admin/dashboard">Tableau de bord</NavLink>
+            <NavLink to="/admin/agencies">Agences</NavLink>
+            <NavLink to="/admin/drivers">Chauffeurs</NavLink>
             <NavLink to="/admin/payouts">Reversements</NavLink>
             <NavLink to="/admin/payout-accounts">Comptes</NavLink>
+            <NavLink to="/admin/moderation">Référentiel</NavLink>
             <NavLink to="/admin/support">Suivi</NavLink>
+            <NavLink to="/admin/settings">Réglages</NavLink>
+            <NavLink to="/admin/audit">Journal</NavLink>
           </nav>
           <button
             type="button"
@@ -251,11 +266,28 @@ function AdminLayout() {
 
       <main className="mx-auto max-w-5xl p-6">
         <Routes>
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="agencies" element={<AgenciesPage />} />
           <Route path="drivers" element={<DriverQueuePage />} />
           <Route path="payouts" element={<PayoutQueuePage />} />
           <Route path="payout-accounts" element={<PayoutAccountsPage />} />
+          <Route path="moderation" element={<ModerationPage />} />
           <Route path="support" element={<SupportLookupPage />} />
-          {/* La file est la page d'accueil : c'est ce qui attend une décision. */}
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="audit" element={<AuditLogPage />} />
+          {/*
+            **La file des chauffeurs reste l'accueil**, et le tableau de bord ne
+            la remplace pas.
+            
+            Le faire accueillir paraissait naturel — il nomme ce qui attend une
+            décision. Mais il ne compte pas les chauffeurs en attente : l'API ne
+            renvoie pas ce nombre. Accueillir sur lui aurait donc fait disparaître
+            la seule barrière entre la plateforme et quelqu'un dont personne n'a vu
+            le permis, en échange d'une vue d'ensemble incomplète.
+
+            À revoir le jour où `GET /v1/admin/dashboard` comptera les dossiers de
+            chauffeur en attente.
+          */}
           <Route path="*" element={<Navigate to="/admin/drivers" replace />} />
         </Routes>
       </main>

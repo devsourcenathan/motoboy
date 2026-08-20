@@ -16,4 +16,21 @@ export const queryKeys = {
    * « refusés » sont deux listes, pas deux vues d'une même liste.
    */
   drivers: (status: DriverStatus) => ['drivers', status] as const,
+
+  /*
+   * Administration. Même raison que pour les chauffeurs : le statut appartient à
+   * la clé, sinon une décision laisse la file d'arrivée périmée.
+   */
+  agencies: (status: string) => ['agencies', status] as const,
+  agency: (reference: string) => ['agency', reference] as const,
+  settings: () => ['settings'] as const,
+  stations: () => ['stations'] as const,
+  cityRequests: () => ['city-requests'] as const,
+  dashboard: () => ['dashboard'] as const,
+  /*
+   * La page fait partie de la clé, et c'est ce qui rend la pagination
+   * utilisable : sans elle, revenir à la page précédente refait un aller-retour
+   * réseau pour des données déjà chargées.
+   */
+  auditLogs: (action: string, page: number) => ['audit-logs', action, page] as const,
 } as const
