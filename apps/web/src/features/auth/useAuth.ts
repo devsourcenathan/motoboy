@@ -43,10 +43,25 @@ export function useVerifyOtp() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ phone, code }: { phone: string; code: string }) => {
+    /*
+     * **Le motif accompagne le code, et il n'est pas toujours `LOGIN`.**
+     *
+     * Une candidature d'agence émet un code de `REGISTRATION` : le figer ici
+     * ferait refuser la vérification d'un compte qui vient d'être créé, avec un
+     * message parlant d'un code invalide alors qu'il est parfaitement bon.
+     */
+    mutationFn: async ({
+      phone,
+      code,
+      purpose = 'LOGIN',
+    }: {
+      phone: string
+      code: string
+      purpose?: 'LOGIN' | 'REGISTRATION'
+    }) => {
       const result = unwrap(
         await api.POST('/v1/auth/otp/verify', {
-          body: { phone, code, purpose: 'LOGIN' },
+          body: { phone, code, purpose },
         }),
       ) as { token: string; user: User }
 

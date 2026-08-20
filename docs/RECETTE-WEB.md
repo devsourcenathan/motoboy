@@ -51,26 +51,47 @@ ouvrez n'importe quel écran, puis **F5**.
 
 ---
 
-## Étape 1 — Amorcer une agence
+## Étape 1 — Inscrire une agence
 
-⚠️ **Il n'existe aucun écran pour candidater.** `POST /v1/agencies/register` est
-public et fonctionne, mais aucun client ne l'appelle — ni le web, ni le mobile.
-C'est une lacune connue, pas une panne. En attendant, la commande :
+Sur l'accueil public, **« Inscrire mon agence »** en haut à droite — ou
+directement `/rejoindre`.
 
-```bash
-curl -X POST https://apimotoboy.sekuu.com/api/v1/agencies/register -H "Content-Type: application/json" -d '{"name":"Général Express","legal_name":"Général Express SARL","phone":"+237690000010","email":"contact@exemple.cm","manager_first_name":"Awa","manager_last_name":"Nkeng","manager_phone":"+237VOTRE_SECOND_NUMERO","locale":"fr"}'
-```
+Renseignez l'agence, puis le responsable. Le **téléphone du responsable** doit
+être votre second numéro : l'écran prévient qu'il devient le compte qui gérera
+l'agence, et c'est lui qui recevra le code.
 
-Remplacez `manager_phone` par votre second numéro : **c'est lui qui recevra le
-code** de connexion à l'espace agence.
+> Attendu : un SMS, puis un champ de code. Une fois confirmé, **vous entrez
+> immédiatement dans l'espace agence** — sans attendre l'admission. C'est voulu :
+> l'agence dépose ses pièces et déclare son parc pendant que MOTOBOY instruit.
+> Seule la parution des départs dans la recherche attend l'admission.
 
-> Attendu : une réponse `202` et un SMS. L'agence existe désormais, en attente.
+À éprouver au passage : laissez la raison sociale et l'email vides, ils sont
+facultatifs. Et basculez l'écran en anglais avant d'envoyer — **le SMS doit
+arriver en anglais**, puisque c'est cette langue qui part avec le formulaire.
+
+---
+
+## Où se connecter
+
+**Deux liens** en haut à droite de l'accueil public : « Inscrire mon agence »
+pour une agence qui n'a pas encore de compte, « Espace professionnel » pour se
+connecter. La distinction compte — une agence non inscrite ne trouverait rien
+derrière le second, et repartirait en croyant la plateforme fermée.
+
+**Un seul formulaire pour quatre espaces.** Administration, agence, embarquement,
+propriétaire : c'est le rôle du compte qui décide où vous atterrissez, pas l'URL
+tapée. Un compte agence est donc déposé sur ses Départs, un agent d'embarquement
+sur le quai.
+
+Si un compte porte deux rôles — gérer une agence *et* embarquer —, c'est le plus
+large qui l'emporte : l'envoyer vers le plus restreint lui cacherait la moitié de
+son travail.
 
 ---
 
 ## Étape 2 — L'administration
 
-Connectez-vous sur `/sign-in` avec votre compte administrateur.
+Connectez-vous avec votre compte administrateur.
 
 **2.1 — Agences → « À instruire ».** L'agence créée doit y figurer.
 
@@ -116,7 +137,8 @@ orange, **et seulement s'ils ne sont pas à zéro**.
 ## Étape 3 — L'espace agence
 
 Déconnectez-vous. Reconnectez-vous avec **le numéro du responsable** et le code
-reçu à l'étape 1.
+reçu à l'étape 1 — le même formulaire, qui vous déposera cette fois sur les
+Départs de l'agence.
 
 L'ordre est imposé par les données :
 
@@ -205,7 +227,6 @@ Avant de signaler quelque chose, vérifiez qu'il ne figure pas ici.
 
 | Constat | Pourquoi |
 |---|---|
-| **Aucune candidature d'agence en ligne** | `agencies/register` n'a pas d'écran. Lacune connue, corrigeable |
 | **Les reversements « réussissent » toujours** | `PAYOUT_GATEWAY=fake` : le pilote **simule** un succès. Rien ne part. **Ne testez pas un décaissement comme s'il était réel** |
 | L'administration est en français seul | Décision du brief : usage interne |
 | Pas de « rechercher un billet » à l'embarquement | La saisie manuelle valide déjà. Deux formulaires jumeaux dont l'un embarque et l'autre non invitent à se tromper |

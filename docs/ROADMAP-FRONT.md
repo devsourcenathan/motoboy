@@ -900,3 +900,57 @@ jsdom, donc les tests affirmaient du français **par accident**.
 
 Les gabarits de référence — `TCK-XXXXXX`, `TR-XXXXXX`, `LT-4412-AB` — et
 « Douala » comme exemple de saisie. Un format ne change pas de langue.
+
+---
+
+## 15. Les derniers écrans — 19 août 2026
+
+Relevé refait **sur les 92 routes**, et non sur les seuls préfixes `agency/` et
+`admin/` — c'est ainsi que `agencies/register` avait échappé au premier passage.
+
+Il ne restait que deux écrans, et un trou qui n'était pas une route.
+
+**L'inscription d'une agence** (`/rejoindre`). L'API l'acceptait déjà, publique et
+fonctionnelle, et aucun client ne l'appelait : une agence n'avait nulle part où
+dire qu'elle voulait rejoindre la plateforme. C'était la **porte d'entrée du côté
+offre**, et elle n'existait pas.
+
+Deux temps, comme la connexion. Le second crée la session : l'agence entre dans
+son espace **immédiatement**, sans attendre l'admission — elle dépose ses pièces
+et déclare son parc pendant qu'on instruit. Une agence à qui l'on dit de revenir
+plus tard ne dépose rien, et l'instructeur n'a rien à instruire.
+
+**La page d'égarement.** Le routeur public n'avait pas d'attrape-tout : une URL
+inconnue rendait une page **entièrement blanche**, indistinguable d'une panne et
+sans rien pour repartir. Un lien de départ partagé puis périmé est pourtant le cas
+le plus banal.
+
+### Ce que le contrat imposait
+
+`useVerifyOtp` figeait `purpose: 'LOGIN'`. Une candidature émet un code de
+`REGISTRATION` : le laisser figé aurait fait refuser un code parfaitement bon,
+avec un message parlant d'un code invalide.
+
+**La langue de l'écran part avec le formulaire**, et ce n'est pas cosmétique : le
+brief le dit, elle décide de celle de l'OTP — le tout premier message reçu, avant
+même que le compte existe.
+
+### Ce qui reste sans client, et pourquoi
+
+| Route | Raison |
+|---|---|
+| `agency/tickets/lookup` | Écartée : la saisie manuelle valide déjà, et deux formulaires jumeaux dont l'un embarque et l'autre non invitent à se tromper |
+| `webhooks/payments/{provider}` | Appelée par le prestataire |
+| `webhooks/payouts/{provider}` | Idem |
+
+Trente autres routes n'ont pas de client web **par conception** : le parcours
+passager et l'espace chauffeur sont mobiles.
+
+### Une instabilité vue une fois
+
+Un `pnpm verify` a rapporté 123 tests sur 134 — des **fichiers entiers** n'ayant
+pas démarré, jamais un échec d'assertion. C'est la signature d'un worker qui ne se
+lance pas sous charge, `pnpm -r` faisant tourner Jest et Vitest de front. Non
+reproduit en quatre exécutions suivantes, donc noté plutôt que corrigé : à
+reconnaître si la CI la rencontre, parce qu'un décompte incomplet se lit beaucoup
+plus facilement comme un succès que comme une panne.

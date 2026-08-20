@@ -1,6 +1,7 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { session } from '../../lib/api'
 import { jsonResponse, mockRoutes, render, sentRequest } from '../../test/render'
 import { SignInPage } from './SignInPage'
 
@@ -89,5 +90,51 @@ describe('SignInPage', () => {
     await userEvent.type(code, '12 34-56')
 
     expect(code).toHaveValue('123456')
+  })
+  /**
+   * **Le défaut qui bloquait tout le monde.** Une session ouverte n'a rien à
+   * faire sur ce formulaire : on y saisissait son code et on y restait,
+   * authentifié, sans que rien ne le dise. Il fallait taper l'URL de son espace,
+   * qu'on ne connaissait pas.
+   */
+  it('emmène un compte agence dans son espace au lieu de le laisser là', async () => {
+    mockRoutes({
+      ...routes(),
+      '/v1/me': () => jsonResponse({ id: 1, roles: ['AGENCY'] }),
+    })
+
+    /*
+     * La session s'ouvre par son API, pas en écrivant dans `localStorage` :
+     * `Session` mémorise son jeton, et le poser derrière son dos ne le lui
+     * apprend pas. Sans jeton, `useCurrentUser` n'interroge rien — et c'est
+     * juste, on ne peut pas être « déjà connecté » sans session.
+     */
+    await session.start('jeton-de-test')
+
+    render(<SignInPage />)
+
+    // Le formulaire disparaît : on n'est plus en train de se connecter.
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Recevoir un code' }),
+      ).not.toBeInTheDocument(),
+    )
+
+    await session.end()
+  })
+
+  /**
+   * Le titre nomme les quatre espaces plutôt qu'un seul : l'annoncer comme celui
+   * de l'administration fait croire aux trois autres qu'ils se connectent
+   * ailleurs.
+   */
+  it('ne se présente pas comme réservé à l’administration', async () => {
+    mockRoutes(routes())
+
+    render(<SignInPage />)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Espace professionnel' }),
+    ).toBeInTheDocument()
   })
 })

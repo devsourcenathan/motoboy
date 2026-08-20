@@ -7,6 +7,7 @@ import {
   NavLink as RouterNavLink,
   Route,
   Routes,
+  useLocation,
 } from 'react-router'
 import { SignInPage } from './features/auth/SignInPage'
 import { useCurrentUser, useSignOut } from './features/auth/useAuth'
@@ -35,6 +36,9 @@ import { DashboardPage } from './features/admin/DashboardPage'
 import { ModerationPage } from './features/admin/ModerationPage'
 import { SettingsPage } from './features/admin/SettingsPage'
 import { DocumentsPage } from './features/agency/DocumentsPage'
+import { destinationFor, PUBLIC_HOME, spaceLabel } from './features/auth/destination'
+import { JoinPage } from './features/public/JoinPage'
+import { NotFoundPage } from './features/public/NotFoundPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +87,7 @@ export function AppRoutes() {
       <Route path="/trips/:reference" element={<TripPage />} />
 
       <Route path="/sign-in" element={<SignInPage />} />
+      <Route path="/rejoindre" element={<JoinPage />} />
 
       {/*
         Deux espaces distincts derrière la même connexion. Une agence et un
@@ -135,6 +140,13 @@ export function AppRoutes() {
           </RequireSession>
         }
       />
+
+      {/*
+        **L'attrape-tout public, qui manquait.** Sans lui, une URL inconnue rendait
+        une page entièrement blanche : indistinguable d'une panne, et sans rien
+        pour repartir. Il vient en dernier, sinon il avalerait tout le reste.
+      */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
@@ -178,6 +190,7 @@ function RequireSession({
   children: React.ReactNode
 }) {
   const me = useCurrentUser()
+  const location = useLocation()
 
   if (me.isPending) {
     return <p className="p-8 text-sm text-neutral-500">Vérification de la session…</p>
@@ -191,12 +204,25 @@ function RequireSession({
    * qui refuse, et elle seule fait autorité.
    */
   if (!me.data.roles.some((role) => allow.includes(role))) {
+    const mine = destinationFor(me.data.roles)
+
     return (
       <main className="p-8">
         <h1 className="text-xl font-bold text-ink-700">Espace réservé</h1>
+        {/*
+          **Nommer l'espace refusé, et proposer le sien.** Le message disait
+          « pas accès à l'administration » quel que soit l'espace — un gérant
+          d'agence refusé sur le quai lisait donc une phrase sans rapport, et
+          repartait chercher un tort qu'il n'avait pas.
+        */}
         <p className="mt-2 text-sm text-neutral-500">
-          Ce compte n’a pas accès à l’administration.
+          Ce compte n’a pas accès à {spaceLabel(location.pathname)}.
         </p>
+        {mine === PUBLIC_HOME ? null : (
+          <Link to={mine} className="mt-3 inline-block text-sm text-ink-500 underline">
+            Aller à votre espace
+          </Link>
+        )}
       </main>
     )
   }

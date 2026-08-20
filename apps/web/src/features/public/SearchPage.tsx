@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { unwrap } from '@motoboy/api-client'
 import { useTranslation } from 'react-i18next'
@@ -96,7 +96,31 @@ export function SearchPage() {
               basculer avant d'avoir à comprendre le français pour trouver
               comment le quitter.
             */}
-            <LocaleSwitch className="text-neutral-0" />
+            <div className="flex items-center gap-3">
+              {/*
+                L'accès professionnel vit ici et nulle part ailleurs : c'est la
+                seule page qu'un gérant d'agence connaît, et sans ce lien il lui
+                faudrait avoir retenu une URL qu'on ne lui a jamais donnée.
+              */}
+              {/*
+                Deux entrées distinctes, et la distinction compte : une agence qui
+                n'est pas encore inscrite ne trouverait rien derrière « se
+                connecter », et repartirait en croyant la plateforme fermée.
+              */}
+              <Link
+                to="/rejoindre"
+                className="text-xs text-neutral-0/80 underline hover:text-neutral-0"
+              >
+                {t('public:join.link')}
+              </Link>
+              <Link
+                to="/sign-in"
+                className="text-xs text-neutral-0/80 underline hover:text-neutral-0"
+              >
+                {t('public:hero.proAccess')}
+              </Link>
+              <LocaleSwitch className="text-neutral-0" />
+            </div>
           </div>
           <h1 className="mt-4 max-w-lg text-2xl font-bold text-neutral-0 sm:text-3xl">
             {t('public:hero.tagline')}
