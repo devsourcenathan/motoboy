@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { jsonResponse, mockRoutes, render } from '../../test/render'
+import { jsonResponse, mockRoutes, render, sentRequest } from '../../test/render'
 import { StaffPage } from './StaffPage'
 
 /**
@@ -70,18 +70,8 @@ describe('StaffPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Ajouter' }))
 
-    const mock = fetch as unknown as { mock: { calls: [Request | string][] } }
-
-    await waitFor(async () => {
-      const post = mock.mock.calls
-        .map(([input]) => input)
-        .find((input) => typeof input !== 'string' && input.method === 'POST')
-
-      expect(post).toBeDefined()
-
-      const body = JSON.parse(await (post as Request).clone().text()) as { role: string }
-
-      expect(body.role).toBe('COUNTER')
+    expect(await sentRequest((request) => request.method === 'POST')).toMatchObject({
+      role: 'COUNTER',
     })
   })
 

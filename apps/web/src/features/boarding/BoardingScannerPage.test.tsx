@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { jsonResponse, mockRoutes, render } from '../../test/render'
+import { jsonResponse, mockRoutes, render, sentRequest } from '../../test/render'
 import { BoardingScannerPage } from './BoardingScannerPage'
 
 /**
@@ -156,20 +156,8 @@ describe('BoardingScannerPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Synchroniser' }))
 
-    const mock = fetch as unknown as { mock: { calls: [Request | string][] } }
-
-    await waitFor(async () => {
-      const sent = mock.mock.calls
-        .map(([input]) => input)
-        .find((input) => typeof input !== 'string' && input.url.includes('/validations'))
-
-      expect(sent).toBeDefined()
-
-      const body = JSON.parse(await (sent as Request).clone().text()) as {
-        validations: unknown[]
-      }
-
-      expect(body.validations).toHaveLength(1)
-    })
+    expect(
+      await sentRequest((request) => request.url.includes('/validations')),
+    ).toMatchObject({ validations: [expect.anything()] })
   })
 })
