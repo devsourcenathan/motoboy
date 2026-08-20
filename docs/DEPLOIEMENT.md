@@ -251,6 +251,39 @@ fait passer par la CI, la fusion dans `main` déclenche le déploiement.
 
 ---
 
+## 4 quater. La journalisation
+
+`LOG_CHANNEL=stderr` : un conteneur journalise sur sa sortie d'erreur, que
+l'hébergeur collecte. Rien n'est écrit dans un fichier que personne ne lira.
+
+**`LOG_EMERGENCY_PATH=php://stderr` compte autant**, et c'est moins évident.
+C'est le recours de Laravel quand le canal configuré ne peut pas être construit —
+et il visait par défaut `storage/logs/laravel.log`.
+
+Ce qui s'est passé le 20 août 2026 : l'ordonnanceur et le worker tournaient en
+**root** (supervisord démarre en root, et ses programmes n'avaient pas d'`user`).
+Le premier des deux à journaliser a créé `laravel.log` à son nom. php-fpm, qui
+tourne en `www-data`, n'a plus pu y ajouter une ligne. Laravel a basculé sur le
+journaliseur de secours, qui visait ce même fichier, a échoué aussi — et **cet
+échec-là** est remonté en 500, à la place de l'erreur qu'il devait consigner.
+
+Une candidature d'agence refusée ne disait donc rien d'autre que
+« permission denied » sur un fichier de journal. L'erreur réelle n'a jamais été
+écrite nulle part.
+
+Deux corrections, complémentaires :
+
+| Ce qui change | Pourquoi |
+|---|---|
+| L'ordonnanceur et le worker tournent en `www-data` | Rien d'applicatif n'a besoin de root dans un conteneur, et plus rien ne crée de fichier que php-fpm ne pourra pas rouvrir |
+| Le secours écrit sur `stderr` | Le mode d'échec disparaît entièrement, y compris pour ce qu'on n'a pas prévu |
+
+⚠️ **Une panne de journalisation qui remplace l'erreur qu'elle devait consigner
+est le pire des masques** : elle transforme un diagnostic d'une minute en une
+enquête, et laisse croire à un défaut d'écriture là où le problème est ailleurs.
+
+---
+
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.
