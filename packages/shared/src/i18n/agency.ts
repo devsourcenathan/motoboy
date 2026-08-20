@@ -190,6 +190,8 @@ export interface AgencyMessages {
     readonly title: string
     readonly subtitle: string
     readonly payoutAccount: string
+    readonly declareAccount: string
+    readonly changeAccount: string
     /** Dit **avant** la saisie : un numero errone envoie l'argent ailleurs. */
     readonly accountWarning: string
     readonly declared: string
@@ -458,6 +460,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       subtitle:
         'Vos écritures, vos reversements, et le compte sur lequel MOTOBOY vous verse.',
       payoutAccount: 'Compte de versement',
+      declareAccount: 'Déclarer un compte',
+      changeAccount: 'Changer de compte',
       accountWarning:
         'Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé ne se récupère pas.',
       declared:
@@ -721,6 +725,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       title: 'Account',
       subtitle: 'Your ledger, your payouts, and the account MOTOBOY pays you into.',
       payoutAccount: 'Payout account',
+      declareAccount: 'Declare an account',
+      changeAccount: 'Change account',
       accountWarning:
         'MOTOBOY verifies this account before using it. A misdirected transfer cannot be recovered.',
       declared:

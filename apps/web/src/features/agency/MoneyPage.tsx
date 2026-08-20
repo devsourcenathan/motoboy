@@ -96,7 +96,11 @@ export function MoneyPage() {
         subtitle={t('agency:money.subtitle')}
         action={
           <Button
-            label={active === undefined ? 'Déclarer un compte' : 'Changer de compte'}
+            label={
+              active === undefined
+                ? t('agency:money.declareAccount')
+                : t('agency:money.changeAccount')
+            }
             variant="secondary"
             onPress={() => setDeclaring(true)}
           />

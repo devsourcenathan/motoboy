@@ -18,12 +18,18 @@ import {
 } from '../../shared/ui'
 
 /** Ce que la plateforme attend d'une agence, et les libellés qui le disent. */
+/**
+ * Ce que la plateforme attend d'une agence.
+ *
+ * Une **clé** et non un libellé : écrit ici, le texte serait épinglé à la langue
+ * de ce fichier, et l'écran resterait en français une fois tout le reste traduit.
+ */
 const TYPES = [
-  ['REGISTRATION', 'Registre de commerce'],
-  ['TRANSPORT_LICENCE', 'Licence de transport'],
-  ['INSURANCE', 'Assurance'],
-  ['ID_DOCUMENT', 'Pièce d’identité du dirigeant'],
-  ['OTHER', 'Autre'],
+  ['REGISTRATION', 'registration'],
+  ['TRANSPORT_LICENCE', 'transportLicence'],
+  ['INSURANCE', 'insurance'],
+  ['ID_DOCUMENT', 'idDocument'],
+  ['OTHER', 'other'],
 ] as const
 
 /** Huit mégaoctets, comme la validation côté serveur. */
@@ -47,14 +53,18 @@ function useDocuments() {
 }
 
 /**
- * Le dépôt d'une pièce.
+ * Le dépôt d'une pièce — premier envoi de fichier du web.
  *
- * **Premier envoi de fichier du web, d'où le sérialiseur explicite.** Le client
- * typé encode en JSON par défaut ; laisser faire enverrait `[object File]`. On
- * rend donc le `FormData` tel quel — et **sans fixer `Content-Type`** : le
- * navigateur doit y écrire lui-même la frontière multipart, qu'il est seul à
- * connaître. La renseigner à la main produit un corps que le serveur ne sait pas
- * découper, et l'erreur parle alors d'un champ manquant plutôt que de l'en-tête.
+ * **Aucun sérialiseur explicite, et c'est vérifié.** J'en avais écrit un, en
+ * expliquant que le client typé encoderait sinon en JSON et enverrait
+ * `[object File]`. Le test l'a démenti : la requête part en `multipart/form-data`
+ * avec sa frontière, sérialiseur ou pas — `openapi-fetch` reconnaît un `FormData`
+ * et le laisse passer. Le retirer supprime du code mort et un commentaire faux.
+ *
+ * **`Content-Type` n'est jamais fixé à la main.** Le navigateur seul connaît la
+ * frontière multipart ; la renseigner soi-même produit un corps que le serveur ne
+ * sait pas découper, et l'erreur parle alors d'un champ manquant plutôt que d'un
+ * en-tête.
  */
 function useUploadDocument() {
   const queryClient = useQueryClient()
@@ -77,12 +87,7 @@ function useUploadDocument() {
         form.append('expires_at', expiresAt)
       }
 
-      return unwrap(
-        await api.POST('/v1/agency/documents', {
-          body: form as never,
-          bodySerializer: (body: unknown) => body as FormData,
-        }),
-      )
+      return unwrap(await api.POST('/v1/agency/documents', { body: form as never }))
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agency-documents'] }),
   })
@@ -135,9 +140,9 @@ export function DocumentsPage() {
                 value={type}
                 onChange={(event) => setType(event.target.value)}
               >
-                {TYPES.map(([value, label]) => (
+                {TYPES.map(([value, key]) => (
                   <option key={value} value={value}>
-                    {label}
+                    {t(`agency:documents.types.${key}`)}
                   </option>
                 ))}
               </select>
@@ -225,14 +230,14 @@ export function DocumentsPage() {
                 t('agency:documents.head.expiry'),
               ]}
             >
-              {TYPES.map(([value, label]) => {
+              {TYPES.map(([value, key]) => {
                 const found = rows.find((row) => row.type === value)
 
                 if (found === undefined && value === 'OTHER') return null
 
                 return (
                   <tr key={value} className="border-t border-neutral-200">
-                    <Cell>{label}</Cell>
+                    <Cell>{t(`agency:documents.types.${key}`)}</Cell>
                     <Cell>
                       {found === undefined ? (
                         // Nommer l'absence : une ligne manquante se lit comme un

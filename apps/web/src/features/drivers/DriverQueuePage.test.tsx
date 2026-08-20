@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { errorLabel, resolveLocale } from '@motoboy/shared'
 import type { AdminDriverRow } from '@motoboy/api-client/types'
+import { i18next } from '../../lib/i18n'
 import { calledUrls, jsonResponse, mockFetch, render } from '../../test/render'
 import { DriverQueuePage } from './DriverQueuePage'
 
@@ -159,13 +160,17 @@ describe('DriverQueuePage', () => {
     render(<DriverQueuePage />)
 
     /*
-     * Le libellé vient de `@motoboy/shared`, et sa **langue suit le navigateur**
-     * — `en-US` sous jsdom. On compare donc à la même source de vérité plutôt
-     * qu'à une chaîne française codée en dur, qui ferait échouer le test pour une
-     * raison sans rapport avec ce qu'il vérifie.
+     * Le libellé vient de `@motoboy/shared`, et sa langue est celle **choisie par
+     * l'utilisateur** — épinglée au français par le harnais. On compare donc à la
+     * même source de vérité plutôt qu'à une chaîne codée en dur.
+     *
+     * Ce test lisait `navigator.language` jusqu'ici, et passait pour une mauvaise
+     * raison : `describeError` figeait alors la langue du navigateur au
+     * chargement du module et ignorait le sélecteur. Les deux se trompaient de
+     * concert, ce qui les faisait s'accorder.
      */
     expect(
-      await screen.findByText(errorLabel('FORBIDDEN', resolveLocale(navigator.language))),
+      await screen.findByText(errorLabel('FORBIDDEN', resolveLocale(i18next.language))),
     ).toBeInTheDocument()
   })
 })

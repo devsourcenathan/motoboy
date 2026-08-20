@@ -30,6 +30,15 @@ export default defineConfig({
      */
     environmentOptions: { jsdom: { url: 'http://localhost' } },
     globals: true,
+    /*
+     * **Au-dessus de `asyncUtilTimeout`, et c'est l'ordre qui compte.**
+     *
+     * `findBy*` dispose de cinq secondes (voir `src/test/setup.ts`). Laisser le
+     * délai du test à sa valeur par défaut — cinq secondes également — tue le
+     * test à l'instant précis où l'attente allait aboutir : le message parle
+     * alors de test trop long là où il n'y avait qu'une machine chargée.
+     */
+    testTimeout: 15000,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     // Fuseau figé : un test qui formate une date ne doit pas dépendre de la
