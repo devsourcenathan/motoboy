@@ -210,6 +210,25 @@ L'ordre compte. Couper l'auto-déploiement avant d'avoir posé les secrets laiss
 un intervalle pendant lequel plus rien ne se déploie, sans erreur nulle part pour
 le dire.
 
+**Fait le 19 août 2026** : `autoDeploy: false` dans `render.yaml`,
+`git.deploymentEnabled: false` dans `apps/web/vercel.json`.
+
+### Les deux vérifications qui restent à faire à la main
+
+**Les hooks doivent viser `main`.** Un *deploy hook* construit la branche pour
+laquelle il a été créé. S'ils ont été créés alors que les hébergeurs déployaient
+encore la branche de travail, ils construiront celle-là — la CI déclencherait
+donc un déploiement de code périmé, ce qui est pire que pas de déploiement du
+tout, parce que ça ressemble à un succès. À contrôler dans les deux tableaux de
+bord, avec la branche de production du service.
+
+**Un hook fonctionne-t-il vraiment avec l'auto-déploiement coupé ?** Ni la
+documentation de Render ni celle de Vercel ne le disent noir sur blanc. Le
+vocabulaire penche du bon côté — Vercel parle d'empêcher le déclenchement
+« upon commits », Render cite les environnements CI/CD comme cas d'usage d'un
+hook — mais ce n'est pas écrit. Déclenchez donc chaque hook une fois à la main
+avant de compter dessus.
+
 ### La branche de déploiement
 
 Le garde-fou ne vaut que si l'on déploie depuis `main`. Déployer depuis une
