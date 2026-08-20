@@ -69,15 +69,17 @@ export function PayoutQueuePage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-ink-700">Reversements</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Vérifiez le bénéficiaire et la destination avant de valider. Un virement
-          Mobile Money mal dirigé ne se récupère pas.
+          Vérifiez le bénéficiaire et la destination avant de valider. Un virement Mobile
+          Money mal dirigé ne se récupère pas.
         </p>
       </header>
 
       {payouts.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}
 
       {payouts.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">{describeError(payouts.error)}</p>
+        <p className="text-sm whitespace-pre-line text-danger">
+          {describeError(payouts.error)}
+        </p>
       ) : null}
 
       {payouts.data?.data.length === 0 ? (
@@ -128,13 +130,17 @@ function PayoutCard({ payout }: { payout: Payout }) {
         </div>
 
         <div className="text-right">
-          <p className="text-xl font-bold text-brand-600">{formatMoney(payout.net, 'fr')}</p>
+          <p className="text-xl font-bold text-brand-600">
+            {formatMoney(payout.net, 'fr')}
+          </p>
           <p className="text-xs text-neutral-500">{payout.status}</p>
         </div>
       </div>
 
       <div className="mt-4 rounded-lg bg-neutral-50 p-3">
-        <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">Destination</p>
+        <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+          Destination
+        </p>
         {destination === null || destination === undefined ? (
           <p className="mt-1 text-sm text-danger">Aucun compte rattaché.</p>
         ) : (
@@ -193,7 +199,11 @@ function PayoutCard({ payout }: { payout: Payout }) {
                 <button
                   type="button"
                   disabled={send.isPending}
-                  onClick={() => send.mutate(payout.reference, { onSuccess: () => setConfirming(false) })}
+                  onClick={() =>
+                    send.mutate(payout.reference, {
+                      onSuccess: () => setConfirming(false),
+                    })
+                  }
                   className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-neutral-0 hover:bg-brand-600 disabled:opacity-50"
                 >
                   Envoyer l’argent

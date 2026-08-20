@@ -29,7 +29,13 @@ const list = (...rows: AgencyStation[]) => jsonResponse({ data: rows })
 const cities = () =>
   jsonResponse({
     data: [
-      { type: 'CITY', city_id: 5, station_id: null, label: 'Douala', secondary_label: null },
+      {
+        type: 'CITY',
+        city_id: 5,
+        station_id: null,
+        label: 'Douala',
+        secondary_label: null,
+      },
     ],
   })
 

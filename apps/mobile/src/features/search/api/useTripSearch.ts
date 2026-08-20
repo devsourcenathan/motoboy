@@ -9,7 +9,12 @@ import { queryKeys } from '../../../shared/api/queryKeys'
  * Le prix pèse lourd dans le classement du MVP : c'est le premier critère de
  * comparaison entre deux agences qui desservent la même liaison.
  */
-export const SEARCH_SORTS = ['best', 'price_asc', 'departure_asc', 'duration_asc'] as const
+export const SEARCH_SORTS = [
+  'best',
+  'price_asc',
+  'departure_asc',
+  'duration_asc',
+] as const
 
 export type SearchSort = (typeof SEARCH_SORTS)[number]
 

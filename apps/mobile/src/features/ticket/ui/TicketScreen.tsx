@@ -182,7 +182,10 @@ export function TicketScreen() {
             <View style={styles.rule} />
 
             <View style={styles.ends}>
-              <Detail label={t('ticket.date')} value={formatDate(data.trip.departure_at, { locale })} />
+              <Detail
+                label={t('ticket.date')}
+                value={formatDate(data.trip.departure_at, { locale })}
+              />
               <Detail
                 label={t('ticket.time')}
                 value={formatTime(data.trip.departure_at, { locale })}

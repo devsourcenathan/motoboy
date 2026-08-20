@@ -1,7 +1,14 @@
 import { Tabs } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import { fontSize, spacing, TabIcon, theme, TOUCH_TARGET, type TabName } from '../../src/shared/ui'
+import {
+  fontSize,
+  spacing,
+  TabIcon,
+  theme,
+  TOUCH_TARGET,
+  type TabName,
+} from '../../src/shared/ui'
 
 /**
  * Les trois racines du parcours passager.
@@ -97,10 +104,7 @@ function Pill({
         filled={focused}
         color={focused ? theme.text.brand : theme.text.muted}
       />
-      <Text
-        style={[styles.label, focused ? styles.labelActive : null]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.label, focused ? styles.labelActive : null]} numberOfLines={1}>
         {label}
       </Text>
     </View>

@@ -1,12 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native'
 import {
   Button,
   CheckIcon,
@@ -132,7 +126,8 @@ function Dossier({
     SUSPENDED: t('driver.statusSuspended'),
   }[profile.status]
 
-  const tone = profile.status === 'APPROVED' ? 'ok' : profile.status === 'PENDING' ? 'wait' : 'bad'
+  const tone =
+    profile.status === 'APPROVED' ? 'ok' : profile.status === 'PENDING' ? 'wait' : 'bad'
 
   return (
     <>
@@ -188,9 +183,7 @@ function Dossier({
 
       <DocumentDeposit provided={profile.documents} missing={missing} />
 
-      {profile.can_drive ? (
-        <Button label={t('driver.work')} onPress={onWork} />
-      ) : null}
+      {profile.can_drive ? <Button label={t('driver.work')} onPress={onWork} /> : null}
 
       {/*
         Ses revenus restent accessibles meme dossier suspendu : l'argent deja

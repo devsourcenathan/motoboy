@@ -29,7 +29,8 @@ import {
 export function OwnerPage() {
   const vehicles = useQuery({
     queryKey: ['owner', 'vehicles'],
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/owner/vehicles', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/owner/vehicles', { signal })),
   })
 
   const [selected, setSelected] = useState<number | null>(null)
@@ -39,7 +40,9 @@ export function OwnerPage() {
   return (
     <div className="min-h-screen bg-page">
       <header className="bg-ink-700 px-6 py-3">
-        <p className="mx-auto max-w-4xl font-bold text-neutral-0">MOTOBOY — mes véhicules</p>
+        <p className="mx-auto max-w-4xl font-bold text-neutral-0">
+          MOTOBOY — mes véhicules
+        </p>
       </header>
 
       <main className="mx-auto max-w-4xl p-6">
@@ -67,8 +70,9 @@ export function OwnerPage() {
                     {vehicle.registration}
                   </p>
                   <p className="text-sm text-neutral-500">
-                    {[vehicle.brand, vehicle.model].filter(Boolean).join(' ') || vehicle.type} ·{' '}
-                    {vehicle.capacity} places
+                    {[vehicle.brand, vehicle.model].filter(Boolean).join(' ') ||
+                      vehicle.type}{' '}
+                    · {vehicle.capacity} places
                     {vehicle.agency === null ? '' : ` · exploité par ${vehicle.agency}`}
                   </p>
                 </div>

@@ -49,9 +49,9 @@ describe('validate', () => {
 
   it('reports incompleteness before an expired licence', () => {
     // Une date passée sur un formulaire vide n'est pas le premier problème.
-    expect(
-      validate({ ...emptyApplication, licenceExpiresAt: '2020-01-01' }, TODAY),
-    ).toBe('INCOMPLETE')
+    expect(validate({ ...emptyApplication, licenceExpiresAt: '2020-01-01' }, TODAY)).toBe(
+      'INCOMPLETE',
+    )
   })
 })
 

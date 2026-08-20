@@ -153,7 +153,9 @@ function RequestCard({
         enfant, un détour. La tronquer ferait accepter une course qu'on refuserait
         en la lisant.
       */}
-      {request.note === null || request.note === undefined || request.note === '' ? null : (
+      {request.note === null ||
+      request.note === undefined ||
+      request.note === '' ? null : (
         <Text style={styles.note}>{request.note}</Text>
       )}
 

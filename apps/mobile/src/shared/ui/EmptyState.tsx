@@ -29,7 +29,13 @@ export interface EmptyStateProps {
  * L'action compte autant que le texte : un état vide sans issue laisse le
  * passager reculer, et il recule souvent hors du parcours.
  */
-export function EmptyState({ icon, title, body, action, tone = 'neutral' }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  title,
+  body,
+  action,
+  tone = 'neutral',
+}: EmptyStateProps) {
   return (
     <View style={styles.container}>
       {icon === undefined ? null : (

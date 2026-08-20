@@ -1,12 +1,6 @@
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import {
-  Pressable,
-  SectionList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native'
 import { formatDate, formatTime, ticketStatusLabels } from '@motoboy/shared'
 import type { Ticket } from '@motoboy/api-client/types'
 import {

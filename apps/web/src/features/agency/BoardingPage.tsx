@@ -102,7 +102,10 @@ function BoardingList({ reference }: { reference: string }) {
           }}
         >
           <div className="min-w-56 flex-1">
-            <Field label="Référence du billet" hint="Saisie manuelle — le scan se fait sur le quai.">
+            <Field
+              label="Référence du billet"
+              hint="Saisie manuelle — le scan se fait sur le quai."
+            >
               <input
                 className={`${INPUT} font-mono uppercase`}
                 value={ticket}
@@ -111,7 +114,11 @@ function BoardingList({ reference }: { reference: string }) {
               />
             </Field>
           </div>
-          <Button type="submit" label="Valider" disabled={ticket.trim() === '' || validate.isPending} />
+          <Button
+            type="submit"
+            label="Valider"
+            disabled={ticket.trim() === '' || validate.isPending}
+          />
         </form>
 
         {/*
@@ -135,8 +142,8 @@ function BoardingList({ reference }: { reference: string }) {
       {list.data === undefined ? null : (
         <>
           <p className="text-sm text-neutral-500">
-            {boarded} embarqué{boarded > 1 ? 's' : ''} sur {passengers.length} · liste établie à{' '}
-            {new Date(list.data.generated_at).toLocaleTimeString('fr')}
+            {boarded} embarqué{boarded > 1 ? 's' : ''} sur {passengers.length} · liste
+            établie à {new Date(list.data.generated_at).toLocaleTimeString('fr')}
           </p>
 
           {passengers.length === 0 ? (
@@ -189,7 +196,11 @@ function BoardingList({ reference }: { reference: string }) {
  * un simple double scan — là où un refus signale un billet qui n'a rien à faire
  * sur ce départ.
  */
-function ValidationOutcome({ status }: { status: 'ACCEPTED' | 'DUPLICATE' | 'REJECTED' }) {
+function ValidationOutcome({
+  status,
+}: {
+  status: 'ACCEPTED' | 'DUPLICATE' | 'REJECTED'
+}) {
   if (status === 'ACCEPTED') {
     return (
       <p className="mt-3 rounded-lg bg-success-50 p-3 text-sm text-success-700">
@@ -201,7 +212,8 @@ function ValidationOutcome({ status }: { status: 'ACCEPTED' | 'DUPLICATE' | 'REJ
   if (status === 'DUPLICATE') {
     return (
       <p className="mt-3 rounded-lg bg-brand-50 p-3 text-sm text-brand-700">
-        Déjà validé. Vérifiez qu’il ne s’agit pas d’un second passager avec le même billet.
+        Déjà validé. Vérifiez qu’il ne s’agit pas d’un second passager avec le même
+        billet.
       </p>
     )
   }

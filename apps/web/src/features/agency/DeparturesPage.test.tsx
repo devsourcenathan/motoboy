@@ -26,14 +26,20 @@ const trip = {
 const routes = {
   '/cancel': () => jsonResponse({ reference: 'TR-001', status: 'CANCELLED' }),
   '/agency/trips': () =>
-    jsonResponse({ data: [trip], meta: { page: 1, per_page: 20, total: 1, last_page: 1 } }),
+    jsonResponse({
+      data: [trip],
+      meta: { page: 1, per_page: 20, total: 1, last_page: 1 },
+    }),
 }
 
 describe('DeparturesPage', () => {
   it('renvoie vers la génération quand aucun départ n’existe', async () => {
     mockRoutes({
       '/agency/trips': () =>
-        jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }),
+        jsonResponse({
+          data: [],
+          meta: { page: 1, per_page: 20, total: 0, last_page: 1 },
+        }),
     })
 
     render(<DeparturesPage />)

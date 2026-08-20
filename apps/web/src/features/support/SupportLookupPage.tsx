@@ -72,7 +72,9 @@ export function SupportLookupPage() {
       {lookup.isFetching ? <p className="text-sm text-neutral-500">Recherche…</p> : null}
 
       {lookup.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">{describeError(lookup.error)}</p>
+        <p className="text-sm whitespace-pre-line text-danger">
+          {describeError(lookup.error)}
+        </p>
       ) : null}
 
       {data === undefined ? null : (
@@ -90,7 +92,9 @@ export function SupportLookupPage() {
               {data.origin.landmark === null ? '' : ` (${data.origin.landmark})`}
               {' → '}
               <strong>{data.destination.city ?? '—'}</strong>
-              {data.destination.landmark === null ? '' : ` (${data.destination.landmark})`}
+              {data.destination.landmark === null
+                ? ''
+                : ` (${data.destination.landmark})`}
             </p>
 
             <p className="mt-2 text-sm text-neutral-500">
@@ -114,12 +118,17 @@ export function SupportLookupPage() {
               <h2 className="mb-3 font-semibold">Offres reçues</h2>
               <ul className="space-y-2 text-sm">
                 {data.offers.map((offer) => (
-                  <li key={offer.id} className="flex justify-between border-b border-neutral-100 pb-2">
+                  <li
+                    key={offer.id}
+                    className="flex justify-between border-b border-neutral-100 pb-2"
+                  >
                     <span>
                       {offer.driver.first_name} · {offer.eta_minutes} min
                     </span>
                     <span className="flex gap-3">
-                      <span className="font-semibold">{formatMoney(offer.price, 'fr')}</span>
+                      <span className="font-semibold">
+                        {formatMoney(offer.price, 'fr')}
+                      </span>
                       <span className="text-neutral-500">{offer.status}</span>
                     </span>
                   </li>
@@ -147,7 +156,9 @@ export function SupportLookupPage() {
                 <div className="flex justify-between border-b border-neutral-100 pb-1">
                   <dt className="text-neutral-500">Chauffeur</dt>
                   <dd className="font-medium">
-                    {[ride.driver.first_name, ride.driver.last_name].filter(Boolean).join(' ')}
+                    {[ride.driver.first_name, ride.driver.last_name]
+                      .filter(Boolean)
+                      .join(' ')}
                   </dd>
                 </div>
                 <div className="flex justify-between border-b border-neutral-100 pb-1">

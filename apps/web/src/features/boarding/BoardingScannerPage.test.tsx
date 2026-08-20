@@ -41,7 +41,9 @@ const routes = { '/boarding-list': boardingList }
  * caméra — le test doit le tolérer, pas le contredire.
  */
 async function downloadList() {
-  await userEvent.click(await screen.findByRole('button', { name: 'Télécharger la liste' }))
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Télécharger la liste' }),
+  )
   await screen.findByText(/copie de/)
 }
 
@@ -66,7 +68,8 @@ describe('BoardingScannerPage', () => {
     render(<BoardingScannerPage />, { route: '/boarding?trip=TR-001' })
     await downloadList()
 
-    const callsBefore = (fetch as unknown as { mock: { calls: unknown[] } }).mock.calls.length
+    const callsBefore = (fetch as unknown as { mock: { calls: unknown[] } }).mock.calls
+      .length
 
     await userEvent.type(screen.getByLabelText(/Saisie manuelle/), 'TCK-AAA111')
     await userEvent.click(screen.getByRole('button', { name: 'Valider' }))

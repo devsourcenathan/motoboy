@@ -27,7 +27,13 @@ const routes = {
   '/places/autocomplete': () =>
     jsonResponse({
       data: [
-        { type: 'CITY', city_id: 5, station_id: null, label: 'Douala', secondary_label: null },
+        {
+          type: 'CITY',
+          city_id: 5,
+          station_id: null,
+          label: 'Douala',
+          secondary_label: null,
+        },
       ],
     }),
 }
@@ -43,7 +49,9 @@ describe('SearchPage', () => {
 
     render(<SearchPage />)
 
-    expect(screen.getByRole('heading', { name: /Comparez les départs/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /Comparez les départs/ }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Chercher' })).toBeInTheDocument()
   })
 

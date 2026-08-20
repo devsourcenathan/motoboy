@@ -22,7 +22,9 @@ export function useAgencyTrips(params: { from?: string; to?: string } = {}) {
     queryFn: async ({ signal }) =>
       unwrap(
         await api.GET('/v1/agency/trips', {
-          params: { query: { ...(params.from === undefined ? {} : { from: params.from }) } },
+          params: {
+            query: { ...(params.from === undefined ? {} : { from: params.from }) },
+          },
           signal,
         }),
       ),

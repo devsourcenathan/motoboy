@@ -13,12 +13,7 @@ import type {
 } from '@motoboy/api-client/types'
 import { api } from '../../lib/api'
 
-export type {
-  AgencyDriver,
-  AgencyRoute,
-  AgencyStation,
-  AgencyVehicle,
-}
+export type { AgencyDriver, AgencyRoute, AgencyStation, AgencyVehicle }
 
 /**
  * L'inventaire d'une agence.
@@ -42,7 +37,8 @@ const keys = {
 export function useStations() {
   return useQuery({
     queryKey: keys.stations,
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/stations', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/agency/stations', { signal })),
   })
 }
 
@@ -59,7 +55,8 @@ export function useCreateStation() {
 export function useVehicles() {
   return useQuery({
     queryKey: keys.vehicles,
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/vehicles', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/agency/vehicles', { signal })),
   })
 }
 
@@ -96,7 +93,8 @@ export function useVehicleSeats(vehicleId: number | null) {
 export function useDrivers() {
   return useQuery({
     queryKey: keys.drivers,
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/drivers', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/agency/drivers', { signal })),
   })
 }
 

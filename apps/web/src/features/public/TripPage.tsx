@@ -62,10 +62,7 @@ export function TripPage() {
                 <Row label="Gare de départ" value={trip.data.origin_station.name} />
                 <Row label="Gare d’arrivée" value={trip.data.destination_station.name} />
                 <Row label="Prix" value={formatMoney(trip.data.price, 'fr')} />
-                <Row
-                  label="Places restantes"
-                  value={String(trip.data.seats_available)}
-                />
+                <Row label="Places restantes" value={String(trip.data.seats_available)} />
               </dl>
             </Card>
 

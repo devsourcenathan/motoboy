@@ -32,7 +32,10 @@ const INCOMPLETE: AdminDriverRow = {
 }
 
 function page(...rows: AdminDriverRow[]) {
-  return jsonResponse({ data: rows, meta: { page: 1, per_page: 20, total: rows.length, last_page: 1 } })
+  return jsonResponse({
+    data: rows,
+    meta: { page: 1, per_page: 20, total: rows.length, last_page: 1 },
+  })
 }
 
 /** Le corps JSON envoyé à la première requête dont l'URL finit par `suffix`. */
@@ -103,7 +106,9 @@ describe('DriverQueuePage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Valider' }))
 
     await waitFor(() =>
-      expect(calledUrls().some((url) => url.endsWith('/v1/admin/drivers/7/approve'))).toBe(true),
+      expect(
+        calledUrls().some((url) => url.endsWith('/v1/admin/drivers/7/approve')),
+      ).toBe(true),
     )
   })
 
@@ -126,7 +131,9 @@ describe('DriverQueuePage', () => {
      * dans le second argument ne trouve rien — la même surprise que le signal
      * d'annulation, qui avait déjà coûté une correction côté client.
      */
-    await waitFor(() => expect(sentBodyTo('/reject')).resolves.toContain('Permis illisible'))
+    await waitFor(() =>
+      expect(sentBodyTo('/reject')).resolves.toContain('Permis illisible'),
+    )
   })
 
   it('dit qu’il n’y a rien à instruire plutôt que de rester vide', async () => {
@@ -134,7 +141,9 @@ describe('DriverQueuePage', () => {
 
     render(<DriverQueuePage />)
 
-    expect(await screen.findByText('Aucun dossier n’attend de décision.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Aucun dossier n’attend de décision.'),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -143,7 +152,9 @@ describe('DriverQueuePage', () => {
    * autre chose.
    */
   it('montre l’échec au lieu de le taire', async () => {
-    mockFetch(jsonResponse({ code: 'FORBIDDEN', message: 'Permission insuffisante.' }, 403))
+    mockFetch(
+      jsonResponse({ code: 'FORBIDDEN', message: 'Permission insuffisante.' }, 403),
+    )
 
     render(<DriverQueuePage />)
 

@@ -1,13 +1,7 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
 import { bookingStatusLabels, formatDateTime } from '@motoboy/shared'
 import type { Booking } from '@motoboy/api-client/types'
 import {
@@ -82,11 +76,11 @@ export function TripsScreen() {
    * liste ferait chercher le voyage du jour sous des voyages morts.
    */
   const upcoming = bookings.data.filter(
-    (booking) =>
-      booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT',
+    (booking) => booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT',
   )
   const past = bookings.data.filter(
-    (booking) => !(booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT'),
+    (booking) =>
+      !(booking.status === 'CONFIRMED' || booking.status === 'PENDING_PAYMENT'),
   )
   const shown = tab === 'upcoming' ? upcoming : past
 
@@ -116,7 +110,10 @@ export function TripsScreen() {
             icon={<HistoryIcon color={theme.text.brand} size={28} />}
             title={t('account.historyEmpty')}
             body={t('account.historyEmptyBody')}
-            action={{ label: t('account.historyEmptyAction'), onPress: () => router.push('/') }}
+            action={{
+              label: t('account.historyEmptyAction'),
+              onPress: () => router.push('/'),
+            }}
           />
         }
         renderItem={({ item }) => (

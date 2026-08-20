@@ -38,9 +38,16 @@ const seats = () =>
 
 const routes = {
   '/agency/trips/TR-001/seats': seats,
-  '/agency/trips': () => jsonResponse({ data: [trip], meta: { page: 1, per_page: 20, total: 1, last_page: 1 } }),
+  '/agency/trips': () =>
+    jsonResponse({
+      data: [trip],
+      meta: { page: 1, per_page: 20, total: 1, last_page: 1 },
+    }),
   '/agency/counter-sales': () =>
-    jsonResponse({ booking: { reference: 'BKG-1', total: { amount: 6500, currency: 'XAF' } } }, 201),
+    jsonResponse(
+      { booking: { reference: 'BKG-1', total: { amount: 6500, currency: 'XAF' } } },
+      201,
+    ),
 }
 
 async function pickTrip() {
@@ -103,7 +110,9 @@ describe('CounterSalePage', () => {
     await waitFor(() => {
       const sale = mock.mock.calls
         .map(([input]) => input)
-        .find((input) => typeof input !== 'string' && input.url.includes('/counter-sales'))
+        .find(
+          (input) => typeof input !== 'string' && input.url.includes('/counter-sales'),
+        )
 
       expect(sale).toBeDefined()
       expect((sale as Request).headers.get('Idempotency-Key')).toBeTruthy()

@@ -483,7 +483,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       passengers: 'Passagers',
       searchCity: 'Ville ou gare',
       noCity: 'Aucune ville trouvée',
-      noCityBody: 'Vérifiez l’orthographe, ou essayez le nom de la ville plutôt que celui du quartier.',
+      noCityBody:
+        'Vérifiez l’orthographe, ou essayez le nom de la ville plutôt que celui du quartier.',
       typeMore: 'Saisissez au moins deux lettres',
       sameCity: 'Le départ et l’arrivée doivent être différents',
       greeting: 'Bonjour 👋',
@@ -596,7 +597,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       idPhotoAdd: 'Ajouter la photo',
       idPhotoDone: 'Photo enregistrée',
       idPhotoReplace: 'Appuyez pour la remplacer',
-      idPhotoDenied: 'Accès aux photos refusé. Autorisez-le dans les réglages du téléphone.',
+      idPhotoDenied:
+        'Accès aux photos refusé. Autorisez-le dans les réglages du téléphone.',
       contactHint: 'Le billet et les alertes de départ y seront envoyés.',
       submit: 'Réserver',
       seatLabel: 'Place {{label}}',
@@ -713,7 +715,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       welcome: 'Bienvenue 👋',
       signUpBody: 'Remplissez les informations ci-dessous.',
       emailOptional: 'E-mail (facultatif)',
-      authBody: 'Saisissez votre numéro pour continuer. Un code de vérification vous sera envoyé par SMS.',
+      authBody:
+        'Saisissez votre numéro pour continuer. Un code de vérification vous sera envoyé par SMS.',
       language: 'Langue',
       languageName: 'Français (Cameroun)',
       historyHint: 'Consultez vos trajets passés et vos reçus',
@@ -773,7 +776,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       entry: 'Besoin d’un véhicule ?',
       entryHint: 'Un chauffeur vient vous chercher',
       title: 'Appel de service',
-      subtitle: 'Dites où vous êtes et où vous allez. Des chauffeurs vous proposent un prix.',
+      subtitle:
+        'Dites où vous êtes et où vous allez. Des chauffeurs vous proposent un prix.',
       from: 'Je suis à',
       to: 'Je vais à',
       landmark: 'Point de repère',
@@ -788,7 +792,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       sameCity: 'Le départ et l’arrivée doivent être différents',
       missingLandmark: 'Indiquez où vous attendre',
       waiting: 'En attente d’offres',
-      waitingBody: 'Les chauffeurs de votre ville voient votre demande. Elle expire dans trente minutes.',
+      waitingBody:
+        'Les chauffeurs de votre ville voient votre demande. Elle expire dans trente minutes.',
       offers: 'Offres reçues',
       eta: 'sur place dans {{minutes}} min',
       accept: 'Retenir cette offre',
@@ -812,7 +817,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     driver: {
       title: 'Mode chauffeur',
       pitchTitle: 'Conduire avec MOTOBOY',
-      pitchBody: 'Vous voyez les demandes de votre ville, vous proposez votre prix. Le passager paie sur la plateforme, vous êtes reversé sur votre compte Mobile Money.',
+      pitchBody:
+        'Vous voyez les demandes de votre ville, vous proposez votre prix. Le passager paie sur la plateforme, vous êtes reversé sur votre compte Mobile Money.',
       requires: 'Ce qu’il faut fournir',
       requiresLicence: 'Permis de conduire en cours de validité',
       requiresRegistration: 'Carte grise du véhicule',
@@ -850,7 +856,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       work: 'Conduire',
       openRequests: 'Demandes ouvertes',
       openRequestsEmpty: 'Aucune demande pour l’instant',
-      openRequestsEmptyBody: 'Les demandes de votre ville apparaissent ici. Tirez pour rafraîchir.',
+      openRequestsEmptyBody:
+        'Les demandes de votre ville apparaissent ici. Tirez pour rafraîchir.',
       outOfCity: 'Aucune demande dans votre ville d’exercice.',
       passengersCount: '{{count}} personne(s)',
       takenAlready: 'Cette demande vient d’être pourvue.',
@@ -944,7 +951,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       passengers: 'Passengers',
       searchCity: 'City or station',
       noCity: 'No city found',
-      noCityBody: 'Check the spelling, or try the city name rather than the neighbourhood.',
+      noCityBody:
+        'Check the spelling, or try the city name rather than the neighbourhood.',
       typeMore: 'Type at least two letters',
       sameCity: 'Origin and destination must differ',
       greeting: 'Hello 👋',
@@ -1220,7 +1228,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
       sameCity: 'Origin and destination must differ',
       missingLandmark: 'Say where to meet you',
       waiting: 'Waiting for offers',
-      waitingBody: 'Drivers in your city can see your request. It expires in thirty minutes.',
+      waitingBody:
+        'Drivers in your city can see your request. It expires in thirty minutes.',
       offers: 'Offers received',
       eta: 'there in {{minutes}} min',
       accept: 'Take this offer',
@@ -1244,7 +1253,8 @@ export const passengerMessages: Record<Locale, PassengerMessages> = {
     driver: {
       title: 'Driver mode',
       pitchTitle: 'Drive with MOTOBOY',
-      pitchBody: 'You see the requests in your city and name your price. The passenger pays on the platform, and you are paid out to your Mobile Money account.',
+      pitchBody:
+        'You see the requests in your city and name your price. The passenger pays on the platform, and you are paid out to your Mobile Money account.',
       requires: 'What you need to provide',
       requiresLicence: 'A valid driving licence',
       requiresRegistration: 'Vehicle registration',

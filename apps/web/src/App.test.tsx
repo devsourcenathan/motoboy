@@ -27,7 +27,9 @@ describe('RequireSession', () => {
   it('renvoie à la connexion quand aucune session n’existe', async () => {
     render(<AppRoutes />, { route: '/admin/drivers' })
 
-    expect(await screen.findByRole('button', { name: 'Recevoir un code' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Recevoir un code' }),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -41,16 +43,23 @@ describe('RequireSession', () => {
     render(<AppRoutes />, { route: '/admin/drivers' })
 
     expect(await screen.findByText('Espace réservé')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Recevoir un code' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Recevoir un code' }),
+    ).not.toBeInTheDocument()
   })
 
   it('laisse entrer un administrateur', async () => {
     await session.start('jeton-admin')
-    mockFetch(jsonResponse(me(['ADMIN'])), jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }))
+    mockFetch(
+      jsonResponse(me(['ADMIN'])),
+      jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }),
+    )
 
     render(<AppRoutes />, { route: '/admin/drivers' })
 
-    expect(await screen.findByRole('heading', { name: 'Dossiers de chauffeur' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Dossiers de chauffeur' }),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -59,11 +68,16 @@ describe('RequireSession', () => {
    */
   it('ouvre sur la file des dossiers', async () => {
     await session.start('jeton-admin')
-    mockFetch(jsonResponse(me(['SUPER_ADMIN'])), jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }))
+    mockFetch(
+      jsonResponse(me(['SUPER_ADMIN'])),
+      jsonResponse({ data: [], meta: { page: 1, per_page: 20, total: 0, last_page: 1 } }),
+    )
 
     render(<AppRoutes />, { route: '/admin' })
 
-    expect(await screen.findByRole('heading', { name: 'Dossiers de chauffeur' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Dossiers de chauffeur' }),
+    ).toBeInTheDocument()
   })
 
   /**

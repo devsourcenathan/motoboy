@@ -11,7 +11,14 @@ import {
 } from 'react-native'
 import type { Seat } from '@motoboy/api-client/types'
 import { formatMoney, formatTime } from '@motoboy/shared'
-import { Button, fontSize, Screen, SkeletonList, spacing, theme } from '../../../shared/ui'
+import {
+  Button,
+  fontSize,
+  Screen,
+  SkeletonList,
+  spacing,
+  theme,
+} from '../../../shared/ui'
 import { useLocale } from '../../../shared/i18n/useLocale'
 import { useErrorMessage } from '../../../shared/i18n/useErrorMessage'
 import { useCurrentUser } from '../../account'
@@ -184,7 +191,8 @@ export function TripScreen() {
             <Text style={styles.totalValue}>
               {formatMoney(
                 {
-                  amount: trip.data.price.amount * Math.max(1, selected.length || passengers),
+                  amount:
+                    trip.data.price.amount * Math.max(1, selected.length || passengers),
                   currency: trip.data.price.currency,
                 },
                 locale,

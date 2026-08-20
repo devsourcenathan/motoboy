@@ -13,3 +13,15 @@ packages/api-client/src/schema.ts
 # décisions deviennent illisibles. Ce sont précisément les fichiers qu'on
 # modifie le plus.
 *.md
+
+# Maquettes exportées depuis Stitch : de la matière de référence, pas du code
+# qu'on entretient. Les reformater ne rendrait service à personne et brouillerait
+# la comparaison avec ce que l'outil a produit.
+stitch_motoboy_mobility_platform
+
+# Le contrat, écrit à la main et relu plus que tout le reste. Prettier y fait
+# éclater `required: [a, b, c]` — la forme idiomatique d'OpenAPI — en blocs de
+# huit lignes dès que la ligne dépasse la largeur. Ajouter un champ obligatoire
+# rejouerait donc ce vacarme à chaque fois, sur le document dont les diffs
+# comptent le plus. Même raison que pour la prose ci-dessus.
+docs/openapi.yaml

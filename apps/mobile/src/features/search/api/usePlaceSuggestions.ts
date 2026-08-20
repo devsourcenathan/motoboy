@@ -65,9 +65,10 @@ export function usePlaceSuggestions(query: string) {
         // `q` omise plutôt qu'envoyée vide : le contrat la déclare facultative,
         // et une chaîne vide serait refusée par `min:2`.
         params: {
-          query: term === ''
-            ? { limit: DEFAULT_CITY_COUNT }
-            : { q: term, limit: DEFAULT_CITY_COUNT },
+          query:
+            term === ''
+              ? { limit: DEFAULT_CITY_COUNT }
+              : { q: term, limit: DEFAULT_CITY_COUNT },
         },
         signal,
       })

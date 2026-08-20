@@ -66,7 +66,9 @@ export function RoutesPage() {
         <EmptyState
           title="Aucun itinéraire"
           body="Déclarez d’abord deux gares, puis reliez-les par un itinéraire."
-          action={<Button label="Ajouter un itinéraire" onPress={() => setAdding(true)} />}
+          action={
+            <Button label="Ajouter un itinéraire" onPress={() => setAdding(true)} />
+          }
         />
       ) : null}
 
@@ -95,8 +97,8 @@ export function RoutesPage() {
 
             {route.schedules.length === 0 ? (
               <p className="mt-4 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">
-                Aucun horaire : cet itinéraire ne produit aucun départ, et n’apparaît donc pas
-                dans la recherche.
+                Aucun horaire : cet itinéraire ne produit aucun départ, et n’apparaît donc
+                pas dans la recherche.
               </p>
             ) : (
               <ul className="mt-4 space-y-2">
@@ -105,7 +107,9 @@ export function RoutesPage() {
                     key={schedule.id}
                     className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-2 text-sm"
                   >
-                    <span className="font-mono font-medium">{schedule.departure_time}</span>
+                    <span className="font-mono font-medium">
+                      {schedule.departure_time}
+                    </span>
                     <span className="flex gap-1">
                       {DAYS.map((day) => (
                         <span
@@ -120,7 +124,9 @@ export function RoutesPage() {
                         </span>
                       ))}
                     </span>
-                    <span className="font-semibold">{formatMoney(schedule.price, 'fr')}</span>
+                    <span className="font-semibold">
+                      {formatMoney(schedule.price, 'fr')}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -138,9 +144,9 @@ export function RoutesPage() {
             rien et l'agence croit son travail perdu.
           */}
           <p className="mt-1 mb-4 text-sm text-neutral-500">
-            Les horaires décrivent une intention ; les départs sont ce que le passager réserve.
-            La génération ne touche jamais un départ existant — elle ne fait qu’ajouter les
-            manquants.
+            Les horaires décrivent une intention ; les départs sont ce que le passager
+            réserve. La génération ne touche jamais un départ existant — elle ne fait
+            qu’ajouter les manquants.
           </p>
 
           <Button
@@ -152,7 +158,8 @@ export function RoutesPage() {
           {generate.data === undefined ? null : (
             <p className="mt-3 text-sm text-success-700">
               {generate.data.created} départ{generate.data.created > 1 ? 's' : ''} créé
-              {generate.data.created > 1 ? 's' : ''} sur {generate.data.horizon_days} jours.
+              {generate.data.created > 1 ? 's' : ''} sur {generate.data.horizon_days}{' '}
+              jours.
             </p>
           )}
           {generate.error ? <ErrorNote message={describeError(generate.error)} /> : null}
@@ -187,7 +194,9 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
             {
               origin_station_id: Number(origin),
               destination_station_id: Number(destination),
-              ...(duration === '' ? {} : { reference_duration_minutes: Number(duration) }),
+              ...(duration === ''
+                ? {}
+                : { reference_duration_minutes: Number(duration) }),
             },
             { onSuccess: onClose },
           )
@@ -397,7 +406,9 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
         <Button
           type="submit"
           label="Créer l’horaire"
-          disabled={days.length === 0 || vehicleId === '' || price === '' || create.isPending}
+          disabled={
+            days.length === 0 || vehicleId === '' || price === '' || create.isPending
+          }
         />
       </form>
     </Panel>

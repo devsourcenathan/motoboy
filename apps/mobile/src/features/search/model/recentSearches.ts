@@ -52,7 +52,9 @@ export async function rememberSearch(search: RecentSearch): Promise<void> {
     const previous = await readRecentSearches()
     const deduped = previous.filter(
       (entry) =>
-        !(entry.from.cityId === search.from.cityId && entry.to.cityId === search.to.cityId),
+        !(
+          entry.from.cityId === search.from.cityId && entry.to.cityId === search.to.cityId
+        ),
     )
 
     await AsyncStorage.setItem(KEY, JSON.stringify([search, ...deduped].slice(0, KEEP)))

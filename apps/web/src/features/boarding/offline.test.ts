@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardingList } from '@motoboy/api-client/types'
-import { acknowledge, enqueue, readList, readQueue, referenceFrom, storeList } from './offline'
+import {
+  acknowledge,
+  enqueue,
+  readList,
+  readQueue,
+  referenceFrom,
+  storeList,
+} from './offline'
 
 /**
  * La mémoire de l'appareil pendant l'embarquement.

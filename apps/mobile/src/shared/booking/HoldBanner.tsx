@@ -38,9 +38,7 @@ export function HoldBanner({ countdown }: HoldBannerProps) {
         {expired ? t('booking.held.expired') : t('booking.held.title')}
       </Text>
 
-      {expired ? null : (
-        <Text style={styles.time}>{formatCountdown(countdown)}</Text>
-      )}
+      {expired ? null : <Text style={styles.time}>{formatCountdown(countdown)}</Text>}
     </View>
   )
 }

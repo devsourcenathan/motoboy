@@ -70,7 +70,8 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         </View>
 
         <View style={styles.line}>
-          {trip.duration_minutes === null || trip.duration_minutes === undefined ? null : (
+          {trip.duration_minutes === null ||
+          trip.duration_minutes === undefined ? null : (
             <Text style={styles.duration}>
               {formatDuration(trip.duration_minutes, locale)}
             </Text>
@@ -88,7 +89,9 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             */}
             {trip.stops === undefined || trip.stops.length === 0
               ? t('results.directOnly')
-              : t('results.via', { stops: trip.stops.map((stop) => stop.city).join(', ') })}
+              : t('results.via', {
+                  stops: trip.stops.map((stop) => stop.city).join(', '),
+                })}
           </Text>
         </View>
 

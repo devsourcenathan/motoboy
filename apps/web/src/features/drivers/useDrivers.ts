@@ -57,7 +57,9 @@ export function useDecideDriver() {
       const path = { path: { driver: id } }
 
       if (decision === 'approve') {
-        return unwrap(await api.POST('/v1/admin/drivers/{driver}/approve', { params: path }))
+        return unwrap(
+          await api.POST('/v1/admin/drivers/{driver}/approve', { params: path }),
+        )
       }
 
       if (decision === 'reject') {

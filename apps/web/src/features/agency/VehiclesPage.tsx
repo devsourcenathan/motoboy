@@ -55,7 +55,9 @@ export function VehiclesPage() {
           {rows.map((vehicle) => (
             <tr key={vehicle.id}>
               <Cell className="font-mono font-medium">{vehicle.registration}</Cell>
-              <Cell>{[vehicle.brand, vehicle.model].filter(Boolean).join(' ') || '—'}</Cell>
+              <Cell>
+                {[vehicle.brand, vehicle.model].filter(Boolean).join(' ') || '—'}
+              </Cell>
               <Cell>{vehicle.type}</Cell>
               <Cell>
                 {vehicle.seating_mode === 'SEATED' ? 'Siège choisi' : 'Par capacité'}
@@ -212,7 +214,13 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
  * l'agence vérifie qu'il correspond à la réalité de son bus — c'est ce plan que
  * verra le passager, et un siège de trop se remarque le jour de l'embarquement.
  */
-function SeatMapPanel({ vehicle, onClose }: { vehicle: AgencyVehicle; onClose: () => void }) {
+function SeatMapPanel({
+  vehicle,
+  onClose,
+}: {
+  vehicle: AgencyVehicle
+  onClose: () => void
+}) {
   const seats = useVehicleSeats(vehicle.id)
 
   return (

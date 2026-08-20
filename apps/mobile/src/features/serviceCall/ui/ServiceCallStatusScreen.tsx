@@ -143,7 +143,9 @@ export function ServiceCallStatusScreen() {
             {offers.map((offer) => (
               <View key={offer.id} style={styles.offer}>
                 <View style={styles.offerHead}>
-                  <Text style={styles.offerPrice}>{formatMoney(offer.price, locale)}</Text>
+                  <Text style={styles.offerPrice}>
+                    {formatMoney(offer.price, locale)}
+                  </Text>
                   <View style={styles.eta}>
                     <TimerIcon color={theme.text.muted} size={16} />
                     <Text style={styles.etaLabel}>
@@ -195,7 +197,9 @@ export function ServiceCallStatusScreen() {
               </Text>
             </View>
 
-            {paid ? null : <Text style={styles.body}>{t('serviceCall.matchedBody')}</Text>}
+            {paid ? null : (
+              <Text style={styles.body}>{t('serviceCall.matchedBody')}</Text>
+            )}
 
             <Row
               label={t('serviceCall.driver')}

@@ -17,11 +17,7 @@ export interface BookingForm {
   readonly idPath: string | null
 }
 
-export type BookingFormError =
-  | 'NAMES_MISSING'
-  | 'PHONE_MISSING'
-  | 'ID_MISSING'
-  | null
+export type BookingFormError = 'NAMES_MISSING' | 'PHONE_MISSING' | 'ID_MISSING' | null
 
 /**
  * Un formulaire par passager, plus un contact.
@@ -64,9 +60,10 @@ export function prefill(
 ): BookingForm {
   const first = form.passengers[0]
 
-  const filled = form.contactPhone.trim() === '' && known.phone !== undefined
-    ? { ...form, contactPhone: known.phone }
-    : form
+  const filled =
+    form.contactPhone.trim() === '' && known.phone !== undefined
+      ? { ...form, contactPhone: known.phone }
+      : form
 
   if (first === undefined) return filled
 

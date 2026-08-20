@@ -29,15 +29,19 @@ export function PayoutAccountsPage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-ink-700">Comptes de versement</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Une erreur de saisie envoie l’argent à un inconnu, sans recours. Vérifiez
-          que le nom du compte correspond au bénéficiaire.
+          Une erreur de saisie envoie l’argent à un inconnu, sans recours. Vérifiez que le
+          nom du compte correspond au bénéficiaire.
         </p>
       </header>
 
-      {accounts.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}
+      {accounts.isPending ? (
+        <p className="text-sm text-neutral-500">Chargement…</p>
+      ) : null}
 
       {accounts.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">{describeError(accounts.error)}</p>
+        <p className="text-sm whitespace-pre-line text-danger">
+          {describeError(accounts.error)}
+        </p>
       ) : null}
 
       {accounts.data && pending.length === 0 ? (
@@ -125,7 +129,9 @@ function AccountRow({ row }: { row: AdminPayoutAccountRow }) {
                 <button
                   type="button"
                   disabled={verify.isPending}
-                  onClick={() => verify.mutate(row.id, { onSuccess: () => setConfirming(false) })}
+                  onClick={() =>
+                    verify.mutate(row.id, { onSuccess: () => setConfirming(false) })
+                  }
                   className="rounded-lg bg-success-500 px-4 py-2 text-sm font-semibold text-neutral-0 hover:bg-success-700 disabled:opacity-50"
                 >
                   Vérifier ce compte
@@ -152,7 +158,9 @@ function AccountRow({ row }: { row: AdminPayoutAccountRow }) {
       )}
 
       {verify.error ? (
-        <p className="mt-3 text-sm whitespace-pre-line text-danger">{describeError(verify.error)}</p>
+        <p className="mt-3 text-sm whitespace-pre-line text-danger">
+          {describeError(verify.error)}
+        </p>
       ) : null}
     </li>
   )
