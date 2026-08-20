@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
-import { api } from '../../lib/api'
+import { api, session } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
   Button,
@@ -17,6 +17,39 @@ import {
   Skeleton,
   Table,
 } from '../../shared/ui'
+
+/**
+ * Télécharger le relevé d'un reversement.
+ *
+ * **Pas un `<a href>`, et c'est la difficulté.** L'endpoint est authentifié : un
+ * lien ordinaire partirait sans le jeton et rapporterait un 401 que le navigateur
+ * afficherait comme une page d'erreur, hors de l'application. On récupère donc le
+ * CSV par le client authentifié, puis on fabrique le téléchargement depuis un
+ * objet mémoire.
+ *
+ * `URL.revokeObjectURL` n'est pas facultatif : chaque objet non révoqué retient
+ * son contenu jusqu'au rechargement de l'onglet, et un comptable qui exporte
+ * vingt relevés d'affilée les garderait tous en mémoire.
+ */
+async function downloadStatement(reference: string): Promise<void> {
+  const response = await fetch(
+    `${import.meta.env['VITE_API_URL'] ?? 'http://localhost:8000/api'}/v1/agency/payouts/${reference}/statement`,
+    { headers: { Authorization: `Bearer ${(await session.token()) ?? ''}` } },
+  )
+
+  if (!response.ok) {
+    throw new Error(`Relevé indisponible (${response.status}).`)
+  }
+
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = `releve-${reference}.csv`
+  link.click()
+
+  URL.revokeObjectURL(url)
+}
 
 /**
  * Le compte de l'agence.
@@ -105,12 +138,28 @@ export function MoneyPage() {
               body="Ils apparaîtront ici dès qu’un solde sera exigible."
             />
           ) : (
-            <Table head={['Référence', 'Net', 'État']}>
+            <Table head={['Référence', 'Net', 'État', '']}>
               {(payouts.data?.data ?? []).map((payout) => (
                 <tr key={payout.reference}>
                   <Cell className="font-mono">{payout.reference}</Cell>
                   <Cell className="font-semibold">{formatMoney(payout.net, 'fr')}</Cell>
                   <Cell>{payout.status}</Cell>
+                  <Cell>
+                    {/*
+                      Le relevé détaille réservation par réservation ce qui compose
+                      le net versé. C'est ce qu'on ouvre quand une agence conteste
+                      un montant — et jusqu'ici, rien ne permettait de l'obtenir.
+                    */}
+                    <button
+                      type="button"
+                      className="text-sm text-ink-500 underline"
+                      onClick={() => {
+                        void downloadStatement(payout.reference)
+                      }}
+                    >
+                      Relevé CSV
+                    </button>
+                  </Cell>
                 </tr>
               ))}
             </Table>

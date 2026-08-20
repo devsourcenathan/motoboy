@@ -1,5 +1,8 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { newIdempotencyKey, unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
+import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
   Button,
@@ -12,6 +15,122 @@ import {
   Skeleton,
 } from '../../shared/ui'
 import { useAgencyTrips, useCounterSale, useTripSeats } from './useOperations'
+
+/**
+ * Annuler une réservation apportée au guichet.
+ *
+ * **La référence vient du passager, pas d'une liste.** Aucun endpoint d'agence ne
+ * liste les réservations : la liste d'embarquement rend des références de
+ * *billet*, pas de réservation. Le geste réel est donc celui-ci — quelqu'un se
+ * présente avec le SMS ou l'écran de son téléphone, et on annule ce qu'il montre.
+ *
+ * L'annulation est **totale ici**. L'API accepte des `passenger_ids` pour n'annuler
+ * qu'une partie d'un groupe, mais choisir lesquels suppose de les avoir sous les
+ * yeux — ce que cet écran ne permet pas encore, faute de savoir lire une
+ * réservation. Annuler partiellement à l'aveugle serait pire que de ne pas le
+ * proposer.
+ */
+function CancelBooking() {
+  const queryClient = useQueryClient()
+  const [reference, setReference] = useState('')
+  const [confirming, setConfirming] = useState<string | null>(null)
+
+  const cancel = useMutation({
+    mutationFn: async ({ booking, key }: { booking: string; key: string }) =>
+      unwrap(
+        await api.POST('/v1/agency/bookings/{reference}/cancel', {
+          params: { path: { reference: booking }, header: { 'Idempotency-Key': key } },
+          body: { passenger_ids: [] } as never,
+        }),
+      ),
+    onSuccess: () => {
+      setReference('')
+      setConfirming(null)
+      // Les places redeviennent vendables : la liste des départs porte leur
+      // décompte, et la laisser périmée ferait refuser une vente possible.
+      void queryClient.invalidateQueries({ queryKey: ['agency', 'trips'] })
+    },
+  })
+
+  const result = cancel.data as
+    { refund?: { amount: number; currency: string } } | undefined
+
+  return (
+    <Card>
+      <p className="mb-1 font-semibold text-neutral-900">Annuler une réservation</p>
+      <p className="mb-3 text-sm text-neutral-500">
+        Demandez la référence au passager — elle figure sur son SMS de confirmation.
+      </p>
+
+      {cancel.error ? <ErrorNote message={describeError(cancel.error)} /> : null}
+
+      {result === undefined ? null : (
+        <p className="mb-3 text-sm text-success-700">
+          Réservation annulée
+          {result.refund === undefined
+            ? '.'
+            : ` — ${formatMoney(result.refund, 'fr')} remboursés au passager.`}
+        </p>
+      )}
+
+      <Field label="Référence de la réservation">
+        <input
+          className={INPUT}
+          value={reference}
+          onChange={(event) => {
+            setReference(event.target.value.toUpperCase())
+            setConfirming(null)
+          }}
+          placeholder="MTB-XXXXXX"
+        />
+      </Field>
+
+      <div className="mt-3">
+        {confirming !== null ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {/*
+              Une confirmation, parce que l'annulation libère les places et
+              déclenche un remboursement : ce n'est pas un geste qu'on reprend.
+            */}
+            <span className="text-sm text-neutral-700">
+              Annuler {reference} et rembourser le passager ?
+            </span>
+            <Button
+              label="Confirmer"
+              variant="danger"
+              disabled={cancel.isPending}
+              onPress={() =>
+                cancel.mutate({ booking: reference.trim(), key: confirming })
+              }
+            />
+            <Button
+              label="Revenir"
+              variant="secondary"
+              onPress={() => setConfirming(null)}
+            />
+          </div>
+        ) : (
+          <Button
+            label="Annuler cette réservation"
+            variant="secondary"
+            disabled={reference.trim().length < 4}
+            /*
+             * **Une clé neuve par annulation, pas par composant.** Réutiliser la
+             * même ferait passer la seconde annulation pour un rejeu de la
+             * première : le serveur rendrait le résultat de l'autre réservation
+             * et celle qu'on vise resterait intacte, en ayant l'air annulée.
+             *
+             * Elle est fixée à l'ouverture de la confirmation et non à l'envoi,
+             * pour qu'un second clic après une coupure réseau reste la même
+             * opération plutôt qu'un second remboursement.
+             */
+            onPress={() => setConfirming(newIdempotencyKey())}
+          />
+        )}
+      </div>
+    </Card>
+  )
+}
 
 /**
  * La vente au guichet.
@@ -38,6 +157,10 @@ export function CounterSalePage() {
         title="Guichet"
         subtitle="Vendre à quelqu’un qui est devant vous. Les places vendues ici disparaissent immédiatement de la recherche."
       />
+
+      <div className="mb-6">
+        <CancelBooking />
+      </div>
 
       {trips.isPending ? <Skeleton /> : null}
       {trips.error ? <ErrorNote message={describeError(trips.error)} /> : null}

@@ -732,3 +732,57 @@ vient de changer entre le chargement de la page et l'enregistrement.
 Cinq endpoints d'agence sans écran — documents de l'agence, recherche de billet,
 annulation d'une réservation, relevé de reversement, demande de ville — puis le
 rattrapage bilingue et les composants encore sans test.
+
+---
+
+## 12. Les écrans d'agence — 19 août 2026
+
+Cinq endpoints d'agence n'avaient pas d'écran. Quatre en ont un ; le cinquième
+est écarté avec sa raison, et un sixième point reste bloqué côté API.
+
+**Pièces de l'agence** — un écran neuf, et le premier envoi de fichier du web.
+Sans lui, une agence pouvait s'inscrire et rester indéfiniment en attente sans
+comprendre ce qui lui manquait : l'API acceptait les fichiers, personne ne pouvait
+les envoyer. La liste énumère les types attendus **y compris ceux qui manquent**,
+et la taille est vérifiée avant l'envoi — huit mégaoctets sur une connexion de
+gare mettent une minute à monter pour être refusés à l'arrivée.
+
+**Relevé de reversement** — un bouton sur la page Compte. Pas un lien : l'endpoint
+est authentifié, et un `<a href>` partirait sans le jeton pour rapporter un 401
+affiché hors de l'application. Le CSV passe donc par le client authentifié, puis
+un objet mémoire qu'on révoque aussitôt.
+
+**Annulation d'une réservation** — au guichet, en deux temps. La référence vient
+du passager et non d'une liste : aucun endpoint d'agence ne liste les
+réservations, et la liste d'embarquement rend des références de *billet*.
+L'annulation est totale ; l'API accepte des `passenger_ids` pour n'annuler qu'une
+partie d'un groupe, mais choisir lesquels suppose de les voir, ce que cet écran ne
+permet pas encore.
+
+### `tickets/lookup` : écarté, et pourquoi
+
+La page d'embarquement porte déjà une saisie manuelle de référence, qui **valide**
+le billet. `tickets/lookup` ne fait que le *consulter*. Ajouter un second
+formulaire d'apparence identique à côté du premier, dont l'un embarque le passager
+et l'autre non, invite à se tromper de champ au moment où l'on est pressé. À
+reprendre le jour où le besoin de vérifier sans embarquer se manifestera vraiment.
+
+### `agency/city-requests` : bloqué par l'API
+
+Le formulaire exige un `country_id`, et **rien ne l'expose au client** :
+`/v1/config` ne rend que la politique de pièces d'identité, et l'autocomplétion
+des lieux ne porte pas le pays. Coder `1` en dur fonctionnerait aujourd'hui — un
+seul pays est semé — et casserait silencieusement à la première extension, en
+rattachant des demandes au mauvais pays.
+
+Le déblocage tient en une ligne de `ClientConfigController` plus la spécification,
+mais c'est un changement de contrat et non un écran.
+
+### La clé d'idempotence, une par annulation
+
+L'annulation exige un `Idempotency-Key`. Une clé unique par composant — le motif
+employé ailleurs — ferait traiter la **seconde** annulation comme un rejeu de la
+première : le serveur rendrait le résultat de l'autre réservation, et celle qu'on
+visait resterait intacte en ayant l'air annulée. La clé est donc fixée à
+l'ouverture de la confirmation, ce qui garde un second clic après coupure réseau
+sur la même opération. Un test l'éprouve, et il échoue si la clé est figée.

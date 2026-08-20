@@ -21,6 +21,7 @@ const TABS = [
   { to: '/agency/boarding', label: 'Embarquement' },
   { to: '/agency/money', label: 'Compte' },
   { to: '/agency/staff', label: 'Personnel' },
+  { to: '/agency/documents', label: 'Pièces' },
 ] as const
 
 export function AgencyLayout({ onSignOut }: { onSignOut: () => void }) {

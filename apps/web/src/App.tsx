@@ -34,6 +34,7 @@ import { AuditLogPage } from './features/admin/AuditLogPage'
 import { DashboardPage } from './features/admin/DashboardPage'
 import { ModerationPage } from './features/admin/ModerationPage'
 import { SettingsPage } from './features/admin/SettingsPage'
+import { DocumentsPage } from './features/agency/DocumentsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,6 +154,7 @@ function AgencySpace() {
         <Route path="boarding" element={<BoardingPage />} />
         <Route path="money" element={<MoneyPage />} />
         <Route path="staff" element={<StaffPage />} />
+        <Route path="documents" element={<DocumentsPage />} />
         {/* Les gares d'abord : tout le reste de l'inventaire s'y rattache. */}
         <Route path="*" element={<Navigate to="/agency/stations" replace />} />
       </Route>
