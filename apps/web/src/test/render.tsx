@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render as rtlRender } from '@testing-library/react'
+import { render as rtlRender, waitFor } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 
 /**
  * Rend un écran avec ce qu'il attend autour de lui.
@@ -100,4 +100,37 @@ export function calledUrls(): string[] {
   return mock.mock.calls.map(([input]) =>
     typeof input === 'string' ? input : String((input as Request).url),
   )
+}
+
+/**
+ * Attend la requête qui correspond, puis rend son corps décodé.
+ *
+ * **`waitFor` ne veut pas de rappel asynchrone.** Il relance le sien à intervalle
+ * fixe sans attendre que l'invocation précédente se termine : un rappel qui
+ * `await` voit donc plusieurs exécutions se chevaucher. Quatre tests lisaient le
+ * corps de la requête *à l'intérieur* du `waitFor`, et l'un d'eux tombait dans la
+ * suite complète tout en passant seul — le symptôme exact d'une course, et le
+ * genre d'instabilité qui apprend à relancer la CI jusqu'à ce qu'elle verdisse.
+ *
+ * Ici l'attente ne fait qu'une chose, de façon synchrone : constater que la
+ * requête est partie. Le corps se lit ensuite, une seule fois.
+ */
+export async function sentRequest(
+  match: (request: Request) => boolean,
+): Promise<unknown> {
+  const sent = () =>
+    (fetch as unknown as { mock: { calls: [Request | string][] } }).mock.calls
+      .map(([input]) => input)
+      .filter((input): input is Request => typeof input !== 'string')
+
+  await waitFor(() => expect(sent().some(match)).toBe(true))
+
+  const request = sent().find(match)
+
+  if (request === undefined) {
+    throw new Error('Requête introuvable après attente.')
+  }
+
+  // Cloné : le corps est un flux, et le lire ici le consommerait pour de bon.
+  return JSON.parse(await request.clone().text())
 }

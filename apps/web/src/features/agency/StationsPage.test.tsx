@@ -1,8 +1,8 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { AgencyStation } from '@motoboy/api-client/types'
-import { jsonResponse, mockRoutes, render } from '../../test/render'
+import { jsonResponse, mockRoutes, render, sentRequest } from '../../test/render'
 import { StationsPage } from './StationsPage'
 
 /**
@@ -101,19 +101,9 @@ describe('StationsPage', () => {
      * touche le même chemin, et une assertion sur l'URL seule passerait sans
      * qu'aucune gare n'ait été créée.
      */
-    await waitFor(async () => {
-      const mock = fetch as unknown as { mock: { calls: [Request | string][] } }
-
-      const post = mock.mock.calls
-        .map(([input]) => input)
-        .find((input) => typeof input !== 'string' && input.method === 'POST')
-
-      expect(post).toBeDefined()
-
-      // Cloné : le corps est un flux, et le lire ici le consommerait.
-      const body = await (post as Request).clone().text()
-
-      expect(JSON.parse(body)).toMatchObject({ city_id: 5, name: 'Gare du Nord' })
+    expect(await sentRequest((request) => request.method === 'POST')).toMatchObject({
+      city_id: 5,
+      name: 'Gare du Nord',
     })
   })
 })

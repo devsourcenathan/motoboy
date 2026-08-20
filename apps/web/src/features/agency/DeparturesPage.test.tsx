@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { jsonResponse, mockRoutes, render } from '../../test/render'
+import { jsonResponse, mockRoutes, render, sentRequest } from '../../test/render'
 import { DeparturesPage } from './DeparturesPage'
 
 /**
@@ -75,18 +75,9 @@ describe('DeparturesPage', () => {
     await userEvent.type(screen.getByLabelText(/Précision/), 'Pont coupé')
     await userEvent.click(screen.getByRole('button', { name: /Annuler ce départ/ }))
 
-    const mock = fetch as unknown as { mock: { calls: [Request | string][] } }
-
-    await waitFor(async () => {
-      const call = mock.mock.calls
-        .map(([input]) => input)
-        .find((input) => typeof input !== 'string' && input.url.endsWith('/cancel'))
-
-      expect(call).toBeDefined()
-
-      const body = await (call as Request).clone().text()
-
-      expect(JSON.parse(body)).toEqual({ reason: 'ROAD_CLOSED', note: 'Pont coupé' })
+    expect(await sentRequest((request) => request.url.endsWith('/cancel'))).toEqual({
+      reason: 'ROAD_CLOSED',
+      note: 'Pont coupé',
     })
   })
 })

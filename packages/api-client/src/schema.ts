@@ -2402,7 +2402,27 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Paiement initié */
+                /**
+                 * @description Tentative close d'emblée — l'agrégateur a refusé avant toute
+                 *     sollicitation. `status` vaut `FAILED` et `failure_reason` porte son
+                 *     motif.
+                 *
+                 *     Distinct du `202` : là, tout est joué, et rien n'arrivera par
+                 *     webhook. Rendre `202` dans ce cas ferait attendre un dénouement déjà
+                 *     connu.
+                 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                /**
+                 * @description Sollicitation partie ; le payeur doit encore saisir son code.
+                 *     `status` vaut `PROCESSING` et c'est le webhook qui tranchera.
+                 */
                 202: {
                     headers: {
                         [name: string]: unknown;
