@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { AgencyRoute } from '@motoboy/api-client/types'
 import { formatMoney } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
@@ -44,6 +45,7 @@ const DAYS = [
  * le troisième — sinon il faudrait ressaisir la même ligne chaque semaine.
  */
 export function RoutesPage() {
+  const { t } = useTranslation()
   const routes = useRoutes()
   const generate = useGenerateTrips()
   const [adding, setAdding] = useState(false)
@@ -54,9 +56,14 @@ export function RoutesPage() {
   return (
     <div>
       <PageHeader
-        title="Itinéraires et horaires"
-        subtitle="Un itinéraire relie deux gares. Un horaire le fait partir régulièrement. Les départs, eux, sont générés."
-        action={<Button label="Ajouter un itinéraire" onPress={() => setAdding(true)} />}
+        title={t('agency:inventory.routes.title')}
+        subtitle={t('agency:inventory.routes.subtitle')}
+        action={
+          <Button
+            label={t('agency:inventory.routes.add')}
+            onPress={() => setAdding(true)}
+          />
+        }
       />
 
       {routes.isPending ? <Skeleton /> : null}
@@ -64,10 +71,13 @@ export function RoutesPage() {
 
       {routes.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun itinéraire"
-          body="Déclarez d’abord deux gares, puis reliez-les par un itinéraire."
+          title={t('agency:inventory.routes.emptyTitle')}
+          body={t('agency:inventory.routes.emptyBody')}
           action={
-            <Button label="Ajouter un itinéraire" onPress={() => setAdding(true)} />
+            <Button
+              label={t('agency:inventory.routes.add')}
+              onPress={() => setAdding(true)}
+            />
           }
         />
       ) : null}
@@ -89,7 +99,7 @@ export function RoutesPage() {
                 </p>
               </div>
               <Button
-                label="Ajouter un horaire"
+                label={t('agency:inventory.routes.addSchedule')}
                 variant="secondary"
                 onPress={() => setScheduling(route)}
               />
@@ -137,7 +147,9 @@ export function RoutesPage() {
 
       {rows.length === 0 ? null : (
         <Card className="mt-6">
-          <p className="font-semibold text-neutral-900">Générer les départs</p>
+          <p className="font-semibold text-neutral-900">
+            {t('agency:inventory.routes.generate')}
+          </p>
           {/*
             Le geste qui rend l'inventaire visible. Jusqu'ici les horaires ne sont
             que des intentions : tant qu'on n'a pas généré, la recherche ne renvoie
@@ -175,6 +187,7 @@ export function RoutesPage() {
 }
 
 function RoutePanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateRoute()
   const stations = useStations()
   const [origin, setOrigin] = useState('')
@@ -184,7 +197,7 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
   const rows = stations.data?.data ?? []
 
   return (
-    <Panel title="Nouvel itinéraire" onClose={onClose}>
+    <Panel title={t('agency:inventory.routes.newTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -202,14 +215,14 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
           )
         }}
       >
-        <Field label="Gare de départ">
+        <Field label={t('agency:inventory.routes.origin')}>
           <select
             className={INPUT}
             required
             value={origin}
             onChange={(event) => setOrigin(event.target.value)}
           >
-            <option value="">Choisir…</option>
+            <option value="">{t('agency:inventory.routes.choose')}</option>
             {rows.map((station) => (
               <option key={station.id} value={station.id}>
                 {station.name} — {station.city}
@@ -218,14 +231,14 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
           </select>
         </Field>
 
-        <Field label="Gare d’arrivée">
+        <Field label={t('agency:inventory.routes.destination')}>
           <select
             className={INPUT}
             required
             value={destination}
             onChange={(event) => setDestination(event.target.value)}
           >
-            <option value="">Choisir…</option>
+            <option value="">{t('agency:inventory.routes.choose')}</option>
             {rows
               // Une gare ne se relie pas à elle-même : l'écarter vaut mieux que
               // de laisser choisir puis refuser.
@@ -239,7 +252,7 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
         </Field>
 
         <Field
-          label="Durée de référence en minutes (facultatif)"
+          label={t('agency:inventory.routes.duration')}
           hint="Affichée au passager comme estimation. Elle n’engage pas l’heure d’arrivée."
         >
           <input
@@ -256,7 +269,7 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Créer l’itinéraire"
+          label={t('agency:inventory.routes.create')}
           disabled={origin === '' || destination === '' || create.isPending}
         />
       </form>
@@ -265,6 +278,7 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
 }
 
 function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateSchedule(route.id)
   const vehicles = useVehicles()
   const drivers = useDrivers()
@@ -304,7 +318,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
           )
         }}
       >
-        <Field label="Heure de départ">
+        <Field label={t('agency:inventory.routes.departureTime')}>
           <input
             className={INPUT}
             type="time"
@@ -318,7 +332,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
           Les jours en boutons plutôt qu'en liste à cocher : un horaire se lit
           d'un coup d'œil, et sept cases empilées prennent la moitié du panneau.
         */}
-        <Field label="Jours de circulation">
+        <Field label={t('agency:inventory.routes.days')}>
           <div className="mt-1 flex gap-1">
             {DAYS.map((day) => (
               <button
@@ -344,14 +358,14 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
           </div>
         </Field>
 
-        <Field label="Véhicule">
+        <Field label={t('agency:inventory.routes.vehicle')}>
           <select
             className={INPUT}
             required
             value={vehicleId}
             onChange={(event) => setVehicleId(event.target.value)}
           >
-            <option value="">Choisir…</option>
+            <option value="">{t('agency:inventory.routes.choose')}</option>
             {(vehicles.data?.data ?? []).map((vehicle) => (
               <option key={vehicle.id} value={vehicle.id}>
                 {vehicle.registration} — {vehicle.capacity} places
@@ -360,13 +374,13 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
           </select>
         </Field>
 
-        <Field label="Chauffeur (facultatif)">
+        <Field label={t('agency:inventory.routes.driver')}>
           <select
             className={INPUT}
             value={driverId}
             onChange={(event) => setDriverId(event.target.value)}
           >
-            <option value="">Non assigné</option>
+            <option value="">{t('agency:inventory.routes.unassigned')}</option>
             {(drivers.data?.data ?? []).map((driver) => (
               <option key={driver.id} value={driver.id}>
                 {driver.first_name} {driver.last_name}
@@ -375,7 +389,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
           </select>
         </Field>
 
-        <Field label="Prix en FCFA">
+        <Field label={t('agency:inventory.routes.price')}>
           <input
             className={INPUT}
             type="number"
@@ -389,7 +403,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
         </Field>
 
         <Field
-          label="À partir du"
+          label={t('agency:inventory.routes.from')}
           hint="Les départs ne sont générés qu’à compter de cette date."
         >
           <input
@@ -405,7 +419,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
 
         <Button
           type="submit"
-          label="Créer l’horaire"
+          label={t('agency:inventory.routes.createSchedule')}
           disabled={
             days.length === 0 || vehicleId === '' || price === '' || create.isPending
           }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { describeError } from '../../lib/errors'
 import {
   Button,
@@ -23,6 +24,7 @@ import { useCreateDriver, useDrivers, useVehicles } from './useInventory'
  * c'est pourquoi son échéance est saisie ici.
  */
 export function DriversPage() {
+  const { t } = useTranslation()
   const drivers = useDrivers()
   const [adding, setAdding] = useState(false)
 
@@ -31,9 +33,14 @@ export function DriversPage() {
   return (
     <div>
       <PageHeader
-        title="Chauffeurs"
-        subtitle="Vos chauffeurs salariés. Vous répondez de leur permis — MOTOBOY ne les modère pas."
-        action={<Button label="Ajouter un chauffeur" onPress={() => setAdding(true)} />}
+        title={t('agency:inventory.drivers.title')}
+        subtitle={t('agency:inventory.drivers.subtitle')}
+        action={
+          <Button
+            label={t('agency:inventory.drivers.add')}
+            onPress={() => setAdding(true)}
+          />
+        }
       />
 
       {drivers.isPending ? <Skeleton /> : null}
@@ -41,14 +48,27 @@ export function DriversPage() {
 
       {drivers.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun chauffeur"
-          body="Un horaire peut désigner un chauffeur par défaut ; sans chauffeur déclaré, ce choix reste vide."
-          action={<Button label="Ajouter un chauffeur" onPress={() => setAdding(true)} />}
+          title={t('agency:inventory.drivers.emptyTitle')}
+          body={t('agency:inventory.drivers.emptyBody')}
+          action={
+            <Button
+              label={t('agency:inventory.drivers.add')}
+              onPress={() => setAdding(true)}
+            />
+          }
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Nom', 'Téléphone', 'Permis', 'Échéance', 'État']}>
+        <Table
+          head={[
+            t('agency:inventory.drivers.head.name'),
+            t('agency:inventory.drivers.head.phone'),
+            t('agency:inventory.drivers.head.licence'),
+            t('agency:inventory.drivers.head.expiry'),
+            t('agency:inventory.drivers.head.status'),
+          ]}
+        >
           {rows.map((driver) => (
             <tr key={driver.id}>
               <Cell className="font-medium">
@@ -102,6 +122,7 @@ function Expiry({ date }: { date: string | null }) {
 }
 
 function DriverPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateDriver()
   const vehicles = useVehicles()
 
@@ -113,7 +134,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
   const [vehicleId, setVehicleId] = useState('')
 
   return (
-    <Panel title="Nouveau chauffeur" onClose={onClose}>
+    <Panel title={t('agency:inventory.drivers.newTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -133,7 +154,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prénom">
+          <Field label={t('agency:inventory.drivers.firstName')}>
             <input
               className={INPUT}
               required
@@ -141,7 +162,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
               onChange={(event) => setFirstName(event.target.value)}
             />
           </Field>
-          <Field label="Nom">
+          <Field label={t('agency:inventory.drivers.lastName')}>
             <input
               className={INPUT}
               required
@@ -151,18 +172,18 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
           </Field>
         </div>
 
-        <Field label="Téléphone">
+        <Field label={t('agency:inventory.drivers.phone')}>
           <input
             className={INPUT}
             required
             type="tel"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            placeholder="+237 6XX XX XX XX"
+            placeholder={t('agency:inventory.drivers.phonePlaceholder')}
           />
         </Field>
 
-        <Field label="Numéro de permis">
+        <Field label={t('agency:inventory.drivers.licence')}>
           <input
             className={INPUT}
             required
@@ -172,7 +193,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
         </Field>
 
         <Field
-          label="Échéance du permis (facultatif)"
+          label={t('agency:inventory.drivers.licenceExpiry')}
           hint="Renseignée, elle est signalée trente jours avant l’expiration."
         >
           <input
@@ -187,13 +208,13 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
           L'affectation est un défaut, pas une contrainte : elle prérenseigne les
           horaires. Un chauffeur peut conduire un autre véhicule un jour donné.
         */}
-        <Field label="Véhicule habituel (facultatif)">
+        <Field label={t('agency:inventory.drivers.usualVehicle')}>
           <select
             className={INPUT}
             value={vehicleId}
             onChange={(event) => setVehicleId(event.target.value)}
           >
-            <option value="">Aucun</option>
+            <option value="">{t('agency:inventory.drivers.none')}</option>
             {(vehicles.data?.data ?? []).map((vehicle) => (
               <option key={vehicle.id} value={vehicle.id}>
                 {vehicle.registration}
@@ -206,7 +227,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Ajouter le chauffeur"
+          label={t('agency:inventory.drivers.create')}
           disabled={create.isPending || firstName.trim() === '' || phone.trim() === ''}
         />
       </form>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
@@ -31,6 +32,7 @@ import { useCreateStation, useStations } from './useInventory'
  * silencieusement les demandes au mauvais des le second.
  */
 function RequestCity() {
+  const { t } = useTranslation()
   const config = useQuery({
     queryKey: ['config'],
     queryFn: async ({ signal }) => unwrap(await api.GET('/v1/config', { signal })),
@@ -58,17 +60,18 @@ function RequestCity() {
 
   return (
     <Card>
-      <p className="mb-1 font-semibold text-neutral-900">Demander une ville</p>
+      <p className="mb-1 font-semibold text-neutral-900">
+        {t('agency:inventory.stations.requestCity')}
+      </p>
       <p className="mb-3 text-sm text-neutral-500">
-        Si la ville que vous desservez n’apparaît pas, demandez-la. MOTOBOY la rattachera
-        au référentiel — c’est ce qui évite deux Douala.
+        {t('agency:inventory.stations.requestCityHelp')}
       </p>
 
       {request.error ? <ErrorNote message={describeError(request.error)} /> : null}
 
       {request.isSuccess ? (
         <p className="mb-3 text-sm text-success-700">
-          Demande transmise. Elle apparaîtra dès qu’elle sera acceptée.
+          {t('agency:inventory.stations.requestSent')}
         </p>
       ) : null}
 
@@ -79,7 +82,7 @@ function RequestCity() {
         */}
         {countries.length > 1 ? (
           <div className="w-48">
-            <Field label="Pays">
+            <Field label={t('agency:inventory.stations.country')}>
               <select
                 className={INPUT}
                 value={selected ?? ''}
@@ -98,7 +101,7 @@ function RequestCity() {
         ) : null}
 
         <div className="w-64">
-          <Field label="Nom de la ville">
+          <Field label={t('agency:inventory.stations.cityName')}>
             <input
               className={INPUT}
               value={name}
@@ -108,7 +111,7 @@ function RequestCity() {
         </div>
 
         <Button
-          label="Envoyer la demande"
+          label={t('agency:inventory.stations.sendRequest')}
           variant="secondary"
           disabled={name.trim().length < 2 || selected === null || request.isPending}
           onPress={() => request.mutate()}
@@ -131,6 +134,7 @@ function RequestCity() {
  * ne la retrouvant pas.
  */
 export function StationsPage() {
+  const { t } = useTranslation()
   const stations = useStations()
   const [adding, setAdding] = useState(false)
 
@@ -139,9 +143,14 @@ export function StationsPage() {
   return (
     <div>
       <PageHeader
-        title="Gares"
-        subtitle="Les points de départ et d’arrivée de vos itinéraires. Une gare nouvelle est vérifiée par MOTOBOY avant d’apparaître dans la recherche."
-        action={<Button label="Ajouter une gare" onPress={() => setAdding(true)} />}
+        title={t('agency:inventory.stations.title')}
+        subtitle={t('agency:inventory.stations.subtitle')}
+        action={
+          <Button
+            label={t('agency:inventory.stations.add')}
+            onPress={() => setAdding(true)}
+          />
+        }
       />
 
       {stations.isPending ? <Skeleton /> : null}
@@ -153,14 +162,26 @@ export function StationsPage() {
 
       {stations.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucune gare"
-          body="Commencez par déclarer une gare : tout le reste de l’inventaire s’y rattache."
-          action={<Button label="Ajouter une gare" onPress={() => setAdding(true)} />}
+          title={t('agency:inventory.stations.emptyTitle')}
+          body={t('agency:inventory.stations.emptyBody')}
+          action={
+            <Button
+              label={t('agency:inventory.stations.add')}
+              onPress={() => setAdding(true)}
+            />
+          }
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Nom', 'Ville', 'Adresse', 'État']}>
+        <Table
+          head={[
+            t('agency:inventory.stations.head.name'),
+            t('agency:inventory.stations.head.city'),
+            t('agency:inventory.stations.head.address'),
+            t('agency:inventory.stations.head.status'),
+          ]}
+        >
           {rows.map((station) => (
             <tr key={station.id}>
               <Cell className="font-medium">{station.name}</Cell>
@@ -212,13 +233,14 @@ function StationState({ moderated, active }: { moderated: boolean; active: boole
 }
 
 function StationPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateStation()
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState<CityChoice | null>(null)
 
   return (
-    <Panel title="Nouvelle gare" onClose={onClose}>
+    <Panel title={t('agency:inventory.stations.newTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -236,20 +258,24 @@ function StationPanel({ onClose }: { onClose: () => void }) {
           )
         }}
       >
-        <Field label="Nom de la gare">
+        <Field label={t('agency:inventory.stations.name')}>
           <input
             className={INPUT}
             required
             maxLength={150}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Gare de Bonabéri"
+            placeholder={t('agency:inventory.stations.namePlaceholder')}
           />
         </Field>
 
-        <CityField label="Ville" value={city} onChange={setCity} />
+        <CityField
+          label={t('agency:inventory.stations.city')}
+          value={city}
+          onChange={setCity}
+        />
 
-        <Field label="Adresse (facultatif)">
+        <Field label={t('agency:inventory.stations.address')}>
           <input
             className={INPUT}
             maxLength={255}
@@ -262,7 +288,7 @@ function StationPanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Créer la gare"
+          label={t('agency:inventory.stations.create')}
           disabled={city === null || name.trim() === '' || create.isPending}
         />
       </form>

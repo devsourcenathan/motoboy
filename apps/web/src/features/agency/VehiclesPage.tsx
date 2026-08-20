@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { AgencyVehicle } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
 import {
@@ -25,6 +26,7 @@ import { useCreateVehicle, useVehicleSeats, useVehicles } from './useInventory'
  * réservations déjà prises.
  */
 export function VehiclesPage() {
+  const { t } = useTranslation()
   const vehicles = useVehicles()
   const [adding, setAdding] = useState(false)
   const [seatsOf, setSeatsOf] = useState<AgencyVehicle | null>(null)
@@ -34,9 +36,14 @@ export function VehiclesPage() {
   return (
     <div>
       <PageHeader
-        title="Véhicules"
-        subtitle="Votre parc. Le mode de placement choisi à la déclaration détermine si les passagers choisiront leur siège."
-        action={<Button label="Ajouter un véhicule" onPress={() => setAdding(true)} />}
+        title={t('agency:inventory.vehicles.title')}
+        subtitle={t('agency:inventory.vehicles.subtitle')}
+        action={
+          <Button
+            label={t('agency:inventory.vehicles.add')}
+            onPress={() => setAdding(true)}
+          />
+        }
       />
 
       {vehicles.isPending ? <Skeleton /> : null}
@@ -44,14 +51,28 @@ export function VehiclesPage() {
 
       {vehicles.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun véhicule"
-          body="Un itinéraire ne produit de départs qu’avec un véhicule pour les assurer."
-          action={<Button label="Ajouter un véhicule" onPress={() => setAdding(true)} />}
+          title={t('agency:inventory.vehicles.emptyTitle')}
+          body={t('agency:inventory.vehicles.emptyBody')}
+          action={
+            <Button
+              label={t('agency:inventory.vehicles.add')}
+              onPress={() => setAdding(true)}
+            />
+          }
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Immatriculation', 'Modèle', 'Type', 'Placement', 'Places', '']}>
+        <Table
+          head={[
+            t('agency:inventory.vehicles.head.plate'),
+            t('agency:inventory.vehicles.head.model'),
+            t('agency:inventory.vehicles.head.type'),
+            t('agency:inventory.vehicles.head.seating'),
+            t('agency:inventory.vehicles.head.seats'),
+            '',
+          ]}
+        >
           {rows.map((vehicle) => (
             <tr key={vehicle.id}>
               <Cell className="font-mono font-medium">{vehicle.registration}</Cell>
@@ -93,6 +114,7 @@ export function VehiclesPage() {
 }
 
 function VehiclePanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const create = useCreateVehicle()
   const [registration, setRegistration] = useState('')
   const [brand, setBrand] = useState('')
@@ -103,7 +125,7 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
   const [capacity, setCapacity] = useState('30')
 
   return (
-    <Panel title="Nouveau véhicule" onClose={onClose}>
+    <Panel title={t('agency:inventory.vehicles.newTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -122,26 +144,26 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
           )
         }}
       >
-        <Field label="Immatriculation">
+        <Field label={t('agency:inventory.vehicles.plate')}>
           <input
             className={`${INPUT} uppercase`}
             required
             maxLength={20}
             value={registration}
             onChange={(event) => setRegistration(event.target.value)}
-            placeholder="LT-4412-AB"
+            placeholder={t('agency:inventory.vehicles.platePlaceholder')}
           />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Marque (facultatif)">
+          <Field label={t('agency:inventory.vehicles.make')}>
             <input
               className={INPUT}
               value={brand}
               onChange={(event) => setBrand(event.target.value)}
             />
           </Field>
-          <Field label="Modèle (facultatif)">
+          <Field label={t('agency:inventory.vehicles.model')}>
             <input
               className={INPUT}
               value={model}
@@ -150,14 +172,14 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
           </Field>
         </div>
 
-        <Field label="Type">
+        <Field label={t('agency:inventory.vehicles.type')}>
           <select
             className={INPUT}
             value={type}
             onChange={(event) => setType(event.target.value as typeof type)}
           >
-            <option value="BUS">Bus</option>
-            <option value="CAR">Voiture</option>
+            <option value="BUS">{t('agency:inventory.vehicles.bus')}</option>
+            <option value="CAR">{t('agency:inventory.vehicles.car')}</option>
           </select>
         </Field>
 
@@ -166,7 +188,7 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
           se trompe ici ne s'en aperçoit qu'au premier départ vendu.
         */}
         <Field
-          label="Mode de placement"
+          label={t('agency:inventory.vehicles.seating')}
           hint={
             mode === 'SEATED'
               ? 'Le passager choisit son siège sur un plan. Ne se change plus une fois des départs vendus.'
@@ -178,12 +200,12 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
             value={mode}
             onChange={(event) => setMode(event.target.value as typeof mode)}
           >
-            <option value="SEATED">Siège choisi</option>
-            <option value="CAPACITY">Par capacité</option>
+            <option value="SEATED">{t('agency:inventory.vehicles.assignedSeat')}</option>
+            <option value="CAPACITY">{t('agency:inventory.vehicles.byCapacity')}</option>
           </select>
         </Field>
 
-        <Field label="Nombre de places">
+        <Field label={t('agency:inventory.vehicles.seats')}>
           <input
             className={INPUT}
             type="number"
@@ -199,7 +221,7 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Ajouter le véhicule"
+          label={t('agency:inventory.vehicles.create')}
           disabled={registration.trim() === '' || create.isPending}
         />
       </form>
