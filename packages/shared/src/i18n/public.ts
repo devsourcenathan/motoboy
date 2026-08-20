@@ -21,6 +21,13 @@ import type { Locale } from '../locale.js'
 export interface PublicMessages {
   readonly hero: {
     readonly tagline: string
+    /**
+     * L'entrée des professionnels.
+     *
+     * Discrète, mais **présente** : sans elle, un gérant d'agence n'a aucun
+     * moyen de trouver son espace depuis le site — il faudrait connaître l'URL.
+     */
+    readonly proAccess: string
   }
   readonly search: {
     readonly from: string
@@ -52,6 +59,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
   fr: {
     hero: {
       tagline: 'Comparez les départs de toutes les agences, sur un seul écran.',
+      proAccess: 'Espace professionnel',
     },
     search: {
       from: 'Départ',
@@ -77,6 +85,7 @@ export const publicMessages: Record<Locale, PublicMessages> = {
   en: {
     hero: {
       tagline: 'Compare departures from every agency, on one screen.',
+      proAccess: 'Staff sign-in',
     },
     search: {
       from: 'From',

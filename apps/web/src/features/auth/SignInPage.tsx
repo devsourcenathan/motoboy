@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router'
 import { describeError } from '../../lib/errors'
-import { useRequestOtp, useVerifyOtp } from './useAuth'
+import { useCurrentUser, useRequestOtp, useVerifyOtp } from './useAuth'
 import { Logo } from '../../shared/ui'
+import { destinationFor } from './destination'
 
 /**
  * Connexion au back-office.
@@ -20,8 +22,22 @@ export function SignInPage() {
 
   const request = useRequestOtp()
   const verify = useVerifyOtp()
+  const me = useCurrentUser()
 
   const awaitingCode = request.isSuccess
+
+  /*
+   * **Une session déjà ouverte n'a rien à faire sur ce formulaire.**
+   *
+   * Le compte décide de sa destination : le même formulaire sert
+   * l'administration, l'agence, le quai et le propriétaire. Sans cette
+   * redirection, on saisissait son code et on restait là — authentifié, sans que
+   * rien ne le dise et sans nulle part où aller. Il fallait connaître l'URL par
+   * cœur, ce qui n'est demandable à personne.
+   */
+  if (me.data) {
+    return <Navigate to={destinationFor(me.data.roles)} replace />
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
@@ -39,11 +55,16 @@ export function SignInPage() {
           le seul repère avant d'avoir saisi quoi que ce soit.
         */}
         <Logo size={44} title="MOTOBOY" />
-        <h1 className="mt-3 text-xl font-bold text-ink-700">MOTOBOY — administration</h1>
+        {/*
+          « Espace professionnel » et non « administration » : ce formulaire est
+          la seule porte pour quatre espaces, et l'annoncer comme celui d'un seul
+          fait croire aux trois autres qu'ils se connectent ailleurs.
+        */}
+        <h1 className="mt-3 text-xl font-bold text-ink-700">Espace professionnel</h1>
         <p className="mt-1 mb-6 text-sm text-neutral-500">
           {awaitingCode
             ? 'Saisissez le code reçu par SMS.'
-            : 'Connectez-vous avec votre numéro.'}
+            : 'Agence, embarquement, administration : le même numéro ouvre votre espace.'}
         </p>
 
         <label className="block text-xs font-medium text-neutral-700" htmlFor="phone">

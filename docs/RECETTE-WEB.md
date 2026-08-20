@@ -68,9 +68,25 @@ code** de connexion à l'espace agence.
 
 ---
 
+## Où se connecter
+
+**Le lien « Espace professionnel »** est en haut à droite de l'accueil public,
+à côté du choix de la langue. Il mène à `/sign-in`.
+
+**Un seul formulaire pour quatre espaces.** Administration, agence, embarquement,
+propriétaire : c'est le rôle du compte qui décide où vous atterrissez, pas l'URL
+tapée. Un compte agence est donc déposé sur ses Départs, un agent d'embarquement
+sur le quai.
+
+Si un compte porte deux rôles — gérer une agence *et* embarquer —, c'est le plus
+large qui l'emporte : l'envoyer vers le plus restreint lui cacherait la moitié de
+son travail.
+
+---
+
 ## Étape 2 — L'administration
 
-Connectez-vous sur `/sign-in` avec votre compte administrateur.
+Connectez-vous avec votre compte administrateur.
 
 **2.1 — Agences → « À instruire ».** L'agence créée doit y figurer.
 
@@ -116,7 +132,8 @@ orange, **et seulement s'ils ne sont pas à zéro**.
 ## Étape 3 — L'espace agence
 
 Déconnectez-vous. Reconnectez-vous avec **le numéro du responsable** et le code
-reçu à l'étape 1.
+reçu à l'étape 1 — le même formulaire, qui vous déposera cette fois sur les
+Départs de l'agence.
 
 L'ordre est imposé par les données :
 
