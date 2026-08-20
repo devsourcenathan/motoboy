@@ -253,7 +253,7 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
 
         <Field
           label={t('agency:inventory.routes.duration')}
-          hint="Affichée au passager comme estimation. Elle n’engage pas l’heure d’arrivée."
+          hint={t('agency:inventory.routes.durationHint')}
         >
           <input
             className={INPUT}
@@ -404,7 +404,7 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
 
         <Field
           label={t('agency:inventory.routes.from')}
-          hint="Les départs ne sont générés qu’à compter de cette date."
+          hint={t('agency:inventory.routes.fromHint')}
         >
           <input
             className={INPUT}

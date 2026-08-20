@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
 import type { AgencyStaffMember } from '@motoboy/api-client/types'
 import { api } from '../../lib/api'
@@ -25,16 +26,8 @@ import {
  * choisir au hasard, et le mauvais choix donne le droit d'encaisser.
  */
 const PROFILES = [
-  {
-    value: 'AGENT',
-    label: 'Agent d’embarquement',
-    detail: 'Valide les billets et consulte les départs. Ne peut pas vendre.',
-  },
-  {
-    value: 'COUNTER',
-    label: 'Guichetier',
-    detail: 'Tout ce que fait l’agent, et vend au comptoir.',
-  },
+  { value: 'AGENT', key: 'agent' },
+  { value: 'COUNTER', key: 'counter' },
 ] as const
 
 const staffKey = ['agency', 'staff'] as const
@@ -47,6 +40,7 @@ const staffKey = ['agency', 'staff'] as const
  * rôle d'agence — lui ouvrirait aussi les reversements et cette page même.
  */
 export function StaffPage() {
+  const { t } = useTranslation()
   const staff = useQuery({
     queryKey: staffKey,
     queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/staff', { signal })),
@@ -58,9 +52,9 @@ export function StaffPage() {
   return (
     <div>
       <PageHeader
-        title="Personnel"
-        subtitle="Vos agents et guichetiers. Ils se connectent par SMS avec leur numéro — aucun mot de passe à distribuer."
-        action={<Button label="Ajouter quelqu’un" onPress={() => setAdding(true)} />}
+        title={t('agency:staff.title')}
+        subtitle={t('agency:staff.subtitle')}
+        action={<Button label={t('agency:staff.add')} onPress={() => setAdding(true)} />}
       />
 
       {staff.isPending ? <Skeleton /> : null}
@@ -68,14 +62,23 @@ export function StaffPage() {
 
       {staff.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun membre du personnel"
-          body="Ajoutez un guichetier pour vendre au comptoir, ou un agent pour embarquer sur le quai."
-          action={<Button label="Ajouter quelqu’un" onPress={() => setAdding(true)} />}
+          title={t('agency:staff.emptyTitle')}
+          body={t('agency:staff.emptyBody')}
+          action={
+            <Button label={t('agency:staff.add')} onPress={() => setAdding(true)} />
+          }
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Nom', 'Téléphone', 'Profil', '']}>
+        <Table
+          head={[
+            t('agency:staff.head.name'),
+            t('agency:staff.head.phone'),
+            t('agency:staff.head.role'),
+            '',
+          ]}
+        >
           {rows.map((member) => (
             <StaffRow key={member.user_id} member={member} />
           ))}
@@ -88,6 +91,7 @@ export function StaffPage() {
 }
 
 function StaffRow({ member }: { member: AgencyStaffMember }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [confirming, setConfirming] = useState(false)
 
@@ -109,7 +113,9 @@ function StaffRow({ member }: { member: AgencyStaffMember }) {
         {member.first_name} {member.last_name}
       </Cell>
       <Cell>{member.phone}</Cell>
-      <Cell>{profile?.label ?? member.role}</Cell>
+      <Cell>
+        {profile === undefined ? member.role : t(`agency:staff.roles.${profile.key}`)}
+      </Cell>
       <Cell>
         {confirming ? (
           <span className="flex flex-wrap items-center gap-2">
@@ -119,10 +125,10 @@ function StaffRow({ member }: { member: AgencyStaffMember }) {
               peur d'effacer ses ventes.
             */}
             <span className="text-xs text-neutral-500">
-              Retire son accès. Ses ventes restent à son nom.
+              {t('agency:staff.removeWarning')}
             </span>
             <Button
-              label="Confirmer"
+              label={t('agency:staff.confirm')}
               variant="danger"
               onPress={() => remove.mutate()}
               disabled={remove.isPending}
@@ -141,7 +147,7 @@ function StaffRow({ member }: { member: AgencyStaffMember }) {
             className="text-sm font-medium text-danger hover:underline"
             onClick={() => setConfirming(true)}
           >
-            Retirer
+            {t('agency:staff.remove')}
           </button>
         )}
 
@@ -152,6 +158,7 @@ function StaffRow({ member }: { member: AgencyStaffMember }) {
 }
 
 function StaffPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -179,7 +186,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
   const chosen = PROFILES.find((entry) => entry.value === role)
 
   return (
-    <Panel title="Ajouter au personnel" onClose={onClose}>
+    <Panel title={t('agency:staff.addTitle')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -188,7 +195,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prénom">
+          <Field label={t('agency:staff.firstName')}>
             <input
               className={INPUT}
               required
@@ -196,7 +203,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
               onChange={(event) => setFirstName(event.target.value)}
             />
           </Field>
-          <Field label="Nom">
+          <Field label={t('agency:staff.lastName')}>
             <input
               className={INPUT}
               required
@@ -206,10 +213,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
           </Field>
         </div>
 
-        <Field
-          label="Téléphone"
-          hint="C’est avec ce numéro qu’il se connectera, par code SMS. S’il a déjà un compte MOTOBOY, celui-ci est réutilisé."
-        >
+        <Field label={t('agency:staff.phone')} hint={t('agency:staff.phoneHint')}>
           <input
             className={INPUT}
             required
@@ -224,7 +228,12 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
           Le profil est expliqué sous le choix, pas seulement nommé : une agence
           ne connaît pas nos rôles, et le mauvais choix donne le droit d'encaisser.
         */}
-        <Field label="Profil" hint={chosen?.detail}>
+        <Field
+          label={t('agency:staff.role')}
+          hint={
+            chosen === undefined ? undefined : t(`agency:staff.roles.${chosen.key}Detail`)
+          }
+        >
           <select
             className={INPUT}
             value={role}
@@ -232,7 +241,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
           >
             {PROFILES.map((entry) => (
               <option key={entry.value} value={entry.value}>
-                {entry.label}
+                {t(`agency:staff.roles.${entry.key}`)}
               </option>
             ))}
           </select>
@@ -242,7 +251,7 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
 
         <Button
           type="submit"
-          label="Ajouter"
+          label={t('agency:staff.submit')}
           disabled={add.isPending || phone.trim() === '' || firstName.trim() === ''}
         />
       </form>

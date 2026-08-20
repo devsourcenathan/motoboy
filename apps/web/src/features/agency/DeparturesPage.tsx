@@ -147,7 +147,7 @@ function CancelPanel({ reference, onClose }: { reference: string; onClose: () =>
 
         <Field
           label={t('agency:departures.reason')}
-          hint="Le taux d’annulation est suivi par cause."
+          hint={t('agency:departures.reasonHint')}
         >
           <select
             className={INPUT}

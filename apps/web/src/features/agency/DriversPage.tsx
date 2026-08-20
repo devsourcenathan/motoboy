@@ -194,7 +194,7 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
 
         <Field
           label={t('agency:inventory.drivers.licenceExpiry')}
-          hint="Renseignée, elle est signalée trente jours avant l’expiration."
+          hint={t('agency:inventory.drivers.licenceExpiryHint')}
         >
           <input
             className={INPUT}

@@ -42,6 +42,7 @@ export interface AgencyMessages {
     }
     readonly cancel: string
     readonly reason: string
+    readonly reasonHint: string
     readonly note: string
     readonly reasons: {
       readonly vehicleBreakdown: string
@@ -60,6 +61,7 @@ export interface AgencyMessages {
     readonly lastName: string
     readonly phone: string
     readonly phonePlaceholder: string
+    readonly phoneHint: string
     readonly sell: string
     readonly cancelSection: string
     readonly cancelHelp: string
@@ -146,6 +148,7 @@ export interface AgencyMessages {
       readonly phonePlaceholder: string
       readonly licence: string
       readonly licenceExpiry: string
+      readonly licenceExpiryHint: string
       readonly usualVehicle: string
       readonly none: string
       readonly create: string
@@ -167,6 +170,7 @@ export interface AgencyMessages {
       readonly origin: string
       readonly destination: string
       readonly duration: string
+      readonly durationHint: string
       readonly create: string
       readonly addSchedule: string
       readonly departureTime: string
@@ -179,6 +183,96 @@ export interface AgencyMessages {
       readonly createSchedule: string
       readonly generate: string
       readonly from: string
+      readonly fromHint: string
+    }
+  }
+  readonly money: {
+    readonly title: string
+    readonly subtitle: string
+    readonly payoutAccount: string
+    /** Dit **avant** la saisie : un numero errone envoie l'argent ailleurs. */
+    readonly accountWarning: string
+    readonly declared: string
+    readonly noneVerified: string
+    readonly type: string
+    readonly mobileMoney: string
+    readonly bank: string
+    readonly operator: string
+    readonly number: string
+    readonly holder: string
+    readonly holderHint: string
+    readonly declare: string
+    readonly payouts: string
+    readonly noPayoutsTitle: string
+    readonly noPayoutsBody: string
+    readonly statement: string
+    readonly ledger: string
+    readonly noLedgerTitle: string
+    readonly noLedgerBody: string
+    readonly head: {
+      readonly reference: string
+      readonly net: string
+      readonly status: string
+      readonly date: string
+      readonly label: string
+      readonly amount: string
+    }
+  }
+  readonly staff: {
+    readonly title: string
+    readonly subtitle: string
+    readonly emptyTitle: string
+    readonly emptyBody: string
+    readonly add: string
+    readonly addTitle: string
+    readonly firstName: string
+    readonly lastName: string
+    readonly phone: string
+    readonly phoneHint: string
+    readonly role: string
+    readonly submit: string
+    readonly remove: string
+    readonly confirm: string
+    /** Nomme ce qui **survit** au retrait : sinon on n'ose pas retirer. */
+    readonly removeWarning: string
+    readonly head: {
+      readonly name: string
+      readonly phone: string
+      readonly role: string
+    }
+    readonly roles: {
+      readonly agent: string
+      readonly agentDetail: string
+      readonly counter: string
+      readonly counterDetail: string
+    }
+  }
+  readonly documents: {
+    readonly title: string
+    readonly subtitle: string
+    readonly upload: string
+    readonly kind: string
+    readonly file: string
+    readonly fileHint: string
+    readonly tooLarge: string
+    readonly expiry: string
+    readonly expiryHint: string
+    readonly submit: string
+    readonly filed: string
+    readonly emptyTitle: string
+    readonly emptyBody: string
+    readonly notFiled: string
+    readonly head: {
+      readonly document: string
+      readonly status: string
+      readonly expiry: string
+    }
+    readonly types: {
+      readonly registration: string
+      readonly transportLicence: string
+      readonly insurance: string
+      readonly idDocument: string
+      readonly other: string
     }
   }
 }
@@ -215,6 +309,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       },
       cancel: 'Annuler ce départ et rembourser',
       reason: 'Motif',
+      reasonHint: 'Le taux d’annulation est suivi par cause.',
       note: 'Précision (facultatif)',
       reasons: {
         vehicleBreakdown: 'Panne du véhicule',
@@ -235,6 +330,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       lastName: 'Nom',
       phone: 'Téléphone',
       phonePlaceholder: '+237 6XX XX XX XX',
+      phoneHint: 'Le billet part par SMS à ce numéro.',
       sell: 'Vendre',
       cancelSection: 'Annuler une réservation',
       cancelHelp:
@@ -316,6 +412,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         phonePlaceholder: '+237 6XX XX XX XX',
         licence: 'Numéro de permis',
         licenceExpiry: 'Échéance du permis (facultatif)',
+        licenceExpiryHint:
+          'Renseignée, elle est signalée trente jours avant l’expiration.',
         usualVehicle: 'Véhicule habituel (facultatif)',
         none: 'Aucun',
         create: 'Ajouter le chauffeur',
@@ -338,6 +436,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         origin: 'Gare de départ',
         destination: 'Gare d’arrivée',
         duration: 'Durée de référence en minutes (facultatif)',
+        durationHint:
+          'Affichée au passager comme estimation. Elle n’engage pas l’heure d’arrivée.',
         create: 'Créer l’itinéraire',
         addSchedule: 'Ajouter un horaire',
         departureTime: 'Heure de départ',
@@ -350,6 +450,97 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         createSchedule: 'Créer l’horaire',
         generate: 'Générer les départs',
         from: 'À partir du',
+        fromHint: 'Les départs ne sont générés qu’à compter de cette date.',
+      },
+    },
+    money: {
+      title: 'Compte',
+      subtitle:
+        'Vos écritures, vos reversements, et le compte sur lequel MOTOBOY vous verse.',
+      payoutAccount: 'Compte de versement',
+      accountWarning:
+        'Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé ne se récupère pas.',
+      declared:
+        'Déclaré. MOTOBOY vérifie ce compte avant qu’un virement puisse y partir.',
+      noneVerified:
+        'Aucun compte vérifié. Tant qu’il en manque un, aucun reversement ne peut vous être envoyé.',
+      type: 'Type',
+      mobileMoney: 'Mobile Money',
+      bank: 'Compte bancaire',
+      operator: 'Opérateur',
+      number: 'Numéro',
+      holder: 'Nom du titulaire',
+      holderHint:
+        'Il doit correspondre au nom de l’agence ; c’est ce que le vérificateur compare.',
+      declare: 'Déclarer ce compte',
+      payouts: 'Reversements',
+      noPayoutsTitle: 'Aucun reversement',
+      noPayoutsBody: 'Ils apparaîtront ici dès qu’un solde sera exigible.',
+      statement: 'Relevé CSV',
+      ledger: 'Écritures récentes',
+      noLedgerTitle: 'Aucune écriture',
+      noLedgerBody: 'Votre première vente créditera ce compte.',
+      head: {
+        reference: 'Référence',
+        net: 'Net',
+        status: 'État',
+        date: 'Date',
+        label: 'Libellé',
+        amount: 'Montant',
+      },
+    },
+    staff: {
+      title: 'Personnel',
+      subtitle:
+        'Vos agents et guichetiers. Ils se connectent par SMS avec leur numéro — aucun mot de passe à distribuer.',
+      emptyTitle: 'Aucun membre du personnel',
+      emptyBody:
+        'Ajoutez un guichetier pour vendre au comptoir, ou un agent pour embarquer sur le quai.',
+      add: 'Ajouter quelqu’un',
+      addTitle: 'Ajouter au personnel',
+      firstName: 'Prénom',
+      lastName: 'Nom',
+      phone: 'Téléphone',
+      phoneHint:
+        'C’est avec ce numéro qu’il se connectera, par code SMS. S’il a déjà un compte MOTOBOY, celui-ci est réutilisé.',
+      role: 'Profil',
+      submit: 'Ajouter',
+      remove: 'Retirer',
+      confirm: 'Confirmer',
+      removeWarning: 'Retire son accès. Ses ventes restent à son nom.',
+      head: { name: 'Nom', phone: 'Téléphone', role: 'Profil' },
+      roles: {
+        agent: 'Agent d’embarquement',
+        agentDetail: 'Valide les billets et consulte les départs. Ne peut pas vendre.',
+        counter: 'Guichetier',
+        counterDetail: 'Tout ce que fait l’agent, et vend au comptoir.',
+      },
+    },
+    documents: {
+      title: 'Pièces de l’agence',
+      subtitle:
+        'C’est sur ces pièces que la plateforme instruit votre dossier. Tant qu’elles manquent, l’admission ne peut pas avancer.',
+      upload: 'Déposer une pièce',
+      kind: 'Nature de la pièce',
+      file: 'Fichier',
+      fileHint: 'PDF ou image, 8 Mo au maximum.',
+      tooLarge: 'Ce fichier dépasse 8 Mo. Il serait refusé après l’envoi.',
+      expiry: 'Date d’expiration',
+      expiryHint:
+        'Facultative. Une assurance ou une licence en a une ; un registre de commerce, non.',
+      submit: 'Déposer',
+      filed: 'Pièces déposées',
+      emptyTitle: 'Aucune pièce déposée',
+      emptyBody:
+        'Commencez par le registre de commerce : c’est celui que la plateforme regarde en premier.',
+      notFiled: 'Non déposée',
+      head: { document: 'Pièce', status: 'État', expiry: 'Expiration' },
+      types: {
+        registration: 'Registre de commerce',
+        transportLicence: 'Licence de transport',
+        insurance: 'Assurance',
+        idDocument: 'Pièce d’identité du dirigeant',
+        other: 'Autre',
       },
     },
   },
@@ -384,6 +575,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       },
       cancel: 'Cancel this departure and refund',
       reason: 'Reason',
+      reasonHint: 'The cancellation rate is tracked by cause.',
       note: 'Details (optional)',
       reasons: {
         vehicleBreakdown: 'Vehicle breakdown',
@@ -404,6 +596,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       lastName: 'Last name',
       phone: 'Phone',
       phonePlaceholder: '+237 6XX XX XX XX',
+      phoneHint: 'The ticket is sent by SMS to this number.',
       sell: 'Sell',
       cancelSection: 'Cancel a booking',
       cancelHelp:
@@ -484,6 +677,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         phonePlaceholder: '+237 6XX XX XX XX',
         licence: 'Licence number',
         licenceExpiry: 'Licence expiry (optional)',
+        licenceExpiryHint: 'If given, it is flagged thirty days before it runs out.',
         usualVehicle: 'Usual vehicle (optional)',
         none: 'None',
         create: 'Add the driver',
@@ -506,6 +700,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         origin: 'Departure station',
         destination: 'Arrival station',
         duration: 'Reference duration in minutes (optional)',
+        durationHint:
+          'Shown to passengers as an estimate. It does not commit to an arrival time.',
         create: 'Create the route',
         addSchedule: 'Add a schedule',
         departureTime: 'Departure time',
@@ -518,6 +714,94 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         createSchedule: 'Create the schedule',
         generate: 'Generate departures',
         from: 'From',
+        fromHint: 'Departures are only generated from this date onwards.',
+      },
+    },
+    money: {
+      title: 'Account',
+      subtitle: 'Your ledger, your payouts, and the account MOTOBOY pays you into.',
+      payoutAccount: 'Payout account',
+      accountWarning:
+        'MOTOBOY verifies this account before using it. A misdirected transfer cannot be recovered.',
+      declared:
+        'Declared. MOTOBOY verifies this account before any transfer can go to it.',
+      noneVerified:
+        'No verified account. Until there is one, no payout can be sent to you.',
+      type: 'Type',
+      mobileMoney: 'Mobile Money',
+      bank: 'Bank account',
+      operator: 'Operator',
+      number: 'Number',
+      holder: 'Account holder',
+      holderHint: 'It must match the agency name; that is what the verifier compares.',
+      declare: 'Declare this account',
+      payouts: 'Payouts',
+      noPayoutsTitle: 'No payouts',
+      noPayoutsBody: 'They will appear here as soon as a balance is due.',
+      statement: 'CSV statement',
+      ledger: 'Recent entries',
+      noLedgerTitle: 'No entries',
+      noLedgerBody: 'Your first sale will credit this account.',
+      head: {
+        reference: 'Reference',
+        net: 'Net',
+        status: 'Status',
+        date: 'Date',
+        label: 'Description',
+        amount: 'Amount',
+      },
+    },
+    staff: {
+      title: 'Staff',
+      subtitle:
+        'Your agents and clerks. They sign in by SMS with their number — no passwords to hand out.',
+      emptyTitle: 'No staff yet',
+      emptyBody:
+        'Add a clerk to sell at the counter, or an agent to board on the platform.',
+      add: 'Add someone',
+      addTitle: 'Add to staff',
+      firstName: 'First name',
+      lastName: 'Last name',
+      phone: 'Phone',
+      phoneHint:
+        'This is the number they will sign in with, by SMS code. If they already have a MOTOBOY account, it is reused.',
+      role: 'Role',
+      submit: 'Add',
+      confirm: 'Confirm',
+      remove: 'Remove',
+      removeWarning: 'Removes their access. Their sales stay in their name.',
+      head: { name: 'Name', phone: 'Phone', role: 'Role' },
+      roles: {
+        agent: 'Boarding agent',
+        agentDetail: 'Checks tickets in and views departures. Cannot sell.',
+        counter: 'Counter clerk',
+        counterDetail: 'Everything an agent does, and sells at the counter.',
+      },
+    },
+    documents: {
+      title: 'Agency documents',
+      subtitle:
+        'These are the documents the platform reviews your application on. While they are missing, admission cannot move forward.',
+      upload: 'File a document',
+      kind: 'Kind of document',
+      file: 'File',
+      fileHint: 'PDF or image, 8 MB at most.',
+      tooLarge: 'This file is over 8 MB. It would be refused after uploading.',
+      expiry: 'Expiry date',
+      expiryHint: 'Optional. Insurance and licences have one; a trade register does not.',
+      submit: 'File it',
+      filed: 'Documents filed',
+      emptyTitle: 'No documents filed',
+      emptyBody:
+        'Start with the trade register: it is the one the platform looks at first.',
+      notFiled: 'Not filed',
+      head: { document: 'Document', status: 'Status', expiry: 'Expiry' },
+      types: {
+        registration: 'Trade register',
+        transportLicence: 'Transport licence',
+        insurance: 'Insurance',
+        idDocument: 'Director’s ID',
+        other: 'Other',
       },
     },
   },

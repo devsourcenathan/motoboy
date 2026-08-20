@@ -794,3 +794,56 @@ première : le serveur rendrait le résultat de l'autre réservation, et celle q
 visait resterait intacte en ayant l'air annulée. La clé est donc fixée à
 l'ouverture de la confirmation, ce qui garde un second clic après coupure réseau
 sur la même opération. Un test l'éprouve, et il échoue si la clé est figée.
+
+---
+
+## 13. Le web bilingue — 19 août 2026
+
+Trois surfaces sur trois, conformément au brief : le comparateur public,
+l'embarquement et l'espace agence. **L'administration reste en français seul** —
+outil interne, décision du brief, et deux cents chaînes qu'on aurait traduites
+pour personne.
+
+| Catalogue | Ce qu'il couvre |
+|---|---|
+| `common` | Ce qui se lit à l'identique partout — existait déjà, partagé avec le mobile |
+| `public` | Le comparateur : recherche et fiche de départ |
+| `boarding` | La PWA du quai **et** la vue d'embarquement de l'agence |
+| `agency` | Les dix pages du back-office d'agence |
+
+### Ce qui rend la complétude vérifiable
+
+Le type croisé `Record<Locale, XMessages>` fait travailler le compilateur dans les
+deux dimensions : une clé présente en français et absente en anglais **casse la
+compilation**. Un `tsc` propre sur `@motoboy/shared` n'est donc pas une promesse
+de complétude, c'en est la preuve.
+
+### Ce que le web fait que le mobile ne fait pas
+
+**La langue survit au rechargement.** L'application garde son état ; un navigateur
+repart de zéro à chaque F5. Un agent qui bascule l'embarquement en anglais puis
+recharge — ce que fait précisément quelqu'un dont l'écran s'est figé — retrouverait
+du français sans comprendre son erreur. Le choix est stocké, et `document.lang`
+est posé : c'est ce qui fait prononcer la page correctement par un lecteur
+d'écran.
+
+Le sélecteur est **sur la première page vue** du public, et **dans l'en-tête de la
+PWA** : celle-ci s'installe seule sur un écran d'accueil et tourne hors réseau, il
+n'y a nulle part ailleurs où aller le chercher.
+
+### Trois défauts du harnais de test, trouvés en chemin
+
+1. Les tests affirmaient du français **par accident**, via `navigator.language`
+   qui vaut `en-US` sous jsdom. Un verdict qui dépend des réglages de la machine ne
+   prouve rien.
+2. `changeLanguage` lancé sans être attendu faisait atterrir un rendu au milieu du
+   test suivant : des tests passaient seuls et échouaient en suite, sans que rien
+   ne pointe vers la langue.
+3. Ce qui a révélé un défaut latent : `findBy*` disposait d'une seconde, et la
+   suite alourdie dépassait ce budget une fois sur cinq — sur des assertions
+   correctes.
+
+### Ce qui n'est volontairement pas traduit
+
+Les gabarits de référence (`TCK-XXXXXX`, `LT-4412-AB`, `MTB-XXXXXX`), les noms de
+villes et les noms d'opérateurs. Un format ne change pas de langue.

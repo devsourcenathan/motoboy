@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
@@ -100,6 +101,7 @@ function useUploadDocument() {
  * combien il en faut.
  */
 export function DocumentsPage() {
+  const { t } = useTranslation()
   const documents = useDocuments()
   const upload = useUploadDocument()
 
@@ -114,18 +116,20 @@ export function DocumentsPage() {
   return (
     <div>
       <PageHeader
-        title="Pièces de l’agence"
-        subtitle="C’est sur ces pièces que la plateforme instruit votre dossier. Tant qu’elles manquent, l’admission ne peut pas avancer."
+        title={t('agency:documents.title')}
+        subtitle={t('agency:documents.subtitle')}
       />
 
       <div className="flex flex-col gap-6">
         <Card>
-          <h2 className="mb-3 text-lg font-bold text-ink-700">Déposer une pièce</h2>
+          <h2 className="mb-3 text-lg font-bold text-ink-700">
+            {t('agency:documents.upload')}
+          </h2>
 
           {upload.error ? <ErrorNote message={describeError(upload.error)} /> : null}
 
           <div className="flex flex-col gap-3">
-            <Field label="Nature de la pièce">
+            <Field label={t('agency:documents.kind')}>
               <select
                 className={INPUT}
                 value={type}
@@ -139,7 +143,10 @@ export function DocumentsPage() {
               </select>
             </Field>
 
-            <Field label="Fichier" hint="PDF ou image, 8 Mo au maximum.">
+            <Field
+              label={t('agency:documents.file')}
+              hint={t('agency:documents.fileHint')}
+            >
               <input
                 className={INPUT}
                 type="file"
@@ -160,8 +167,8 @@ export function DocumentsPage() {
             ) : null}
 
             <Field
-              label="Date d’expiration"
-              hint="Facultative. Une assurance ou une licence en a une ; un registre de commerce, non."
+              label={t('agency:documents.expiry')}
+              hint={t('agency:documents.expiryHint')}
             >
               <input
                 className={INPUT}
@@ -173,7 +180,7 @@ export function DocumentsPage() {
 
             <div>
               <Button
-                label="Déposer"
+                label={t('agency:documents.submit')}
                 disabled={file === null || tooLarge || upload.isPending}
                 onPress={() => {
                   if (file === null) return
@@ -194,7 +201,9 @@ export function DocumentsPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-lg font-bold text-ink-700">Pièces déposées</h2>
+          <h2 className="mb-3 text-lg font-bold text-ink-700">
+            {t('agency:documents.filed')}
+          </h2>
 
           {documents.isPending ? <Skeleton rows={3} /> : null}
           {documents.error ? (
@@ -203,13 +212,19 @@ export function DocumentsPage() {
 
           {documents.isSuccess && rows.length === 0 ? (
             <EmptyState
-              title="Aucune pièce déposée"
-              body="Commencez par le registre de commerce : c’est celui que la plateforme regarde en premier."
+              title={t('agency:documents.emptyTitle')}
+              body={t('agency:documents.emptyBody')}
             />
           ) : null}
 
           {rows.length > 0 ? (
-            <Table head={['Pièce', 'État', 'Expiration']}>
+            <Table
+              head={[
+                t('agency:documents.head.document'),
+                t('agency:documents.head.status'),
+                t('agency:documents.head.expiry'),
+              ]}
+            >
               {TYPES.map(([value, label]) => {
                 const found = rows.find((row) => row.type === value)
 
@@ -222,7 +237,9 @@ export function DocumentsPage() {
                       {found === undefined ? (
                         // Nommer l'absence : une ligne manquante se lit comme un
                         // oubli d'affichage, pas comme une pièce à fournir.
-                        <span className="text-neutral-500">Non déposée</span>
+                        <span className="text-neutral-500">
+                          {t('agency:documents.notFiled')}
+                        </span>
                       ) : (
                         (found.status ?? '—')
                       )}

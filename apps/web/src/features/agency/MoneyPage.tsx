@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import { api, session } from '../../lib/api'
@@ -65,6 +66,7 @@ async function downloadStatement(reference: string): Promise<void> {
  * en administration.
  */
 export function MoneyPage() {
+  const { t } = useTranslation()
   const ledger = useQuery({
     queryKey: ['agency', 'ledger'],
     queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/ledger', { signal })),
@@ -90,8 +92,8 @@ export function MoneyPage() {
   return (
     <div>
       <PageHeader
-        title="Compte"
-        subtitle="Vos écritures, vos reversements, et le compte sur lequel MOTOBOY vous verse."
+        title={t('agency:money.title')}
+        subtitle={t('agency:money.subtitle')}
         action={
           <Button
             label={active === undefined ? 'Déclarer un compte' : 'Changer de compte'}
@@ -108,7 +110,7 @@ export function MoneyPage() {
       */}
       <Card className="mb-6">
         <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
-          Compte de versement
+          {t('agency:money.payoutAccount')}
         </p>
         {accounts.isPending ? (
           <Skeleton rows={1} />
@@ -127,18 +129,27 @@ export function MoneyPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <h2 className="mb-3 font-semibold text-neutral-900">Reversements</h2>
+          <h2 className="mb-3 font-semibold text-neutral-900">
+            {t('agency:money.payouts')}
+          </h2>
 
           {payouts.isPending ? <Skeleton rows={3} /> : null}
           {payouts.error ? <ErrorNote message={describeError(payouts.error)} /> : null}
 
           {payouts.data !== undefined && (payouts.data.data ?? []).length === 0 ? (
             <EmptyState
-              title="Aucun reversement"
-              body="Ils apparaîtront ici dès qu’un solde sera exigible."
+              title={t('agency:money.noPayoutsTitle')}
+              body={t('agency:money.noPayoutsBody')}
             />
           ) : (
-            <Table head={['Référence', 'Net', 'État', '']}>
+            <Table
+              head={[
+                t('agency:money.head.reference'),
+                t('agency:money.head.net'),
+                t('agency:money.head.status'),
+                '',
+              ]}
+            >
               {(payouts.data?.data ?? []).map((payout) => (
                 <tr key={payout.reference}>
                   <Cell className="font-mono">{payout.reference}</Cell>
@@ -167,18 +178,26 @@ export function MoneyPage() {
         </div>
 
         <div>
-          <h2 className="mb-3 font-semibold text-neutral-900">Écritures récentes</h2>
+          <h2 className="mb-3 font-semibold text-neutral-900">
+            {t('agency:money.ledger')}
+          </h2>
 
           {ledger.isPending ? <Skeleton rows={3} /> : null}
           {ledger.error ? <ErrorNote message={describeError(ledger.error)} /> : null}
 
           {ledger.data !== undefined && entries.length === 0 ? (
             <EmptyState
-              title="Aucune écriture"
-              body="Votre première vente créditera ce compte."
+              title={t('agency:money.noLedgerTitle')}
+              body={t('agency:money.noLedgerBody')}
             />
           ) : (
-            <Table head={['Date', 'Libellé', 'Montant']}>
+            <Table
+              head={[
+                t('agency:money.head.date'),
+                t('agency:money.head.label'),
+                t('agency:money.head.amount'),
+              ]}
+            >
               {entries.map((entry, index) => (
                 <tr key={`${entry.occurred_at}-${index}`}>
                   <Cell className="whitespace-nowrap">
@@ -212,6 +231,7 @@ export function MoneyPage() {
 }
 
 function AccountPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
   const [type, setType] = useState<'MOBILE_MONEY' | 'BANK'>('MOBILE_MONEY')
   const [operator, setOperator] = useState<'MTN' | 'ORANGE'>('MTN')
   const [number, setNumber] = useState('')
@@ -220,7 +240,7 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = useState(false)
 
   return (
-    <Panel title="Compte de versement" onClose={onClose}>
+    <Panel title={t('agency:money.payoutAccount')} onClose={onClose}>
       {sent ? (
         <p className="rounded-lg bg-success-50 p-3 text-sm text-success-700">
           Déclaré. MOTOBOY vérifie ce compte avant qu’un virement puisse y partir ; le
@@ -263,19 +283,19 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
             ne se récupère pas.
           </p>
 
-          <Field label="Type">
+          <Field label={t('agency:money.type')}>
             <select
               className={INPUT}
               value={type}
               onChange={(event) => setType(event.target.value as typeof type)}
             >
-              <option value="MOBILE_MONEY">Mobile Money</option>
-              <option value="BANK">Compte bancaire</option>
+              <option value="MOBILE_MONEY">{t('agency:money.mobileMoney')}</option>
+              <option value="BANK">{t('agency:money.bank')}</option>
             </select>
           </Field>
 
           {type === 'MOBILE_MONEY' ? (
-            <Field label="Opérateur">
+            <Field label={t('agency:money.operator')}>
               <select
                 className={INPUT}
                 value={operator}
@@ -287,7 +307,7 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
             </Field>
           ) : null}
 
-          <Field label="Numéro">
+          <Field label={t('agency:money.number')}>
             <input
               className={INPUT}
               required
@@ -297,10 +317,7 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
             />
           </Field>
 
-          <Field
-            label="Nom du titulaire"
-            hint="Il doit correspondre au nom de l’agence ; c’est ce que le vérificateur compare."
-          >
+          <Field label={t('agency:money.holder')} hint={t('agency:money.holderHint')}>
             <input
               className={INPUT}
               required
@@ -314,7 +331,7 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
 
           <Button
             type="submit"
-            label="Déclarer ce compte"
+            label={t('agency:money.declare')}
             disabled={number.trim() === '' || name.trim() === ''}
           />
         </form>

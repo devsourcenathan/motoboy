@@ -104,7 +104,7 @@ function BoardingList({ reference }: { reference: string }) {
           <div className="min-w-56 flex-1">
             <Field
               label={t('boarding:manual.label')}
-              hint="Saisie manuelle — le scan se fait sur le quai."
+              hint={t('boarding:manual.noCamera')}
             >
               <input
                 className={`${INPUT} font-mono uppercase`}

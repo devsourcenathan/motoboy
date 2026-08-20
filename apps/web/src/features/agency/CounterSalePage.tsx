@@ -324,10 +324,7 @@ function SaleForm({ reference }: { reference: string }) {
           </Field>
         </div>
 
-        <Field
-          label={t('agency:counter.phone')}
-          hint="Le billet part par SMS à ce numéro."
-        >
+        <Field label={t('agency:counter.phone')} hint={t('agency:counter.phoneHint')}>
           <input
             className={INPUT}
             required
