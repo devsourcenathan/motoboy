@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatMoney } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
+import { CommercialTerms, type Terms } from './CommercialTerms'
 import {
   Button,
   Cell,
@@ -171,7 +172,7 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
           status: string
           expires_at?: string | null
         }[]
-        commercial_terms?: Record<string, unknown> | null
+        commercial_terms?: Terms | null
       }
     | undefined
 
@@ -265,6 +266,8 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
               )}
             </section>
           ) : null}
+
+          <CommercialTerms reference={reference} terms={agency.commercial_terms} />
 
           <LedgerAdjustment reference={reference} />
         </div>

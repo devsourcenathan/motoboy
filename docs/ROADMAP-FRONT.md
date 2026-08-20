@@ -708,9 +708,24 @@ chauffeur, décrite ailleurs comme « la seule barrière entre la plateforme et
 quelqu'un dont personne n'a vu le permis ». Le test de `App.tsx` défendait cette
 décision et a refusé la bascule — à juste titre.
 
-**Les conditions commerciales ne sont pas éditables depuis l'écran.** Le hook
-existe et la fiche affiche l'état, mais le formulaire des quatorze champs n'est
-pas écrit. Une agence est donc admise avec ses conditions par défaut.
+**Les conditions commerciales sont éditables.** Le formulaire des quatorze champs
+est écrit, et trois de ses champs changent de sens selon un autre — c'est tout
+son intérêt :
+
+- `commission_value` vaut des points de base ou des francs selon le mode ; le
+  même 500 se lit « 5 % » ou « 500 F ».
+- `cancellation_fee_value` de même, plafonné à 5 000 — soit 50 %, parce qu'une
+  agence ne peut pas rendre une réservation intégralement non remboursable à
+  l'intérieur de sa propre fenêtre d'annulation.
+- `payout_day` est un **jour du mois** en mensuel et un **jour de la semaine** en
+  hebdomadaire. La validation accepte 1 à 28 dans les deux cas : saisir 15 en
+  hebdomadaire passe la validation, puis `BuildDuePayouts` le ramène à dimanche
+  sans que rien ne le signale. D'où une liste de jours plutôt qu'un champ
+  numérique.
+
+**Seuls les champs modifiés sont transmis.** Toutes les règles de l'API sont en
+`sometimes` : renvoyer l'objet entier écraserait ce qu'un autre administrateur
+vient de changer entre le chargement de la page et l'enregistrement.
 
 ### Ce qui reste sur le web
 
