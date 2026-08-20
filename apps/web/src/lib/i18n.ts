@@ -6,6 +6,7 @@ import {
   SUPPORTED_LOCALES,
   type Locale,
 } from '@motoboy/shared'
+import { agencyMessages } from '@motoboy/shared/i18n/agency'
 import { boardingMessages } from '@motoboy/shared/i18n/boarding'
 import { commonMessages } from '@motoboy/shared/i18n/common'
 import { publicMessages } from '@motoboy/shared/i18n/public'
@@ -13,9 +14,9 @@ import { publicMessages } from '@motoboy/shared/i18n/public'
 /**
  * Les langues du web.
  *
- * Trois espaces de noms, trois catalogues, comme sur le mobile : `common` pour ce
+ * Quatre espaces de noms, quatre catalogues, comme sur le mobile : `common` pour ce
  * qui se lit à l'identique partout, `public` pour le comparateur, `boarding` pour
- * le quai. Chacun s'importe par son point d'entrée dédié — les faire passer par
+ * le quai, `agency` pour le bureau. Chacun s'importe par son point d'entrée dédié — les faire passer par
  * l'index du package embarquerait aussi les textes du parcours passager mobile.
  *
  * **L'administration n'y figure pas, et c'est une décision du brief** ([I10]) :
@@ -26,6 +27,7 @@ const NAMESPACES = {
   common: 'common',
   public: 'public',
   boarding: 'boarding',
+  agency: 'agency',
 } as const
 
 const resources = Object.fromEntries(
@@ -35,6 +37,7 @@ const resources = Object.fromEntries(
       [NAMESPACES.common]: commonMessages[locale],
       [NAMESPACES.public]: publicMessages[locale],
       [NAMESPACES.boarding]: boardingMessages[locale],
+      [NAMESPACES.agency]: agencyMessages[locale],
     },
   ]),
 )
@@ -75,7 +78,7 @@ void i18next.use(initReactI18next).init({
   lng: initialLocale(),
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: NAMESPACES.common,
-  ns: [NAMESPACES.common, NAMESPACES.public, NAMESPACES.boarding],
+  ns: [NAMESPACES.common, NAMESPACES.public, NAMESPACES.boarding, NAMESPACES.agency],
   interpolation: {
     // React échappe déjà ce qu'il rend ; le faire deux fois transforme une
     // apostrophe en `&#39;` à l'écran, et le français en est plein.

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { newIdempotencyKey, unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
@@ -31,6 +32,7 @@ import { useAgencyTrips, useCounterSale, useTripSeats } from './useOperations'
  * proposer.
  */
 function CancelBooking() {
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [reference, setReference] = useState('')
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -57,23 +59,24 @@ function CancelBooking() {
 
   return (
     <Card>
-      <p className="mb-1 font-semibold text-neutral-900">Annuler une réservation</p>
-      <p className="mb-3 text-sm text-neutral-500">
-        Demandez la référence au passager — elle figure sur son SMS de confirmation.
+      <p className="mb-1 font-semibold text-neutral-900">
+        {t('agency:counter.cancelSection')}
       </p>
+      <p className="mb-3 text-sm text-neutral-500">{t('agency:counter.cancelHelp')}</p>
 
       {cancel.error ? <ErrorNote message={describeError(cancel.error)} /> : null}
 
       {result === undefined ? null : (
         <p className="mb-3 text-sm text-success-700">
-          Réservation annulée
           {result.refund === undefined
-            ? '.'
-            : ` — ${formatMoney(result.refund, 'fr')} remboursés au passager.`}
+            ? t('agency:counter.cancelled')
+            : t('agency:counter.cancelledWithRefund', {
+                amount: formatMoney(result.refund, i18n.language as 'fr' | 'en'),
+              })}
         </p>
       )}
 
-      <Field label="Référence de la réservation">
+      <Field label={t('agency:counter.bookingReference')}>
         <input
           className={INPUT}
           value={reference}
@@ -81,7 +84,7 @@ function CancelBooking() {
             setReference(event.target.value.toUpperCase())
             setConfirming(null)
           }}
-          placeholder="MTB-XXXXXX"
+          placeholder={t('agency:counter.bookingPlaceholder')}
         />
       </Field>
 
@@ -93,10 +96,10 @@ function CancelBooking() {
               déclenche un remboursement : ce n'est pas un geste qu'on reprend.
             */}
             <span className="text-sm text-neutral-700">
-              Annuler {reference} et rembourser le passager ?
+              {t('agency:counter.confirmQuestion', { reference })}
             </span>
             <Button
-              label="Confirmer"
+              label={t('agency:counter.confirm')}
               variant="danger"
               disabled={cancel.isPending}
               onPress={() =>
@@ -104,14 +107,14 @@ function CancelBooking() {
               }
             />
             <Button
-              label="Revenir"
+              label={t('agency:counter.back')}
               variant="secondary"
               onPress={() => setConfirming(null)}
             />
           </div>
         ) : (
           <Button
-            label="Annuler cette réservation"
+            label={t('agency:counter.cancelAction')}
             variant="secondary"
             disabled={reference.trim().length < 4}
             /*
@@ -145,6 +148,7 @@ function CancelBooking() {
  * pendant que le plan de sièges charge, jamais après.
  */
 export function CounterSalePage() {
+  const { t } = useTranslation()
   const today = new Date().toISOString().slice(0, 10)
   const trips = useAgencyTrips({ from: today })
   const [reference, setReference] = useState<string | null>(null)
@@ -154,8 +158,8 @@ export function CounterSalePage() {
   return (
     <div>
       <PageHeader
-        title="Guichet"
-        subtitle="Vendre à quelqu’un qui est devant vous. Les places vendues ici disparaissent immédiatement de la recherche."
+        title={t('agency:counter.title')}
+        subtitle={t('agency:counter.subtitle')}
       />
 
       <div className="mb-6">
@@ -167,15 +171,17 @@ export function CounterSalePage() {
 
       {trips.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun départ aujourd’hui"
-          body="Le guichet vend sur les départs à venir. Générez-les depuis l’onglet Itinéraires."
+          title={t('agency:counter.emptyTitle')}
+          body={t('agency:counter.emptyBody')}
         />
       ) : null}
 
       {rows.length === 0 ? null : (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
           <Card>
-            <p className="mb-3 font-semibold text-neutral-900">Départ</p>
+            <p className="mb-3 font-semibold text-neutral-900">
+              {t('agency:counter.departure')}
+            </p>
             <div className="space-y-1">
               {rows.map((trip) => (
                 <button
@@ -246,6 +252,7 @@ function seatClass(
 }
 
 function SaleForm({ reference }: { reference: string }) {
+  const { t } = useTranslation()
   const seats = useTripSeats(reference)
   const sale = useCounterSale()
 
@@ -298,7 +305,7 @@ function SaleForm({ reference }: { reference: string }) {
           charge, et l'inverse ferait attendre devant un formulaire figé.
         */}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prénom">
+          <Field label={t('agency:counter.firstName')}>
             <input
               className={INPUT}
               required
@@ -307,7 +314,7 @@ function SaleForm({ reference }: { reference: string }) {
               onChange={(event) => setFirstName(event.target.value)}
             />
           </Field>
-          <Field label="Nom">
+          <Field label={t('agency:counter.lastName')}>
             <input
               className={INPUT}
               required
@@ -317,14 +324,17 @@ function SaleForm({ reference }: { reference: string }) {
           </Field>
         </div>
 
-        <Field label="Téléphone" hint="Le billet part par SMS à ce numéro.">
+        <Field
+          label={t('agency:counter.phone')}
+          hint="Le billet part par SMS à ce numéro."
+        >
           <input
             className={INPUT}
             required
             type="tel"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            placeholder="+237 6XX XX XX XX"
+            placeholder={t('agency:counter.phonePlaceholder')}
           />
         </Field>
 
@@ -373,7 +383,7 @@ function SaleForm({ reference }: { reference: string }) {
 
         <Button
           type="submit"
-          label="Vendre"
+          label={t('agency:counter.sell')}
           disabled={
             sale.isPending ||
             firstName.trim() === '' ||

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
 import {
@@ -17,10 +18,10 @@ import { useAgencyTrips, useCancelTrip } from './useOperations'
 
 /** Les motifs que l'administration compte. Du texte libre ne se compterait pas. */
 const REASONS = [
-  { value: 'BREAKDOWN', label: 'Panne du véhicule' },
-  { value: 'INSUFFICIENT_PASSENGERS', label: 'Effectif insuffisant' },
-  { value: 'ROAD_CLOSED', label: 'Route coupée' },
-  { value: 'OTHER', label: 'Autre' },
+  { value: 'BREAKDOWN', labelKey: 'vehicleBreakdown' },
+  { value: 'INSUFFICIENT_PASSENGERS', labelKey: 'notEnoughPassengers' },
+  { value: 'ROAD_CLOSED', labelKey: 'roadClosed' },
+  { value: 'OTHER', labelKey: 'other' },
 ] as const
 
 /**
@@ -31,6 +32,7 @@ const REASONS = [
  * ouvre le matin, et celui où une erreur coûte le plus cher.
  */
 export function DeparturesPage() {
+  const { t } = useTranslation()
   const [from, setFrom] = useState(new Date().toISOString().slice(0, 10))
   const trips = useAgencyTrips({ from })
   const [cancelling, setCancelling] = useState<string | null>(null)
@@ -40,12 +42,12 @@ export function DeparturesPage() {
   return (
     <div>
       <PageHeader
-        title="Départs"
-        subtitle="Ce que le passager voit dans la recherche. Annuler un départ rembourse intégralement toutes ses réservations."
+        title={t('agency:departures.title')}
+        subtitle={t('agency:departures.subtitle')}
       />
 
       <div className="mb-4 max-w-xs">
-        <Field label="À partir du">
+        <Field label={t('agency:departures.from')}>
           <input
             className={INPUT}
             type="date"
@@ -60,13 +62,22 @@ export function DeparturesPage() {
 
       {trips.data !== undefined && rows.length === 0 ? (
         <EmptyState
-          title="Aucun départ sur cette période"
-          body="Les départs viennent des horaires. Créez un horaire, puis lancez la génération depuis l’onglet Itinéraires."
+          title={t('agency:departures.emptyTitle')}
+          body={t('agency:departures.emptyBody')}
         />
       ) : null}
 
       {rows.length === 0 ? null : (
-        <Table head={['Départ', 'Trajet', 'Prix', 'Places', 'Référence', '']}>
+        <Table
+          head={[
+            t('agency:departures.head.departure'),
+            t('agency:departures.head.route'),
+            t('agency:departures.head.price'),
+            t('agency:departures.head.seats'),
+            t('agency:departures.head.reference'),
+            '',
+          ]}
+        >
           {rows.map((trip) => (
             <tr key={trip.reference}>
               <Cell className="font-medium whitespace-nowrap">
@@ -111,6 +122,7 @@ export function DeparturesPage() {
 }
 
 function CancelPanel({ reference, onClose }: { reference: string; onClose: () => void }) {
+  const { t } = useTranslation()
   const cancel = useCancelTrip()
   const [reason, setReason] = useState<(typeof REASONS)[number]['value']>('BREAKDOWN')
   const [note, setNote] = useState('')
@@ -133,7 +145,10 @@ function CancelPanel({ reference, onClose }: { reference: string; onClose: () =>
           prévenus. L’annulation ne se reprend pas.
         </p>
 
-        <Field label="Motif" hint="Le taux d’annulation est suivi par cause.">
+        <Field
+          label={t('agency:departures.reason')}
+          hint="Le taux d’annulation est suivi par cause."
+        >
           <select
             className={INPUT}
             value={reason}
@@ -141,13 +156,13 @@ function CancelPanel({ reference, onClose }: { reference: string; onClose: () =>
           >
             {REASONS.map((entry) => (
               <option key={entry.value} value={entry.value}>
-                {entry.label}
+                {t(`agency:departures.reasons.${entry.labelKey}`)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Précision (facultatif)">
+        <Field label={t('agency:departures.note')}>
           <textarea
             className={INPUT}
             rows={3}
@@ -162,7 +177,7 @@ function CancelPanel({ reference, onClose }: { reference: string; onClose: () =>
         <Button
           type="submit"
           variant="danger"
-          label="Annuler ce départ et rembourser"
+          label={t('agency:departures.cancel')}
           disabled={cancel.isPending}
         />
       </form>
