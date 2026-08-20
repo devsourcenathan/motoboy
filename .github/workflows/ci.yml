@@ -20,7 +20,17 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # **22 et non 20**, et ce n'est pas un caprice de version.
+          #
+          # `jsdom` charge `undici`, qui appelle `webidl.util.markAsUncloneable`
+          # — laquelle vient de `node:worker_threads` et n'existe pas avant
+          # Node 22.19. Sous Node 20, aucun worker Vitest ne démarrait : la suite
+          # web ne rendait pas « des tests en échec » mais « aucun test », ce qui
+          # est bien plus facile à lire de travers.
+          #
+          # Le plancher est déclaré dans `engines` à la racine : c'est lui qui
+          # fait foi, et cette valeur doit le satisfaire.
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
