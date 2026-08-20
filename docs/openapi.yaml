@@ -1065,10 +1065,26 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [id_document_mode, id_document_required]
+                required: [id_document_mode, id_document_required, countries]
                 properties:
                   id_document_mode: { $ref: '#/components/schemas/IdDocumentMode' }
                   id_document_required: { type: boolean }
+                  countries:
+                    type: array
+                    description: |
+                      Les pays desservis, actifs seulement. Une agence qui reclame
+                      une ville absente doit dire de quel pays elle releve, et rien
+                      d'autre n'expose cette liste au client.
+
+                      Trois champs et pas un de plus : le fuseau, la devise et
+                      l'indicatif telephonique ne changent rien a ce qui s'affiche.
+                    items:
+                      type: object
+                      required: [id, code, name]
+                      properties:
+                        id: { type: integer }
+                        code: { type: string, example: CM }
+                        name: { type: string, example: Cameroun }
 
   /v1/places/autocomplete:
     get:

@@ -1773,6 +1773,21 @@ export interface paths {
                         "application/json": {
                             id_document_mode: components["schemas"]["IdDocumentMode"];
                             id_document_required: boolean;
+                            /**
+                             * @description Les pays desservis, actifs seulement. Une agence qui reclame
+                             *     une ville absente doit dire de quel pays elle releve, et rien
+                             *     d'autre n'expose cette liste au client.
+                             *
+                             *     Trois champs et pas un de plus : le fuseau, la devise et
+                             *     l'indicatif telephonique ne changent rien a ce qui s'affiche.
+                             */
+                            countries: {
+                                id: number;
+                                /** @example CM */
+                                code: string;
+                                /** @example Cameroun */
+                                name: string;
+                            }[];
                         };
                     };
                 };

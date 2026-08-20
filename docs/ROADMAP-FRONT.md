@@ -767,16 +767,24 @@ formulaire d'apparence identique à côté du premier, dont l'un embarque le pas
 et l'autre non, invite à se tromper de champ au moment où l'on est pressé. À
 reprendre le jour où le besoin de vérifier sans embarquer se manifestera vraiment.
 
-### `agency/city-requests` : bloqué par l'API
+### `agency/city-requests` : débloqué en étendant `/v1/config`
 
-Le formulaire exige un `country_id`, et **rien ne l'expose au client** :
-`/v1/config` ne rend que la politique de pièces d'identité, et l'autocomplétion
-des lieux ne porte pas le pays. Coder `1` en dur fonctionnerait aujourd'hui — un
-seul pays est semé — et casserait silencieusement à la première extension, en
-rattachant des demandes au mauvais pays.
+Le formulaire exige un `country_id` que rien n'exposait au client. Coder `1` en
+dur fonctionnerait aujourd'hui — un seul pays est semé — et casserait
+silencieusement à la première extension, en rattachant des demandes au mauvais
+pays.
 
-Le déblocage tient en une ligne de `ClientConfigController` plus la spécification,
-mais c'est un changement de contrat et non un écran.
+`/v1/config` rend donc maintenant les pays **actifs**, avec trois champs et pas un
+de plus : cet endpoint est public et sa spécification le dit « volontairement
+pauvre ». Le fuseau, la devise et l'indicatif ne changent rien à ce qui s'affiche.
+Les pays inactifs sont écartés — en proposer un où l'on ne vend pas ferait déposer
+une demande que personne n'accepterait, et l'agence attendrait une réponse qui ne
+viendrait jamais.
+
+Le sélecteur de pays ne s'affiche qu'au-delà d'un pays : en proposer un seul
+demanderait un choix qui n'en est pas un.
+
+`/v1/config` n'avait **aucun test**. Il en a trois.
 
 ### La clé d'idempotence, une par annulation
 
