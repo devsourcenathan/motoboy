@@ -102,6 +102,17 @@ export function SearchPage() {
                 seule page qu'un gérant d'agence connaît, et sans ce lien il lui
                 faudrait avoir retenu une URL qu'on ne lui a jamais donnée.
               */}
+              {/*
+                Deux entrées distinctes, et la distinction compte : une agence qui
+                n'est pas encore inscrite ne trouverait rien derrière « se
+                connecter », et repartirait en croyant la plateforme fermée.
+              */}
+              <Link
+                to="/rejoindre"
+                className="text-xs text-neutral-0/80 underline hover:text-neutral-0"
+              >
+                {t('public:join.link')}
+              </Link>
               <Link
                 to="/sign-in"
                 className="text-xs text-neutral-0/80 underline hover:text-neutral-0"

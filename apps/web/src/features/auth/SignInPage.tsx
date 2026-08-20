@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
+import { Link, Navigate } from 'react-router'
 import { describeError } from '../../lib/errors'
 import { useCurrentUser, useRequestOtp, useVerifyOtp } from './useAuth'
 import { Logo } from '../../shared/ui'
@@ -23,6 +24,7 @@ export function SignInPage() {
   const request = useRequestOtp()
   const verify = useVerifyOtp()
   const me = useCurrentUser()
+  const { t } = useTranslation()
 
   const awaitingCode = request.isSuccess
 
@@ -111,6 +113,19 @@ export function SignInPage() {
         >
           {awaitingCode ? 'Se connecter' : 'Recevoir un code'}
         </button>
+
+        {/*
+          Le seul cas d'échec que ce formulaire ne peut pas résoudre : une agence
+          qui n'a pas encore de compte. Sans cette issue, elle réessaierait son
+          numéro jusqu'à se croire bloquée.
+        */}
+        {awaitingCode ? null : (
+          <p className="mt-4 text-center text-xs text-neutral-500">
+            <Link to="/rejoindre" className="underline">
+              {t('public:join.link')}
+            </Link>
+          </p>
+        )}
 
         {request.error || verify.error ? (
           <p className="mt-4 text-sm whitespace-pre-line text-danger">

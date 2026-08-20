@@ -37,6 +37,8 @@ import { ModerationPage } from './features/admin/ModerationPage'
 import { SettingsPage } from './features/admin/SettingsPage'
 import { DocumentsPage } from './features/agency/DocumentsPage'
 import { destinationFor, PUBLIC_HOME, spaceLabel } from './features/auth/destination'
+import { JoinPage } from './features/public/JoinPage'
+import { NotFoundPage } from './features/public/NotFoundPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +87,7 @@ export function AppRoutes() {
       <Route path="/trips/:reference" element={<TripPage />} />
 
       <Route path="/sign-in" element={<SignInPage />} />
+      <Route path="/rejoindre" element={<JoinPage />} />
 
       {/*
         Deux espaces distincts derrière la même connexion. Une agence et un
@@ -137,6 +140,13 @@ export function AppRoutes() {
           </RequireSession>
         }
       />
+
+      {/*
+        **L'attrape-tout public, qui manquait.** Sans lui, une URL inconnue rendait
+        une page entièrement blanche : indistinguable d'une panne, et sans rien
+        pour repartir. Il vient en dernier, sinon il avalerait tout le reste.
+      */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
