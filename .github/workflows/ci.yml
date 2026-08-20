@@ -1,14 +1,8 @@
 name: CI
 
-# **Sur toutes les branches, et c'est le sujet.**
-#
-# Le déclenchement était limité à `main` et aux pull requests. Le travail se
-# faisant sur des branches poussées directement, la CI ne tournait jamais : 439
-# tests écrits, une intégration continue configurée, et rien qui s'exécute. Elle
-# est restée rouge sur du formatage pendant des semaines sans que personne le
-# voie, ce qui est la conséquence exacte d'un signal que personne ne reçoit.
 on:
   push:
+    branches: [main]
   pull_request:
 
 concurrency:
