@@ -141,11 +141,9 @@ describe('prefill', () => {
    * qu'ils chargeaient — un champ qui se vide sous les doigts.
    */
   it('n’écrase pas une saisie en cours', () => {
-    const typed = setPassenger(
-      { ...blank, contactPhone: '+237699999999' },
-      0,
-      { firstName: 'Jean' },
-    )
+    const typed = setPassenger({ ...blank, contactPhone: '+237699999999' }, 0, {
+      firstName: 'Jean',
+    })
 
     const form = prefill(typed, {
       firstName: 'Awa',
@@ -203,7 +201,10 @@ describe('validate — pièce d’identité', () => {
     ).toBe('ID_MISSING')
 
     expect(
-      validate({ ...filled, idPath: 'id-documents/1/a.jpg' }, { mode: 'IMAGE', required: true }),
+      validate(
+        { ...filled, idPath: 'id-documents/1/a.jpg' },
+        { mode: 'IMAGE', required: true },
+      ),
     ).toBeNull()
   })
 

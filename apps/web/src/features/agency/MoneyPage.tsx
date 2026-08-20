@@ -39,7 +39,8 @@ export function MoneyPage() {
 
   const payouts = useQuery({
     queryKey: ['agency', 'payouts'],
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/agency/payouts', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/agency/payouts', { signal })),
   })
 
   const accounts = useQuery({
@@ -80,12 +81,13 @@ export function MoneyPage() {
           <Skeleton rows={1} />
         ) : active === undefined ? (
           <p className="mt-1 text-sm text-danger">
-            Aucun compte vérifié. Tant qu’il en manque un, aucun reversement ne peut partir.
+            Aucun compte vérifié. Tant qu’il en manque un, aucun reversement ne peut
+            partir.
           </p>
         ) : (
           <p className="mt-1 text-sm">
-            <span className="font-medium">{active.account_name}</span> · {active.operator} ·{' '}
-            <span className="font-mono">{active.masked_number}</span>
+            <span className="font-medium">{active.account_name}</span> · {active.operator}{' '}
+            · <span className="font-mono">{active.masked_number}</span>
           </p>
         )}
       </Card>
@@ -122,7 +124,10 @@ export function MoneyPage() {
           {ledger.error ? <ErrorNote message={describeError(ledger.error)} /> : null}
 
           {ledger.data !== undefined && entries.length === 0 ? (
-            <EmptyState title="Aucune écriture" body="Votre première vente créditera ce compte." />
+            <EmptyState
+              title="Aucune écriture"
+              body="Votre première vente créditera ce compte."
+            />
           ) : (
             <Table head={['Date', 'Libellé', 'Montant']}>
               {entries.map((entry, index) => (
@@ -169,8 +174,8 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
     <Panel title="Compte de versement" onClose={onClose}>
       {sent ? (
         <p className="rounded-lg bg-success-50 p-3 text-sm text-success-700">
-          Déclaré. MOTOBOY vérifie ce compte avant qu’un virement puisse y partir ; le compte
-          précédent reste actif jusque-là.
+          Déclaré. MOTOBOY vérifie ce compte avant qu’un virement puisse y partir ; le
+          compte précédent reste actif jusque-là.
         </p>
       ) : (
         <form
@@ -205,8 +210,8 @@ function AccountPanel({ onClose }: { onClose: () => void }) {
             l'expliquer évite qu'une agence s'inquiète du délai.
           */}
           <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
-            Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé ne se
-            récupère pas.
+            Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé
+            ne se récupère pas.
           </p>
 
           <Field label="Type">

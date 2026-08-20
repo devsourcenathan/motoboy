@@ -23,7 +23,8 @@ export function describeError(error: unknown): string {
    * vient du mobile, où cette phrase seule a coûté une heure de recherche.
    */
   if (import.meta.env.DEV) {
-    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+    const detail =
+      error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
     return `Une erreur inattendue est survenue.\n[dev] ${detail}`
   }

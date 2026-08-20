@@ -108,7 +108,9 @@ export function useAcceptOffer(reference: string) {
       return unwrap(response)
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.serviceRequest(reference) })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.serviceRequest(reference),
+      })
     },
   })
 }

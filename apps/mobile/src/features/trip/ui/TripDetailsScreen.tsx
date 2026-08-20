@@ -114,7 +114,8 @@ export function TripDetailsScreen() {
 
             <Stop
               time={
-                data.arrival_estimate_at === null || data.arrival_estimate_at === undefined
+                data.arrival_estimate_at === null ||
+                data.arrival_estimate_at === undefined
                   ? '—'
                   : formatTime(data.arrival_estimate_at, { locale })
               }

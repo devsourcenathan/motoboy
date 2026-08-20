@@ -137,7 +137,9 @@ export function DriverRidesScreen() {
               />
             )}
 
-            {start.error ? <Text style={styles.error}>{describe(start.error)}</Text> : null}
+            {start.error ? (
+              <Text style={styles.error}>{describe(start.error)}</Text>
+            ) : null}
             {complete.error ? (
               <Text style={styles.error}>{describe(complete.error)}</Text>
             ) : null}
@@ -190,9 +192,7 @@ function PastRide({ ride }: { ride: DriverRide }) {
 
   return (
     <View style={styles.row}>
-      <Text style={styles.rowPrice}>
-        {formatMoney(ride.driver_amount, locale)}
-      </Text>
+      <Text style={styles.rowPrice}>{formatMoney(ride.driver_amount, locale)}</Text>
       <Text style={styles.rowState}>{label}</Text>
     </View>
   )

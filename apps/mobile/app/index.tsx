@@ -34,13 +34,11 @@ export default function Entry() {
      * l'introduction, puis un blanc, puis la connexion — trois écrans pour une
      * seule décision.
      */
-    void Promise.all([hasSeenOnboarding(), hasMadeAuthChoice()]).then(
-      ([seen, chose]) => {
-        if (!active) return
+    void Promise.all([hasSeenOnboarding(), hasMadeAuthChoice()]).then(([seen, chose]) => {
+      if (!active) return
 
-        setRoute(!seen ? '/onboarding' : !chose ? '/account/sign-in' : '/search')
-      },
-    )
+      setRoute(!seen ? '/onboarding' : !chose ? '/account/sign-in' : '/search')
+    })
 
     return () => {
       active = false

@@ -34,7 +34,8 @@ export function useCurrentUser() {
  */
 export function useRequestOtp() {
   return useMutation({
-    mutationFn: async (phone: string) => unwrap(await api.POST('/v1/auth/login', { body: { phone } })),
+    mutationFn: async (phone: string) =>
+      unwrap(await api.POST('/v1/auth/login', { body: { phone } })),
   })
 }
 

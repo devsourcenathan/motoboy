@@ -618,3 +618,63 @@ ce qui attend encore un code du payeur.
 Le 19 aout 2026 : reservation, paiement, encaissement chez NotchPay, webhook,
 rapprochement, **billet `TKT-T98HLQ` emis avec sa signature**. C'est le premier
 parcours d'argent complet du projet.
+
+---
+
+## 10. État des lieux du web — 19 août 2026
+
+Relevé sur le dépôt, pas de mémoire.
+
+### Ce qui tient
+
+Sept espaces existent et compilent : accueil public et fiche de départ,
+connexion, embarquement, propriétaire, agence (neuf pages), administration
+(quatre pages). 60 tests sur 12 fichiers, tous verts. Le paquet fait 379 Ko,
+112 Ko compressés. Le service worker prend la coquille à l'installation et
+n'a jamais mis en cache un appel d'API — la règle qui compte pour
+l'embarquement.
+
+### Le trou principal : rien de tout cela n'est en ligne
+
+`render.yaml` ne déclare **qu'un seul service**, `motoboy-api`. Il n'existe
+aucun site statique, aucune commande de construction du web, aucun domaine.
+L'espace agence, l'administration, la PWA d'embarquement et les pages publiques
+sont écrits, testés — et **hors d'atteinte de qui que ce soit**.
+
+`VITE_API_URL` vaut par défaut `http://localhost:8000/api` : même déployé tel
+quel, le web parlerait à une machine absente.
+
+### Le second : la moitié de l'administration n'a pas d'écran
+
+L'API expose 26 routes d'administration ; le web en consomme 13. Manquent,
+par ordre de gravité :
+
+| Ce qui manque | Conséquence |
+|---|---|
+| `admin/agencies` + `approve` + `reject` | **Aucune agence ne peut être admise.** Six routes, tout le parcours d'entrée d'une agence sur la plateforme |
+| `admin/agencies/{ref}/commercial-terms` | La commission d'une agence ne se règle nulle part |
+| `admin/agencies/{ref}/ledger-adjustments` | Aucun moyen de corriger une écriture comptable |
+| `admin/settings` (+ pièces d'identité, commission course) | Les réglages de la plateforme ne s'atteignent pas |
+| `admin/stations` + `moderate` | Les gares proposées par les agences ne se modèrent pas |
+| `admin/city-requests` + `resolve` | Une agence peut demander une ville ; personne ne peut répondre |
+| `admin/audit-logs` | Le journal d'audit existe et ne se lit pas |
+| `admin/dashboard` | Aucune vue d'ensemble |
+
+Côté agence la couverture est bonne : manquent `documents` (dépôt des pièces de
+l'agence), `city-requests`, `tickets/lookup` et `bookings/{ref}/cancel`.
+
+### Manques transverses
+
+**Le web n'est pas bilingue.** Aucune trace d'`i18next` : tout le texte est
+écrit en français dans les composants, là où le mobile passe par des catalogues.
+Le produit se dit bilingue ; sa moitié web ne l'est pas.
+
+**Douze composants sans test**, dont `SignInPage`, `OwnerPage`, `MoneyPage` et
+`Scanner` — c'est-à-dire la connexion, l'argent et le lecteur de QR.
+
+### Une erreur du présent document, corrigée
+
+Il était écrit ailleurs que le taux d'annulation par agence était « calculé dans
+l'API, jamais affiché ». **Il n'est calculé nulle part.** Le motif d'annulation
+est bien collecté, et la spécification comme le contrôleur le justifient par ce
+suivi — mais aucun code ne l'agrège. La donnée s'accumule sans lecteur.

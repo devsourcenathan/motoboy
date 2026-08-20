@@ -220,7 +220,9 @@ export function SearchScreen() {
               <PassengerStepper
                 label={t('search.passengers')}
                 value={form.passengers}
-                onChange={(passengers) => setForm((current) => ({ ...current, passengers }))}
+                onChange={(passengers) =>
+                  setForm((current) => ({ ...current, passengers }))
+                }
               />
             </View>
           </View>

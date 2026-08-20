@@ -97,3 +97,46 @@ jobs:
 
       - name: Tests
         run: php artisan test
+
+  # ─────────────────────────────── Déploiement ───────────────────────────────
+  #
+  # **Déployer devient une conséquence des tests, pas du push.**
+  #
+  # Render et Vercel construisent au push, chacun de son côté, sans rien attendre
+  # de la CI. Un commit qui casse l'encaissement partait donc en production
+  # exactement comme un bon — les 439 tests ne protégeaient rien.
+  #
+  # `needs` fait dépendre ce travail des deux autres : sans eux au vert, il ne
+  # s'exécute pas.
+  deploy:
+    name: Déploiement
+    needs: [javascript, php]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # Chaque étape ne fait rien tant que son secret est absent. C'est ce qui
+      # permet de basculer sans interruption : tant que l'auto-déploiement des
+      # hébergeurs reste actif, ce travail passe sans agir ; le jour où les
+      # secrets existent et l'auto-déploiement est coupé, il prend le relais.
+      # L'ordre inverse laisserait un trou pendant lequel plus rien ne part.
+      - name: API — Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK absent — l'auto-déploiement de Render fait foi."
+            exit 0
+          fi
+          curl --fail --silent --show-error "$HOOK" > /dev/null
+          echo "Déploiement de l'API demandé."
+
+      - name: Web — Vercel
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK absent — l'auto-déploiement de Vercel fait foi."
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$HOOK" > /dev/null
+          echo "Déploiement du web demandé."

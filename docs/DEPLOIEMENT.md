@@ -136,6 +136,111 @@ C'est arrivé le 19 août 2026 sur l'envoi d'une pièce d'identité de chauffeur
 
 ---
 
+## 4 bis. Le web, sur Vercel
+
+L'API est sur Render, le web sur Vercel : **deux origines distinctes**. Les
+requêtes du navigateur sont donc croisées. Elles passent — le défaut de Laravel
+autorise toutes les origines — mais c'est un défaut, pas une décision : n'importe
+quel site peut appeler l'API. Sans risque immédiat, les jetons voyageant en
+en-tête `Authorization` et non en cookie, donc rien n'est envoyé automatiquement
+par le navigateur d'un tiers. À resserrer le jour où l'API portera autre chose.
+
+### Réglages du projet Vercel
+
+| Réglage | Valeur |
+|---|---|
+| Root Directory | `apps/web` |
+| Framework | Vite |
+| `VITE_API_URL` | `https://apimotoboy.sekuu.com/api` |
+
+**`VITE_API_URL` est lue à la construction, pas à l'exécution.** Vite l'inscrit
+dans le paquet : l'ajouter après coup ne change rien tant qu'on n'a pas
+reconstruit. Absente, sa valeur par défaut est `http://localhost:8000/api`, et le
+site déployé appelle la machine du visiteur — l'erreur ressemble alors à une
+panne réseau, jamais à une variable oubliée.
+
+### Ce que `vercel.json` règle
+
+**La réécriture vers `index.html`.** Le routage se fait côté client : sans elle,
+ouvrir directement `/agency/money`, ou simplement recharger la page, donne un 404
+de Vercel. La navigation interne fonctionne pourtant très bien, ce qui rend le
+défaut invisible tant qu'on ne recharge pas. Vercel consulte les fichiers avant
+d'appliquer les réécritures, donc `sw.js`, le manifeste et les icônes continuent
+d'être servis tels quels.
+
+**`sw.js` servi sans cache.** Un service worker mis en cache par le navigateur
+fige la version installée : le site se met à jour, les agents gardent l'ancienne,
+et rien ne le signale. C'est le piège classique des PWA — la seule ressource qu'il
+ne faut jamais laisser en cache est celle qui gère le cache.
+
+**`/api/` exclu de la réécriture.** Le motif est `/((?!api/).*)` et non `/(.*)`,
+et c'est une précaution qui vaut de l'argent. Les deux domaines se sont échangés
+le 19 août 2026 : `motoboy.sekuu.com` servait l'API, il sert maintenant le web.
+Tout ce qui pointait encore vers l'ancienne adresse — au premier rang desquels
+**l'URL de webhook enregistrée chez NotchPay** — frappe donc désormais Vercel.
+
+Avec une réécriture attrape-tout, ces appels recevraient un `200` accompagné de la
+page d'accueil. NotchPay lirait une remise réussie et **cesserait de réessayer** :
+les paiements ne seraient jamais rapprochés, et rien nulle part ne le signalerait.
+Exclure `/api/` laisse un `404` franc, que le prestataire retentera et qui se voit
+dans son journal de livraison.
+
+Une erreur d'adressage doit rester bruyante.
+
+---
+
+## 4 ter. Faire dépendre le déploiement des tests
+
+Render et Vercel construisent au push, chacun de son côté, **sans rien attendre
+de la CI**. Un commit qui casse l'encaissement part donc en production exactement
+comme un bon : les 439 tests n'empêchent rien.
+
+Le travail `deploy` de `.github/workflows/ci.yml` renverse cela — il dépend des
+deux autres et ne s'exécute que sur `main`. Il reste inerte tant que les secrets
+n'existent pas, ce qui permet de basculer **sans interruption** :
+
+1. Créer un *deploy hook* côté Render (Settings → Deploy Hook) et côté Vercel
+   (Settings → Git → Deploy Hooks).
+2. Les déposer dans les secrets GitHub du dépôt, sous `RENDER_DEPLOY_HOOK` et
+   `VERCEL_DEPLOY_HOOK`.
+3. **Seulement ensuite**, couper l'auto-déploiement des deux hébergeurs
+   (`autoDeploy: false` dans `render.yaml`, et le réglage Git côté Vercel).
+
+L'ordre compte. Couper l'auto-déploiement avant d'avoir posé les secrets laisse
+un intervalle pendant lequel plus rien ne se déploie, sans erreur nulle part pour
+le dire.
+
+**Fait le 19 août 2026** : `autoDeploy: false` dans `render.yaml`,
+`git.deploymentEnabled: false` dans `apps/web/vercel.json`.
+
+### Les deux vérifications qui restent à faire à la main
+
+**Les hooks doivent viser `main`.** Un *deploy hook* construit la branche pour
+laquelle il a été créé. S'ils ont été créés alors que les hébergeurs déployaient
+encore la branche de travail, ils construiront celle-là — la CI déclencherait
+donc un déploiement de code périmé, ce qui est pire que pas de déploiement du
+tout, parce que ça ressemble à un succès. À contrôler dans les deux tableaux de
+bord, avec la branche de production du service.
+
+**Un hook fonctionne-t-il vraiment avec l'auto-déploiement coupé ?** Ni la
+documentation de Render ni celle de Vercel ne le disent noir sur blanc. Le
+vocabulaire penche du bon côté — Vercel parle d'empêcher le déclenchement
+« upon commits », Render cite les environnements CI/CD comme cas d'usage d'un
+hook — mais ce n'est pas écrit. Déclenchez donc chaque hook une fois à la main
+avant de compter dessus.
+
+### La branche de déploiement
+
+Le garde-fou ne vaut que si l'on déploie depuis `main`. Déployer depuis une
+branche de travail le contourne entièrement : la condition `github.ref` ne se
+vérifie pas, le travail ne s'exécute pas, et l'auto-déploiement — s'il est resté
+actif — continue de publier sans test.
+
+Un seul modèle tient : le travail se fait sur une branche, une pull request la
+fait passer par la CI, la fusion dans `main` déclenche le déploiement.
+
+---
+
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.

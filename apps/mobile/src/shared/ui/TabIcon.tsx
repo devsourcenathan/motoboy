@@ -81,14 +81,7 @@ export function TabIcon({ name, color, filled = false, size = 24 }: TabIconProps
 
       {name === 'account' ? (
         <>
-          <Circle
-            cx={12}
-            cy={8}
-            r={3.75}
-            stroke={stroke}
-            fill={fill}
-            strokeWidth={2}
-          />
+          <Circle cx={12} cy={8} r={3.75} stroke={stroke} fill={fill} strokeWidth={2} />
           <Path
             d="M4.5 20c0-3.6 3.4-5.75 7.5-5.75s7.5 2.15 7.5 5.75"
             stroke={filled ? 'none' : color}

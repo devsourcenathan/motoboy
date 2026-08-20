@@ -8,7 +8,8 @@ export type { AdminPayoutAccountRow }
 export function usePayoutAccounts() {
   return useQuery({
     queryKey: ['payout-accounts'],
-    queryFn: async ({ signal }) => unwrap(await api.GET('/v1/admin/payout-accounts', { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET('/v1/admin/payout-accounts', { signal })),
   })
 }
 

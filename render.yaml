@@ -23,7 +23,17 @@ services:
     # En recopier un exemplaire sous `apps/api` le ferait diverger.
     dockerContext: .
     healthCheckPath: /up
-    autoDeploy: true
+    # **Le déploiement passe par la CI, plus par le push.**
+    #
+    # Auparavant, un commit qui cassait l'encaissement partait en production
+    # exactement comme un bon : Render construisait au push sans rien attendre
+    # des 439 tests. Le travail `deploy` de `.github/workflows/ci.yml` dépend
+    # désormais des deux travaux de test et appelle le *deploy hook* — qui reste
+    # actif, lui, indépendamment de ce réglage.
+    #
+    # ⚠️ Ne repasser ceci à `true` qu'en supprimant aussi le secret
+    # `RENDER_DEPLOY_HOOK` : les deux ensemble déploieraient deux fois par push.
+    autoDeploy: false
 
     envVars:
       - key: APP_NAME

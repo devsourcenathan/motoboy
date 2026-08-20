@@ -78,7 +78,10 @@ export function Button({
         <View style={styles.content}>
           {icon}
           <Text
-            style={[styles.label, { color: inactive ? theme.text.muted : labelColor(variant) }]}
+            style={[
+              styles.label,
+              { color: inactive ? theme.text.muted : labelColor(variant) },
+            ]}
             numberOfLines={1}
           >
             {label}

@@ -54,7 +54,9 @@ describe('StaffPage', () => {
 
     render(<StaffPage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Ajouter quelqu’un' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Ajouter quelqu’un' }),
+    )
 
     // Le profil par défaut est le plus restreint.
     expect(screen.getByText(/Ne peut pas vendre/)).toBeInTheDocument()

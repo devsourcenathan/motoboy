@@ -70,8 +70,6 @@ export function validate(form: DriverApplication, today: string): ApplicationErr
 }
 
 /** Les pièces qui manquent encore, dans l'ordre où elles sont demandées. */
-export function missingDocuments(
-  provided: readonly string[],
-): readonly DocumentType[] {
+export function missingDocuments(provided: readonly string[]): readonly DocumentType[] {
   return REQUIRED_DOCUMENTS.filter((type) => !provided.includes(type))
 }

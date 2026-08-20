@@ -39,8 +39,11 @@ export function Scanner({ onScan }: { onScan: (payload: string) => void }) {
         video.srcObject = stream
         await video.play()
 
-        const Detector = (globalThis as unknown as { BarcodeDetector: new (options: { formats: string[] }) => Detector })
-          .BarcodeDetector
+        const Detector = (
+          globalThis as unknown as {
+            BarcodeDetector: new (options: { formats: string[] }) => Detector
+          }
+        ).BarcodeDetector
 
         const detector = new Detector({ formats: ['qr_code'] })
 
@@ -80,7 +83,9 @@ export function Scanner({ onScan }: { onScan: (payload: string) => void }) {
   }, [onScan])
 
   if (error !== null) {
-    return <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">{error}</p>
+    return (
+      <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">{error}</p>
+    )
   }
 
   return (

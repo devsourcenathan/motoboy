@@ -80,7 +80,8 @@ export function DriverEarningsScreen() {
 
   const data: Earnings = earnings.data
   const account = (accounts.data?.data ?? []).at(0) ?? null
-  const belowMinimum = data.payable.amount > 0 && data.payable.amount < data.minimum.amount
+  const belowMinimum =
+    data.payable.amount > 0 && data.payable.amount < data.minimum.amount
 
   return (
     <Screen title={t('driver.earnings')}>
@@ -236,7 +237,10 @@ function PayoutAccountCard({
             style={[styles.choice, operator === value ? styles.choiceOn : null]}
           >
             <Text
-              style={[styles.choiceLabel, operator === value ? styles.choiceLabelOn : null]}
+              style={[
+                styles.choiceLabel,
+                operator === value ? styles.choiceLabelOn : null,
+              ]}
             >
               {value}
             </Text>

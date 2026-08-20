@@ -50,8 +50,8 @@ export function DriverQueuePage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-ink-700">Dossiers de chauffeur</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Personne d’autre ne vérifie ces pièces. Un dossier validé met quelqu’un
-          au volant avec des passagers.
+          Personne d’autre ne vérifie ces pièces. Un dossier validé met quelqu’un au
+          volant avec des passagers.
         </p>
       </header>
 
@@ -75,12 +75,16 @@ export function DriverQueuePage() {
       {queue.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}
 
       {queue.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">{describeError(queue.error)}</p>
+        <p className="text-sm whitespace-pre-line text-danger">
+          {describeError(queue.error)}
+        </p>
       ) : null}
 
       {queue.data?.data.length === 0 ? (
         <p className="rounded-lg bg-neutral-0 p-8 text-center text-sm text-neutral-500">
-          {status === 'PENDING' ? 'Aucun dossier n’attend de décision.' : 'Aucun dossier.'}
+          {status === 'PENDING'
+            ? 'Aucun dossier n’attend de décision.'
+            : 'Aucun dossier.'}
         </p>
       ) : null}
 
@@ -106,7 +110,8 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-semibold text-neutral-900">
-            {[row.driver.first_name, row.driver.last_name].filter(Boolean).join(' ') || '—'}
+            {[row.driver.first_name, row.driver.last_name].filter(Boolean).join(' ') ||
+              '—'}
           </p>
           <p className="text-sm text-neutral-500">
             {row.driver.phone ?? '—'} · {row.vehicle_plate ?? 'sans plaque'}
@@ -178,7 +183,8 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
           */}
           {complete ? null : (
             <span className="text-xs text-neutral-500">
-              Validation impossible : {missing.map((t) => DOCUMENT_LABELS[t]).join(', ')} manquant
+              Validation impossible : {missing.map((t) => DOCUMENT_LABELS[t]).join(', ')}{' '}
+              manquant
               {missing.length > 1 ? 's' : ''}.
             </span>
           )}
@@ -209,7 +215,10 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
             )
           }}
         >
-          <label className="block text-xs font-medium text-neutral-700" htmlFor={`r-${row.id}`}>
+          <label
+            className="block text-xs font-medium text-neutral-700"
+            htmlFor={`r-${row.id}`}
+          >
             Motif — il sera lu par le chauffeur
           </label>
           <textarea
@@ -243,7 +252,9 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
       )}
 
       {decide.error ? (
-        <p className="mt-3 text-sm whitespace-pre-line text-danger">{describeError(decide.error)}</p>
+        <p className="mt-3 text-sm whitespace-pre-line text-danger">
+          {describeError(decide.error)}
+        </p>
       ) : null}
     </li>
   )

@@ -127,8 +127,8 @@ export function BoardingScannerPage() {
       {list === null ? (
         <Card>
           <p className="text-sm text-neutral-500">
-            Téléchargez la liste au bureau, tant que vous avez du réseau. Sur le quai, elle
-            suffit à valider les billets.
+            Téléchargez la liste au bureau, tant que vous avez du réseau. Sur le quai,
+            elle suffit à valider les billets.
           </p>
         </Card>
       ) : (
@@ -183,8 +183,8 @@ export function BoardingScannerPage() {
             </div>
             {boarding.queue.length === 0 ? null : (
               <p className="mt-2 text-xs text-neutral-500">
-                Elles restent sur cet appareil tant qu’elles n’ont pas été envoyées. Ne videz
-                pas les données du navigateur avant d’avoir synchronisé.
+                Elles restent sur cet appareil tant qu’elles n’ont pas été envoyées. Ne
+                videz pas les données du navigateur avant d’avoir synchronisé.
               </p>
             )}
           </Card>
@@ -208,7 +208,9 @@ function Verdict({ outcome }: { outcome: Outcome }) {
       <div className="rounded-xl bg-success-500 p-5 text-center text-neutral-0">
         <p className="text-3xl font-bold">Montez</p>
         <p className="mt-1 text-lg">{outcome.name}</p>
-        {outcome.seat === null ? null : <p className="text-sm opacity-90">Siège {outcome.seat}</p>}
+        {outcome.seat === null ? null : (
+          <p className="text-sm opacity-90">Siège {outcome.seat}</p>
+        )}
       </div>
     )
   }
@@ -231,7 +233,9 @@ function Verdict({ outcome }: { outcome: Outcome }) {
     <div className="rounded-xl bg-brand-500 p-5 text-center text-neutral-0">
       <p className="text-3xl font-bold">Déjà embarqué</p>
       <p className="mt-1 text-lg">{outcome.name}</p>
-      <p className="text-sm opacity-90">Vérifiez qu’il ne s’agit pas d’une seconde personne.</p>
+      <p className="text-sm opacity-90">
+        Vérifiez qu’il ne s’agit pas d’une seconde personne.
+      </p>
     </div>
   )
 }

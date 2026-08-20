@@ -16,9 +16,7 @@ describe('createApiClient', () => {
     const hanging = jest.fn(
       (_input: RequestInfo | URL, init?: RequestInit) =>
         new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () =>
-            reject(new Error('aborted')),
-          )
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')))
         }),
     )
 
@@ -28,8 +26,9 @@ describe('createApiClient', () => {
       fetch: hanging as unknown as typeof fetch,
     })
 
-    await expect(api.GET('/v1/places/autocomplete', { params: { query: { q: 'do' } } }))
-      .rejects.toBeInstanceOf(NetworkError)
+    await expect(
+      api.GET('/v1/places/autocomplete', { params: { query: { q: 'do' } } }),
+    ).rejects.toBeInstanceOf(NetworkError)
   })
 
   /**

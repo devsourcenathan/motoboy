@@ -70,8 +70,7 @@ export const queryKeys = {
   ticket: (reference: string) => [QUERY_ROOT.tickets, reference] as const,
 
   serviceRequests: () => [QUERY_ROOT.serviceRequests] as const,
-  serviceRequest: (reference: string) =>
-    [QUERY_ROOT.serviceRequests, reference] as const,
+  serviceRequest: (reference: string) => [QUERY_ROOT.serviceRequests, reference] as const,
 
   /*
    * Le dossier, ses offres et ses courses partagent une racine : une offre

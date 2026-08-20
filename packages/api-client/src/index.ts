@@ -89,7 +89,8 @@ export function createApiClient(options: CreateApiClientOptions) {
      * pris pour une panne réseau.
      */
     const caller =
-      init?.signal ?? (typeof Request !== 'undefined' && input instanceof Request
+      init?.signal ??
+      (typeof Request !== 'undefined' && input instanceof Request
         ? input.signal
         : undefined)
 

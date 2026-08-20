@@ -61,7 +61,9 @@ export function StationsPage() {
               <Cell className="text-neutral-500">{station.address ?? '—'}</Cell>
               <Cell>
                 <StationState
-                  moderated={station.moderated_at !== null && station.moderated_at !== undefined}
+                  moderated={
+                    station.moderated_at !== null && station.moderated_at !== undefined
+                  }
                   active={station.is_active}
                 />
               </Cell>
@@ -92,9 +94,13 @@ function StationState({ moderated, active }: { moderated: boolean; active: boole
   }
 
   return active ? (
-    <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">Active</span>
+    <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">
+      Active
+    </span>
   ) : (
-    <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">Inactive</span>
+    <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
+      Inactive
+    </span>
   )
 }
 

@@ -92,9 +92,7 @@ export function SettingsScreen() {
         <View style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.rowTitle}>{t('account.about')}</Text>
-            <Text style={styles.rowValue}>
-              v{Constants.expoConfig?.version ?? '—'}
-            </Text>
+            <Text style={styles.rowValue}>v{Constants.expoConfig?.version ?? '—'}</Text>
           </View>
         </View>
 

@@ -77,7 +77,9 @@ describe('PayoutQueuePage', () => {
 
     render(<PayoutQueuePage />)
 
-    expect(await screen.findByRole('button', { name: 'Valider le montant' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Valider le montant' }),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Envoyer' })).not.toBeInTheDocument()
   })
 
@@ -86,7 +88,9 @@ describe('PayoutQueuePage', () => {
 
     render(<PayoutQueuePage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Valider le montant' }))
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Valider le montant' }),
+    )
 
     await waitFor(() =>
       expect(
@@ -101,7 +105,11 @@ describe('PayoutQueuePage', () => {
    * voit encore.
    */
   it('demande confirmation avant d’envoyer, en répétant la destination', async () => {
-    const approved: Payout = { ...PENDING, status: 'APPROVED', approved_at: '2026-08-18T10:00:00Z' }
+    const approved: Payout = {
+      ...PENDING,
+      status: 'APPROVED',
+      approved_at: '2026-08-18T10:00:00Z',
+    }
 
     mockFetch(page(approved))
 

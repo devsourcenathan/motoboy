@@ -105,7 +105,10 @@ export function CounterSalePage() {
  * quelques minutes. Les confondre ferait dire « complet » à un agent devant un
  * client qui n'aurait qu'à patienter.
  */
-function seatClass(status: 'AVAILABLE' | 'TAKEN' | 'HELD' | 'UNAVAILABLE', chosen: boolean) {
+function seatClass(
+  status: 'AVAILABLE' | 'TAKEN' | 'HELD' | 'UNAVAILABLE',
+  chosen: boolean,
+) {
   if (chosen) return 'rounded-lg bg-brand-500 py-2 text-sm font-semibold text-neutral-0'
 
   if (status === 'AVAILABLE') {
@@ -215,7 +218,11 @@ function SaleForm({ reference }: { reference: string }) {
                   key={seat.id}
                   type="button"
                   disabled={seat.status !== 'AVAILABLE'}
-                  title={seat.status === 'HELD' ? 'Tenu par une réservation en cours' : undefined}
+                  title={
+                    seat.status === 'HELD'
+                      ? 'Tenu par une réservation en cours'
+                      : undefined
+                  }
                   onClick={() => setSeatId(seat.id)}
                   className={seatClass(seat.status, seat.id === seatId)}
                 >
@@ -227,7 +234,8 @@ function SaleForm({ reference }: { reference: string }) {
         ) : (
           <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">
             Véhicule à capacité : aucun siège à attribuer. {map.seats_available} place
-            {map.seats_available > 1 ? 's' : ''} restante{map.seats_available > 1 ? 's' : ''}.
+            {map.seats_available > 1 ? 's' : ''} restante
+            {map.seats_available > 1 ? 's' : ''}.
           </p>
         )}
 

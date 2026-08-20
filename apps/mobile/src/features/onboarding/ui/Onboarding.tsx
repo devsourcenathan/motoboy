@@ -91,7 +91,6 @@ export function Onboarding() {
         </Pressable>
       </View>
 
-
       <FlatList
         ref={list}
         data={slides}
@@ -110,7 +109,9 @@ export function Onboarding() {
             */}
             <View style={styles.stage}>
               <View style={styles.glyph}>
-                {position === 0 ? <SearchIcon color={theme.text.brand} size={64} /> : null}
+                {position === 0 ? (
+                  <SearchIcon color={theme.text.brand} size={64} />
+                ) : null}
                 {position === 1 ? (
                   <TabIcon name="tickets" color={theme.text.brand} size={64} />
                 ) : null}
