@@ -349,9 +349,7 @@ function SaleForm({ reference }: { reference: string }) {
                   type="button"
                   disabled={seat.status !== 'AVAILABLE'}
                   title={
-                    seat.status === 'HELD'
-                      ? 'Tenu par une réservation en cours'
-                      : undefined
+                    seat.status === 'HELD' ? t('agency:counter.seatHeld') : undefined
                   }
                   onClick={() => setSeatId(seat.id)}
                   className={seatClass(seat.status, seat.id === seatId)}

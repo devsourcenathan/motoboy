@@ -162,7 +162,11 @@ export function RoutesPage() {
           </p>
 
           <Button
-            label={generate.isPending ? 'Génération…' : 'Générer maintenant'}
+            label={
+              generate.isPending
+                ? t('agency:inventory.routes.generating')
+                : t('agency:inventory.routes.generateNow')
+            }
             onPress={() => generate.mutate()}
             disabled={generate.isPending}
           />

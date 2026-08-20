@@ -81,7 +81,9 @@ export function VehiclesPage() {
               </Cell>
               <Cell>{vehicle.type}</Cell>
               <Cell>
-                {vehicle.seating_mode === 'SEATED' ? 'Siège choisi' : 'Par capacité'}
+                {vehicle.seating_mode === 'SEATED'
+                  ? t('agency:inventory.vehicles.assignedSeat')
+                  : t('agency:inventory.vehicles.byCapacity')}
               </Cell>
               <Cell>{vehicle.capacity}</Cell>
               <Cell>
@@ -191,8 +193,8 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
           label={t('agency:inventory.vehicles.seating')}
           hint={
             mode === 'SEATED'
-              ? 'Le passager choisit son siège sur un plan. Ne se change plus une fois des départs vendus.'
-              : 'Seul le nombre de places compte. Aucun plan, aucun siège attribué.'
+              ? t('agency:inventory.vehicles.seatedHint')
+              : t('agency:inventory.vehicles.capacityHint')
           }
         >
           <select

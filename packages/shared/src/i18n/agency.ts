@@ -63,6 +63,7 @@ export interface AgencyMessages {
     readonly phonePlaceholder: string
     readonly phoneHint: string
     readonly sell: string
+    readonly seatHeld: string
     readonly cancelSection: string
     readonly cancelHelp: string
     readonly bookingReference: string
@@ -93,6 +94,7 @@ export interface AgencyMessages {
       readonly name: string
       readonly namePlaceholder: string
       readonly city: string
+      readonly cityHint: string
       readonly address: string
       readonly create: string
       readonly head: {
@@ -125,6 +127,9 @@ export interface AgencyMessages {
       readonly seating: string
       readonly byCapacity: string
       readonly assignedSeat: string
+      /** Ce que chaque mode engage — il ne se change plus une fois des départs vendus. */
+      readonly seatedHint: string
+      readonly capacityHint: string
       readonly seats: string
       readonly create: string
       readonly head: {
@@ -182,6 +187,8 @@ export interface AgencyMessages {
       readonly unassigned: string
       readonly createSchedule: string
       readonly generate: string
+      readonly generating: string
+      readonly generateNow: string
       readonly from: string
       readonly fromHint: string
     }
@@ -334,6 +341,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       phonePlaceholder: '+237 6XX XX XX XX',
       phoneHint: 'Le billet part par SMS à ce numéro.',
       sell: 'Vendre',
+      seatHeld: 'Tenu par une réservation en cours',
       cancelSection: 'Annuler une réservation',
       cancelHelp:
         'Demandez la référence au passager — elle figure sur son SMS de confirmation.',
@@ -359,6 +367,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         name: 'Nom de la gare',
         namePlaceholder: 'Gare de Bonabéri',
         city: 'Ville',
+        cityHint: 'Cherchez dans le référentiel MOTOBOY.',
         address: 'Adresse (facultatif)',
         create: 'Créer la gare',
         head: { name: 'Nom', city: 'Ville', address: 'Adresse', status: 'État' },
@@ -389,6 +398,10 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         seating: 'Mode de placement',
         byCapacity: 'Par capacité',
         assignedSeat: 'Siège choisi',
+        seatedHint:
+          'Le passager choisit son siège sur un plan. Ne se change plus une fois des départs vendus.',
+        capacityHint:
+          'Seul le nombre de places compte. Aucun plan, aucun siège attribué.',
         seats: 'Nombre de places',
         create: 'Ajouter le véhicule',
         head: {
@@ -451,6 +464,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         unassigned: 'Non assigné',
         createSchedule: 'Créer l’horaire',
         generate: 'Générer les départs',
+        generating: 'Génération…',
+        generateNow: 'Générer maintenant',
         from: 'À partir du',
         fromHint: 'Les départs ne sont générés qu’à compter de cette date.',
       },
@@ -602,6 +617,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
       phonePlaceholder: '+237 6XX XX XX XX',
       phoneHint: 'The ticket is sent by SMS to this number.',
       sell: 'Sell',
+      seatHeld: 'Held by a booking in progress',
       cancelSection: 'Cancel a booking',
       cancelHelp:
         'Ask the passenger for the reference — it is on their confirmation SMS.',
@@ -627,6 +643,7 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         name: 'Station name',
         namePlaceholder: 'Bonabéri station',
         city: 'Town',
+        cityHint: 'Search the MOTOBOY reference list.',
         address: 'Address (optional)',
         create: 'Create the station',
         head: { name: 'Name', city: 'Town', address: 'Address', status: 'Status' },
@@ -656,6 +673,9 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         seating: 'Seating mode',
         byCapacity: 'By capacity',
         assignedSeat: 'Assigned seat',
+        seatedHint:
+          'Passengers pick their seat from a plan. Cannot be changed once departures have sold.',
+        capacityHint: 'Only the seat count matters. No plan, no assigned seats.',
         seats: 'Number of seats',
         create: 'Add the vehicle',
         head: {
@@ -717,6 +737,8 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         unassigned: 'Unassigned',
         createSchedule: 'Create the schedule',
         generate: 'Generate departures',
+        generating: 'Generating…',
+        generateNow: 'Generate now',
         from: 'From',
         fromHint: 'Departures are only generated from this date onwards.',
       },

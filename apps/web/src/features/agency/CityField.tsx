@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Field, INPUT } from '../../shared/ui'
 import { useCitySearch } from './useCities'
 
@@ -28,6 +29,7 @@ export function CityField({
   value: CityChoice | null
   onChange: (city: CityChoice | null) => void
 }) {
+  const { t } = useTranslation()
   const [query, setQuery] = useState(value?.label ?? '')
   const cities = useCitySearch(query)
 
@@ -35,7 +37,7 @@ export function CityField({
     <div>
       <Field
         label={label}
-        hint={value === null ? 'Cherchez dans le référentiel MOTOBOY.' : undefined}
+        hint={value === null ? t('agency:inventory.stations.cityHint') : undefined}
       >
         <input
           className={INPUT}

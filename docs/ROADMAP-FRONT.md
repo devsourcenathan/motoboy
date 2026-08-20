@@ -847,3 +847,56 @@ n'y a nulle part ailleurs où aller le chercher.
 
 Les gabarits de référence (`TCK-XXXXXX`, `LT-4412-AB`, `MTB-XXXXXX`), les noms de
 villes et les noms d'opérateurs. Un format ne change pas de langue.
+
+---
+
+## 14. Le web, couvert — 19 août 2026
+
+**122 tests, zéro composant sans test** hormis le harnais lui-même. Les seize
+composants découverts au relevé sont couverts, et six chaînes françaises de plus
+ont été traduites au passage.
+
+### Ce que les tests ont trouvé, et qu'aucune relecture n'avait vu
+
+**`describeError` figeait la langue.** Elle était lue une seule fois, au
+chargement du module, depuis `navigator.language` — jamais depuis le choix de
+l'utilisateur. Quelqu'un qui basculait en anglais continuait de lire ses erreurs
+en français. Le défaut restait invisible tant qu'aucune erreur ne survenait,
+c'est-à-dire jusqu'au moment précis où l'on a besoin de comprendre.
+
+**Un test existant passait grâce à ce défaut** : il affirmait contre
+`resolveLocale(navigator.language)`, donc les deux côtés se trompaient de concert.
+
+**Un `bodySerializer` mort dans `DocumentsPage`**, accompagné d'un commentaire
+expliquant pourquoi il était nécessaire. Le test l'a démenti : la requête part en
+multipart dans les deux cas.
+
+**Six chaînes dans des ternaires**, invisibles à tout balayage orienté propriétés
+— le mode de placement d'un véhicule, l'indice de recherche d'une ville, l'état
+d'un siège tenu. Plus les libellés de type de pièce, logés dans une constante de
+module.
+
+### Deux limites de jsdom, écrites plutôt que combattues
+
+`Request.formData()` ne s'y résout jamais : l'assertion porte donc sur la
+frontière `multipart/form-data`, ce qui prouve davantage — elle n'existe que si le
+corps était bien un `FormData`.
+
+Le cas nominal du lecteur de QR exige de simuler `getUserMedia`,
+`HTMLMediaElement.play` **et** `BarcodeDetector`. À ce compte-là un test n'éprouve
+plus que ses propres simulacres : seuls les deux chemins d'échec sont couverts, et
+le fichier dit pourquoi.
+
+### Deux réglages du harnais
+
+`testTimeout` relevé **au-dessus** d'`asyncUtilTimeout` : tous deux à cinq
+secondes, un `findBy` sur le point d'aboutir se faisait tuer, en signalant un test
+trop long là où il n'y avait qu'une machine chargée.
+
+Et la langue est épinglée au français : `navigator.language` vaut `en-US` sous
+jsdom, donc les tests affirmaient du français **par accident**.
+
+### Ce qui n'est volontairement pas traduit
+
+Les gabarits de référence — `TCK-XXXXXX`, `TR-XXXXXX`, `LT-4412-AB` — et
+« Douala » comme exemple de saisie. Un format ne change pas de langue.
