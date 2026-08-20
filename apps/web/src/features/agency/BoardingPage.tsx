@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { describeError } from '../../lib/errors'
 import {
   Button,
@@ -27,6 +28,7 @@ import { useAgencyTrips, useBoardingList, useValidateTicket } from './useOperati
  * ramènerait l'agent au papier.
  */
 export function BoardingPage() {
+  const { t } = useTranslation()
   const today = new Date().toISOString().slice(0, 10)
   const trips = useAgencyTrips({ from: today })
   const [reference, setReference] = useState<string | null>(null)
@@ -35,22 +37,19 @@ export function BoardingPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Embarquement"
-        subtitle="Qui est monté, et qui manque. Le scan sur le quai se fait depuis la PWA ; ici on complète et on contrôle."
-      />
+      <PageHeader title={t('boarding:title')} subtitle={t('boarding:subtitle')} />
 
       {trips.isPending ? <Skeleton /> : null}
       {trips.error ? <ErrorNote message={describeError(trips.error)} /> : null}
 
       {trips.data !== undefined && rows.length === 0 ? (
-        <EmptyState title="Aucun départ aujourd’hui" />
+        <EmptyState title={t('boarding:list.noTripTitle')} />
       ) : null}
 
       {rows.length === 0 ? null : (
         <>
           <div className="mb-4 max-w-md">
-            <Field label="Départ">
+            <Field label={t('boarding:departure')}>
               <select
                 className={INPUT}
                 value={reference ?? ''}
@@ -78,6 +77,7 @@ export function BoardingPage() {
 }
 
 function BoardingList({ reference }: { reference: string }) {
+  const { t } = useTranslation()
   const list = useBoardingList(reference)
   const validate = useValidateTicket(reference)
   const [ticket, setTicket] = useState('')
@@ -103,7 +103,7 @@ function BoardingList({ reference }: { reference: string }) {
         >
           <div className="min-w-56 flex-1">
             <Field
-              label="Référence du billet"
+              label={t('boarding:manual.label')}
               hint="Saisie manuelle — le scan se fait sur le quai."
             >
               <input
@@ -116,7 +116,7 @@ function BoardingList({ reference }: { reference: string }) {
           </div>
           <Button
             type="submit"
-            label="Valider"
+            label={t('boarding:manual.submit')}
             disabled={ticket.trim() === '' || validate.isPending}
           />
         </form>
@@ -148,11 +148,18 @@ function BoardingList({ reference }: { reference: string }) {
 
           {passengers.length === 0 ? (
             <EmptyState
-              title="Aucun passager"
-              body="Ce départ n’a pas encore de réservation confirmée."
+              title={t('boarding:list.emptyTitle')}
+              body={t('boarding:list.emptyBody')}
             />
           ) : (
-            <Table head={['Passager', 'Siège', 'Billet', 'État']}>
+            <Table
+              head={[
+                t('boarding:list.passenger'),
+                t('boarding:list.seat'),
+                t('boarding:list.ticket'),
+                t('boarding:list.status'),
+              ]}
+            >
               {passengers.map((passenger) => (
                 <tr key={passenger.ticket_reference}>
                   <Cell className="font-medium">
@@ -170,11 +177,11 @@ function BoardingList({ reference }: { reference: string }) {
                   <Cell>
                     {passenger.status === 'USED' ? (
                       <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">
-                        Embarqué
+                        {t('boarding:list.boarded')}
                       </span>
                     ) : (
                       <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
-                        Attendu
+                        {t('boarding:list.expected')}
                       </span>
                     )}
                   </Cell>

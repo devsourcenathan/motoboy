@@ -346,8 +346,8 @@ export function LocaleSwitch({ className = '' }: { className?: string }) {
           onClick={() => setLocale(locale)}
           className={
             i18n.language === locale
-              ? 'rounded px-2 py-1 text-xs font-bold text-neutral-0 underline'
-              : 'rounded px-2 py-1 text-xs text-neutral-0/70 hover:text-neutral-0'
+              ? 'rounded px-2 py-1 text-xs font-bold underline'
+              : 'rounded px-2 py-1 text-xs opacity-70 hover:opacity-100'
           }
         >
           {label}

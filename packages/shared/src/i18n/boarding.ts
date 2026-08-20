@@ -14,6 +14,10 @@ import type { Locale } from '../locale.js'
  */
 export interface BoardingMessages {
   readonly title: string
+  readonly subtitle: string
+  /** La camera peut manquer, ou etre refusee : la saisie reste possible. */
+  readonly cameraUnavailable: string
+  readonly departure: string
   readonly network: {
     readonly online: string
     readonly offline: string
@@ -42,6 +46,8 @@ export interface BoardingMessages {
     readonly notOnThisTrip: string
     /** Un doublon n'est pas une fraude : c'est le plus souvent un double scan. */
     readonly checkSecondPerson: string
+    /** Le siege evite d'etre rappele trois rangs plus loin. */
+    readonly seat: string
   }
   readonly list: {
     readonly emptyTitle: string
@@ -59,6 +65,10 @@ export interface BoardingMessages {
 export const boardingMessages: Record<Locale, BoardingMessages> = {
   fr: {
     title: 'Embarquement',
+    subtitle:
+      'Qui est monté, et qui manque. Le scan sur le quai se fait depuis la PWA ; ici on complète et on contrôle.',
+    cameraUnavailable: 'Caméra indisponible. Saisissez la référence à la main.',
+    departure: 'Départ',
     network: { online: 'En ligne', offline: 'Hors ligne' },
     trip: {
       reference: 'Référence du départ',
@@ -83,6 +93,7 @@ export const boardingMessages: Record<Locale, BoardingMessages> = {
       alreadyBoarded: 'Déjà embarqué',
       notOnThisTrip: 'Pas sur ce départ',
       checkSecondPerson: 'Vérifiez qu’il ne s’agit pas d’une seconde personne.',
+      seat: 'Siège {{seat}}',
     },
     list: {
       emptyTitle: 'Aucun passager',
@@ -98,6 +109,10 @@ export const boardingMessages: Record<Locale, BoardingMessages> = {
   },
   en: {
     title: 'Boarding',
+    subtitle:
+      'Who boarded, and who is missing. Scanning on the platform happens in the PWA; here you complete and check.',
+    cameraUnavailable: 'Camera unavailable. Type the reference in by hand.',
+    departure: 'Departure',
     network: { online: 'Online', offline: 'Offline' },
     trip: {
       reference: 'Departure reference',
@@ -122,6 +137,7 @@ export const boardingMessages: Record<Locale, BoardingMessages> = {
       alreadyBoarded: 'Already boarded',
       notOnThisTrip: 'Not on this departure',
       checkSecondPerson: 'Check this is not a second person.',
+      seat: 'Seat {{seat}}',
     },
     list: {
       emptyTitle: 'No passengers',

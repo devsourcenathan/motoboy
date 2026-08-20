@@ -96,7 +96,7 @@ export function SearchPage() {
               basculer avant d'avoir à comprendre le français pour trouver
               comment le quitter.
             */}
-            <LocaleSwitch />
+            <LocaleSwitch className="text-neutral-0" />
           </div>
           <h1 className="mt-4 max-w-lg text-2xl font-bold text-neutral-0 sm:text-3xl">
             {t('public:hero.tagline')}

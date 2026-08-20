@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Le lecteur de QR, quand l'appareil sait le faire.
@@ -18,8 +19,17 @@ interface Detector {
 }
 
 export function Scanner({ onScan }: { onScan: (payload: string) => void }) {
+  const { t } = useTranslation()
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [error, setError] = useState<string | null>(null)
+  /*
+   * **L'état retient ce qui s'est passé, pas comment le dire.**
+   *
+   * Traduire dans l'effet obligerait à y faire entrer `t`, dont l'identité change
+   * à chaque bascule de langue : la caméra redémarrerait alors sous les doigts de
+   * l'agent. L'omettre laisserait au contraire le message figé dans l'ancienne
+   * langue. Un drapeau traduit au rendu échappe aux deux.
+   */
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let stream: MediaStream | null = null
@@ -68,7 +78,7 @@ export function Scanner({ onScan }: { onScan: (payload: string) => void }) {
 
         void tick()
       } catch {
-        setError('Caméra indisponible. Saisissez la référence à la main.')
+        setFailed(true)
       }
     }
 
@@ -82,9 +92,11 @@ export function Scanner({ onScan }: { onScan: (payload: string) => void }) {
     }
   }, [onScan])
 
-  if (error !== null) {
+  if (failed) {
     return (
-      <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">{error}</p>
+      <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">
+        {t('boarding:cameraUnavailable')}
+      </p>
     )
   }
 
