@@ -151,7 +151,7 @@ par le navigateur d'un tiers. À resserrer le jour où l'API portera autre chose
 |---|---|
 | Root Directory | `apps/web` |
 | Framework | Vite |
-| `VITE_API_URL` | `https://motoboy.sekuu.com/api` |
+| `VITE_API_URL` | `https://apimotoboy.sekuu.com/api` |
 
 **`VITE_API_URL` est lue à la construction, pas à l'exécution.** Vite l'inscrit
 dans le paquet : l'ajouter après coup ne change rien tant qu'on n'a pas
@@ -172,6 +172,20 @@ d'être servis tels quels.
 fige la version installée : le site se met à jour, les agents gardent l'ancienne,
 et rien ne le signale. C'est le piège classique des PWA — la seule ressource qu'il
 ne faut jamais laisser en cache est celle qui gère le cache.
+
+**`/api/` exclu de la réécriture.** Le motif est `/((?!api/).*)` et non `/(.*)`,
+et c'est une précaution qui vaut de l'argent. Les deux domaines se sont échangés
+le 19 août 2026 : `motoboy.sekuu.com` servait l'API, il sert maintenant le web.
+Tout ce qui pointait encore vers l'ancienne adresse — au premier rang desquels
+**l'URL de webhook enregistrée chez NotchPay** — frappe donc désormais Vercel.
+
+Avec une réécriture attrape-tout, ces appels recevraient un `200` accompagné de la
+page d'accueil. NotchPay lirait une remise réussie et **cesserait de réessayer** :
+les paiements ne seraient jamais rapprochés, et rien nulle part ne le signalerait.
+Exclure `/api/` laisse un `404` franc, que le prestataire retentera et qui se voit
+dans son journal de livraison.
+
+Une erreur d'adressage doit rester bruyante.
 
 ---
 
