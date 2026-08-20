@@ -189,6 +189,39 @@ Une erreur d'adressage doit rester bruyante.
 
 ---
 
+## 4 ter. Faire dépendre le déploiement des tests
+
+Render et Vercel construisent au push, chacun de son côté, **sans rien attendre
+de la CI**. Un commit qui casse l'encaissement part donc en production exactement
+comme un bon : les 439 tests n'empêchent rien.
+
+Le travail `deploy` de `.github/workflows/ci.yml` renverse cela — il dépend des
+deux autres et ne s'exécute que sur `main`. Il reste inerte tant que les secrets
+n'existent pas, ce qui permet de basculer **sans interruption** :
+
+1. Créer un *deploy hook* côté Render (Settings → Deploy Hook) et côté Vercel
+   (Settings → Git → Deploy Hooks).
+2. Les déposer dans les secrets GitHub du dépôt, sous `RENDER_DEPLOY_HOOK` et
+   `VERCEL_DEPLOY_HOOK`.
+3. **Seulement ensuite**, couper l'auto-déploiement des deux hébergeurs
+   (`autoDeploy: false` dans `render.yaml`, et le réglage Git côté Vercel).
+
+L'ordre compte. Couper l'auto-déploiement avant d'avoir posé les secrets laisse
+un intervalle pendant lequel plus rien ne se déploie, sans erreur nulle part pour
+le dire.
+
+### La branche de déploiement
+
+Le garde-fou ne vaut que si l'on déploie depuis `main`. Déployer depuis une
+branche de travail le contourne entièrement : la condition `github.ref` ne se
+vérifie pas, le travail ne s'exécute pas, et l'auto-déploiement — s'il est resté
+actif — continue de publier sans test.
+
+Un seul modèle tient : le travail se fait sur une branche, une pull request la
+fait passer par la CI, la fusion dans `main` déclenche le déploiement.
+
+---
+
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.
