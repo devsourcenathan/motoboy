@@ -77,6 +77,33 @@ final class AgencyAccountController
         ], 201);
     }
 
+    /**
+     * Son propre dossier.
+     *
+     * **Rien ne le disait.** Une agence entrait dans son espace sans y trouver
+     * ni son nom ni son statut : le bandeau annonçait « MOTOBOY — agence », et
+     * c'était tout. Le manque est devenu criant quand les agences en attente ont
+     * pu entrer — elles y travaillent sans que rien ne leur dise que leur
+     * dossier est en instruction, ni pourquoi leurs départs ne paraissent pas.
+     *
+     * Passe par `require()` et non `requireApproved()` : c'est précisément
+     * l'agence non admise qui a besoin de lire son statut.
+     */
+    public function show(Request $request): JsonResponse
+    {
+        $agency = $this->context->require($request);
+
+        return response()->json([
+            'reference' => $agency->reference,
+            'name' => $agency->name,
+            'legal_name' => $agency->legal_name,
+            'phone' => $agency->phone,
+            'email' => $agency->email,
+            'status' => $agency->status,
+            'approved_at' => $agency->approved_at?->toIso8601String(),
+        ]);
+    }
+
     public function payoutAccounts(Request $request): JsonResponse
     {
         $agency = $this->context->require($request);

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Button,
   Cell,
   EmptyState,
@@ -10,7 +11,9 @@ import {
   INPUT,
   PageHeader,
   SheetForm,
+  SkeletonCards,
   SkeletonTable,
+  StatCard,
   Table,
 } from '../../shared/ui'
 import { useCreateDriver, useDrivers, useVehicles } from './useInventory'
@@ -43,8 +46,15 @@ export function DriversPage() {
         }
       />
 
-      {drivers.isPending ? <SkeletonTable columns={5} /> : null}
+      {drivers.isPending ? (
+        <div className="flex flex-col gap-4">
+          <SkeletonCards count={3} columns={3} />
+          <SkeletonTable columns={5} />
+        </div>
+      ) : null}
       {drivers.error ? <ErrorNote message={describeError(drivers.error)} /> : null}
+
+      {rows.length === 0 ? null : <Fleet rows={rows} />}
 
       {drivers.data !== undefined && rows.length === 0 ? (
         <EmptyState
@@ -96,6 +106,55 @@ export function DriversPage() {
  * Une date brute se lit sans être comprise : c'est la veille du contrôle qu'on
  * découvre qu'un permis a expiré. Trente jours laissent le temps de le renouveler.
  */
+/**
+ * Ce que la liste ne montre pas d'un coup d'œil.
+ *
+ * **Un permis qui expire est enfoui dans une cellule.** Il faut parcourir la
+ * colonne pour s'en apercevoir, et une agence de vingt chauffeurs ne le fait
+ * pas — jusqu'au jour où un contrôle routier le fait pour elle.
+ *
+ * Calculé sur la liste déjà chargée : aucun appel de plus, et le compte ne peut
+ * pas diverger de ce qui est affiché en dessous.
+ */
+function Fleet({ rows }: { rows: readonly { license_expires_at?: string | null }[] }) {
+  const now = Date.now()
+
+  const expired = rows.filter(
+    (row) =>
+      row.license_expires_at !== null &&
+      new Date(row.license_expires_at ?? '').getTime() < now,
+  ).length
+
+  const soon = rows.filter((row) => {
+    if (row.license_expires_at === null || row.license_expires_at === undefined)
+      return false
+
+    const days = (new Date(row.license_expires_at).getTime() - now) / 86_400_000
+
+    return days >= 0 && days <= 30
+  }).length
+
+  return (
+    <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <StatCard label="Chauffeurs" value={String(rows.length)} icon="drivers" />
+      <StatCard
+        label="Permis à renouveler"
+        value={String(soon)}
+        hint="Dans les trente jours"
+        icon="alert"
+        tone={soon > 0 ? 'action' : 'neutral'}
+      />
+      <StatCard
+        label="Permis expirés"
+        value={String(expired)}
+        hint="Ne devraient plus conduire"
+        icon="alert"
+        tone={expired > 0 ? 'alert' : 'neutral'}
+      />
+    </div>
+  )
+}
+
 function Expiry({ date }: { date: string | null }) {
   if (date === null) return <span className="text-neutral-500">—</span>
 
@@ -103,19 +162,11 @@ function Expiry({ date }: { date: string | null }) {
   const formatted = new Date(date).toLocaleDateString('fr')
 
   if (days < 0) {
-    return (
-      <span className="rounded-full bg-danger-soft px-2 py-1 text-xs text-danger-strong">
-        Expiré le {formatted}
-      </span>
-    )
+    return <Badge label={`Expiré le ${formatted}`} tone="alert" />
   }
 
   if (days <= 30) {
-    return (
-      <span className="rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700">
-        Expire dans {days} j
-      </span>
-    )
+    return <Badge label={`Expire dans ${days} j`} tone="action" />
   }
 
   return <span>{formatted}</span>

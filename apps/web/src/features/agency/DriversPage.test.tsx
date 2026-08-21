@@ -51,4 +51,43 @@ describe('DriversPage', () => {
     expect(sent).toMatchObject({ license_number: 'CM-99' })
     expect(sent).not.toHaveProperty('assigned_vehicle_id')
   })
+  /**
+   * **Un permis expiré est enfoui dans une cellule.** Il faut parcourir la
+   * colonne pour s'en apercevoir, et une agence de vingt chauffeurs ne le fait
+   * pas — jusqu'au jour où un contrôle routier le fait pour elle.
+   */
+  it('compte les permis expirés et ceux qui vont l’être', async () => {
+    const jour = 86_400_000
+
+    mockRoutes(
+      drivers([
+        {
+          id: 1,
+          first_name: 'Awa',
+          last_name: 'Nkeng',
+          license_expires_at: new Date(Date.now() - 5 * jour).toISOString(),
+        },
+        {
+          id: 2,
+          first_name: 'Bertin',
+          last_name: 'Mbarga',
+          license_expires_at: new Date(Date.now() + 10 * jour).toISOString(),
+        },
+        {
+          id: 3,
+          first_name: 'Chantal',
+          last_name: 'Eyenga',
+          license_expires_at: new Date(Date.now() + 400 * jour).toISOString(),
+        },
+      ]),
+    )
+
+    render(<DriversPage />)
+
+    const expires = (await screen.findByText('Permis expirés')).closest('dl')
+    const bientot = screen.getByText('Permis à renouveler').closest('dl')
+
+    expect(expires).toHaveTextContent('1')
+    expect(bientot).toHaveTextContent('1')
+  })
 })

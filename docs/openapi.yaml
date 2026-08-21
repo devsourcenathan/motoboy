@@ -2744,6 +2744,30 @@ paths:
                   description: Reçoit le code de vérification, et devient le compte.
                 locale: { $ref: '#/components/schemas/Locale' }
 
+  /v1/agency:
+    get:
+      tags: [Agency]
+      summary: Son propre dossier
+      description: |
+        L'identité de l'agence et son statut.
+
+        **Rien ne le disait.** Une agence entrait dans son espace sans y trouver
+        ni son nom ni son statut, et le manque est devenu criant quand les
+        agences en attente ont pu entrer : elles y travaillent sans que rien ne
+        leur dise que leur dossier est en instruction, ni pourquoi leurs départs
+        n'apparaissent pas dans la recherche.
+
+        Lisible **avant** l'admission, délibérément : c'est l'agence non admise
+        qui en a le plus besoin.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencySelf' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /v1/agency/payout-accounts:
     get:
       tags: [Agency]
@@ -4356,6 +4380,18 @@ components:
               type: array
               items: { $ref: '#/components/schemas/PayoutAccount' }
             commercial_terms: { $ref: '#/components/schemas/CommercialTerms' }
+
+    AgencySelf:
+      type: object
+      required: [reference, name, status]
+      properties:
+        reference: { type: string }
+        name: { type: string }
+        legal_name: { type: [string, 'null'] }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED] }
+        approved_at: { type: [string, 'null'], format: date-time }
 
     AgencyDocument:
       type: object

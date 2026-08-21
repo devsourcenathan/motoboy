@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { describeError } from '../../lib/errors'
+import { Badge } from '../../shared/ui'
 import {
   usePayoutAccounts,
   useVerifyPayoutAccount,
@@ -79,15 +80,10 @@ function AccountRow({ row }: { row: AdminPayoutAccountRow }) {
           </p>
         </div>
 
-        <span
-          className={
-            row.verified
-              ? 'rounded-full bg-success-50 px-3 py-1 text-xs font-semibold text-success-700'
-              : 'rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700'
-          }
-        >
-          {row.verified ? 'Vérifié' : 'À vérifier'}
-        </span>
+        <Badge
+          label={row.verified ? 'Vérifié' : 'À vérifier'}
+          tone={row.verified ? 'good' : 'action'}
+        />
       </div>
 
       <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">

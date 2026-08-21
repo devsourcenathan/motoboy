@@ -111,21 +111,27 @@ export function StatCard({
 }) {
   const skin = TONES[tone]
 
+  /*
+   * Une **liste de définitions**, et non trois paragraphes : un intitulé et sa
+   * valeur, c'est exactement ce que `dl` décrit. Le gain n'est pas théorique —
+   * la valeur se rattache à son libellé, pour un lecteur d'écran comme pour un
+   * test, là où trois `p` frères n'avaient aucun lien entre eux.
+   */
   const body = (
-    <>
+    <dl>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+        <dt className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
           {label}
-        </p>
+        </dt>
         <span className={`rounded-lg p-1.5 ${skin.icon}`}>
           <Icon name={icon} size={16} />
         </span>
       </div>
-      <p className={`mt-3 text-3xl font-bold tabular-nums ${skin.value}`}>{value}</p>
+      <dd className={`mt-3 text-3xl font-bold tabular-nums ${skin.value}`}>{value}</dd>
       {hint === undefined ? null : (
-        <p className="mt-1 text-xs text-neutral-500">{hint}</p>
+        <dd className="mt-1 text-xs text-neutral-500">{hint}</dd>
       )}
-    </>
+    </dl>
   )
 
   const shell = 'rounded-xl border border-neutral-200 bg-neutral-0 p-5 shadow-sm'

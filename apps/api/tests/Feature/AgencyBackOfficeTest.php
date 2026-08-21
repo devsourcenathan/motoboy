@@ -274,6 +274,27 @@ final class AgencyBackOfficeTest extends TestCase
     }
 
     /**
+     * **Une agence en attente doit pouvoir lire son propre statut.**
+     *
+     * Elle entre désormais dans son espace sans attendre l'admission, et rien
+     * ne le lui disait : le bandeau annonçait « MOTOBOY — agence », et ses
+     * départs ne paraissaient pas dans la recherche sans qu'aucun écran
+     * n'explique pourquoi. Le seul état qui rend cet endpoint nécessaire est
+     * précisément celui qu'une garde d'admission lui interdirait.
+     */
+    public function test_an_agency_reads_its_own_name_and_status(): void
+    {
+        $this->agency->update(['status' => 'PENDING']);
+
+        $this->actingAs($this->manager)
+            ->getJson('/api/v1/agency')
+            ->assertOk()
+            ->assertJsonPath('name', 'Général Express')
+            ->assertJsonPath('status', 'PENDING')
+            ->assertJsonPath('reference', 'AG-TEST');
+    }
+
+    /**
      * Une candidature refusée est terminale — `ReviewAgency` ne transite que
      * depuis `PENDING`. Laisser l'espace ouvert ferait déposer des pièces que
      * personne n'instruira.

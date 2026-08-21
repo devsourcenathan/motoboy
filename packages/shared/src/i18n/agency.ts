@@ -26,6 +26,27 @@ export interface AgencyMessages {
     readonly staff: string
     readonly documents: string
     readonly signOut: string
+    /**
+     * Les groupes de la barre latérale.
+     *
+     * **Dix onglets alignés ne se lisent pas**, ils défilent — et ce qui défile
+     * hors de l'écran cesse d'exister. Les regrouper par moment du travail rend
+     * la barre parcourable d'un regard : ce qu'on déclare une fois, ce qu'on
+     * fait tous les jours, ce qu'on règle rarement.
+     */
+    readonly groups: {
+      readonly inventory: string
+      readonly operations: string
+      readonly admin: string
+    }
+    /** Ce que le bandeau dit de l'agence elle-même. */
+    readonly status: {
+      readonly pending: string
+      readonly approved: string
+      readonly rejected: string
+      readonly pendingTitle: string
+      readonly pendingBody: string
+    }
   }
   readonly departures: {
     readonly title: string
@@ -289,6 +310,19 @@ export interface AgencyMessages {
 export const agencyMessages: Record<Locale, AgencyMessages> = {
   fr: {
     nav: {
+      groups: {
+        inventory: 'Ce qu’on déclare',
+        operations: 'Au quotidien',
+        admin: 'Le dossier',
+      },
+      status: {
+        pending: 'En instruction',
+        approved: 'Admise',
+        rejected: 'Refusée',
+        pendingTitle: 'Votre dossier est en cours d’instruction',
+        pendingBody:
+          'Vous pouvez déjà déposer vos pièces, déclarer vos gares, votre parc et vos itinéraires. Vos départs n’apparaîtront dans la recherche qu’une fois votre agence admise.',
+      },
       stations: 'Gares',
       vehicles: 'Véhicules',
       drivers: 'Chauffeurs',
@@ -565,6 +599,19 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
   },
   en: {
     nav: {
+      groups: {
+        inventory: 'What you declare',
+        operations: 'Day to day',
+        admin: 'Your file',
+      },
+      status: {
+        pending: 'Under review',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        pendingTitle: 'Your application is under review',
+        pendingBody:
+          'You can already file your documents and declare your stations, fleet and routes. Your departures will only appear in search once your agency is approved.',
+      },
       stations: 'Stations',
       vehicles: 'Vehicles',
       drivers: 'Drivers',

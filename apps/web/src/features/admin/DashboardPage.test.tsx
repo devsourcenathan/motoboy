@@ -78,7 +78,7 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const carte = (await screen.findByText(/Départs annulés/)).closest('div')
+    const carte = (await screen.findByText(/Départs annulés/)).closest('dl')
 
     expect(carte).toHaveTextContent('3')
   })

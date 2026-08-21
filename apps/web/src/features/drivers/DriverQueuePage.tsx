@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { DriverDocumentType, DriverStatus } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
+import { Badge } from '../../shared/ui'
 import { useDecideDriver, useDriverQueue, type AdminDriverRow } from './useDrivers'
 
 /**
@@ -124,15 +125,7 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
           )}
         </div>
 
-        <span
-          className={
-            row.status === 'APPROVED'
-              ? 'rounded-full bg-success-50 px-3 py-1 text-xs font-semibold text-success-700'
-              : 'rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700'
-          }
-        >
-          {row.status}
-        </span>
+        <Badge label={row.status} tone={row.status === 'APPROVED' ? 'good' : 'neutral'} />
       </div>
 
       {/*

@@ -5,6 +5,7 @@ import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Button,
   Card,
   Cell,
@@ -213,23 +214,9 @@ export function StationsPage() {
  * ressaisirait sa gare.
  */
 function StationState({ moderated, active }: { moderated: boolean; active: boolean }) {
-  if (!moderated) {
-    return (
-      <span className="rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700">
-        En vérification
-      </span>
-    )
-  }
+  if (!moderated) return <Badge label="En vérification" tone="action" />
 
-  return active ? (
-    <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">
-      Active
-    </span>
-  ) : (
-    <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
-      Inactive
-    </span>
-  )
+  return active ? <Badge label="Active" tone="good" /> : <Badge label="Inactive" />
 }
 
 function StationPanel({ onClose }: { onClose: () => void }) {

@@ -2,7 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
 import { describeError } from '../../lib/errors'
-import { Button, Card, ErrorNote, Field, INPUT, LocaleSwitch } from '../../shared/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorNote,
+  Field,
+  INPUT,
+  LocaleSwitch,
+} from '../../shared/ui'
 import { referenceFrom } from './offline'
 import { Scanner } from './Scanner'
 import { scanningSupported } from './scanning'
@@ -89,15 +97,10 @@ export function BoardingScannerPage() {
           L'état du réseau est visible en permanence : c'est lui qui explique
           pourquoi la file grandit, et sans lui l'agent croit à une panne.
         */}
-        <span
-          className={
-            online
-              ? 'rounded-full bg-success-50 px-3 py-1 text-xs font-semibold text-success-700'
-              : 'rounded-full bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700'
-          }
-        >
-          {online ? t('boarding:network.online') : t('boarding:network.offline')}
-        </span>
+        <Badge
+          label={online ? t('boarding:network.online') : t('boarding:network.offline')}
+          tone={online ? 'good' : 'neutral'}
+        />
       </header>
 
       <Card>

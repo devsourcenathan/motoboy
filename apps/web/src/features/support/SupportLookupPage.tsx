@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
+import { Badge } from '../../shared/ui'
 import { describeError } from '../../lib/errors'
 
 /**
@@ -82,9 +83,7 @@ export function SupportLookupPage() {
           <section className="rounded-xl bg-neutral-0 p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="font-mono font-semibold">{data.reference}</h2>
-              <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold">
-                {data.status}
-              </span>
+              <Badge label={data.status} />
             </div>
 
             <p className="mt-3 text-sm">
@@ -141,15 +140,10 @@ export function SupportLookupPage() {
             <section className="rounded-xl bg-neutral-0 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="font-mono font-semibold">{ride.reference}</h2>
-                <span
-                  className={
-                    ride.paid
-                      ? 'rounded-full bg-success-50 px-3 py-1 text-xs font-semibold text-success-700'
-                      : 'rounded-full bg-danger-soft px-3 py-1 text-xs font-semibold text-danger-strong'
-                  }
-                >
-                  {ride.paid ? 'Payée' : 'Non payée'} · {ride.status}
-                </span>
+                <Badge
+                  label={`${ride.paid ? 'Payée' : 'Non payée'} · ${ride.status}`}
+                  tone={ride.paid ? 'good' : 'alert'}
+                />
               </div>
 
               <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
