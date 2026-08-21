@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 /**
  * Données de démonstration — **jamais en production**.
@@ -28,8 +29,19 @@ final class DemoSeeder extends Seeder
 {
     private const DAYS_AHEAD = 7;
 
+    /**
+     * Les hôtes qu'on accepte de semer.
+     *
+     * Un nom **sans point** est un service local — `postgres` d'un
+     * docker-compose, `db` d'un conteneur de CI. Tout ce qui porte un domaine
+     * est ailleurs, et « ailleurs » est la seule chose qui compte ici.
+     */
+    private const LOCAL_HOSTS = ['', 'localhost', '127.0.0.1', '::1'];
+
     public function run(): void
     {
+        $this->refuseRemoteDatabase();
+
         $countryId = (int) DB::table('countries')->where('code', 'CM')->value('id');
 
         $cities = $this->cityIds($countryId);
@@ -43,6 +55,61 @@ final class DemoSeeder extends Seeder
 
         $this->say("Démonstration : 2 agences, {$this->tripCount()} départs sur ".self::DAYS_AHEAD.' jours.');
         $this->say("Passager de test : +237690000001 (id {$passengerId}).");
+    }
+
+    /**
+     * **Refuser une base distante, et non un environnement mal nommé.**
+     *
+     * `DatabaseSeeder` gardait déjà ces données derrière `app()->environment()`
+     * — une étiquette, portée par la configuration du client et non par la base
+     * qu'il vise. Un poste de développement branché sur la production, ce que la
+     * documentation recommande faute de shell chez l'hébergeur, porte
+     * `APP_ENV=local` **et** parle à Neon : la garde laissait passer, et deux
+     * agences fictives se sont mises à vendre cent soixante-quatorze départs
+     * dans la recherche publique.
+     *
+     * Le seul fait qui répond à la question « est-ce que je peux semer ici ? »
+     * est l'adresse de la base. C'est donc elle qu'on regarde.
+     */
+    /**
+     * L'hôte désigne-t-il une base **ailleurs** ?
+     *
+     * Publique et statique parce que c'est la seule chose ici qui mérite un
+     * test, et que l'éprouver autrement demanderait de résoudre une connexion —
+     * ce qui, sous `RefreshDatabase`, la connecte pour de bon.
+     *
+     * Un nom **sans point** est un service local : `postgres` d'un
+     * docker-compose, `db` d'un conteneur de CI. Tout ce qui porte un domaine
+     * est ailleurs, et « ailleurs » est la seule chose qui compte.
+     */
+    public static function isRemote(string $host): bool
+    {
+        return !in_array($host, self::LOCAL_HOSTS, true) && str_contains($host, '.');
+    }
+
+    private function refuseRemoteDatabase(): void
+    {
+        /*
+         * `DB::connection()->getConfig()` et **non** `config()`.
+         *
+         * La connexion vient de `DB_URL`, que Laravel n'éclate en hôte, port et
+         * base qu'au moment de se connecter. `config()` rend donc le défaut du
+         * fichier — `127.0.0.1` — quelle que soit la base réellement visée. La
+         * première version de cette garde lisait cela, et aurait laissé semer
+         * sur Neon en affirmant le contraire : une fausse sécurité est pire que
+         * pas de garde du tout.
+         */
+        $host = (string) DB::connection()->getConfig('host');
+
+        if (!self::isRemote($host)) {
+            return;
+        }
+
+        throw new RuntimeException(
+            "Base distante ({$host}) : les données de démonstration ne s'y sèment pas. ".
+            'Viser une base locale, ou lancer les seeders de référentiel un par un — '.
+            'par exemple `--class=RoleAndPermissionSeeder`.',
+        );
     }
 
     /** @return array<string, int> */

@@ -4176,6 +4176,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/vehicles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Corriger un vehicule, ou le retirer du service
+         * @description Une plaque mal saisie etait definitive, et un bus vendu restait `ACTIVE`
+         *     — donc porteur d'horaires, donc generateur de departs qu'aucun vehicule
+         *     ne ferait.
+         *
+         *     **Le mode de placement et la capacite ne sont pas modifiables**, et c'est
+         *     delibere : des departs vendus portent deja un plan de sieges, et le
+         *     changer sous eux deplacerait des passagers deja places. Un vehicule
+         *     reconfigure est un autre vehicule.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        registration?: string;
+                        brand?: string | null;
+                        model?: string | null;
+                        /** @enum {string} */
+                        condition?: "ACTIVE" | "MAINTENANCE" | "RETIRED";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyVehicle"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
+    "/v1/agency/drivers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Corriger un chauffeur, ou le retirer
+         * @description Un permis expire ne pouvait pas etre renouvele : l'ecran comptait les
+         *     echeances et n'offrait aucun moyen d'y repondre. Un chauffeur qui quitte
+         *     l'agence restait dans la liste, et dans les horaires qui le designent.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        first_name?: string;
+                        last_name?: string;
+                        phone?: string;
+                        license_number?: string;
+                        /** Format: date */
+                        license_expires_at?: string | null;
+                        /** Format: int64 */
+                        assigned_vehicle_id?: number | null;
+                        /** @enum {string} */
+                        status?: "ACTIVE" | "INACTIVE";
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyDriver"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/agency/vehicles/{id}/seats": {
         parameters: {
             query?: never;
@@ -4362,6 +4482,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/routes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Corriger un itineraire, ou fermer la ligne
+         * @description **Les gares ne se changent pas.** Un itineraire *est* la paire qu'il
+         *     relie : le reattacher ailleurs deplacerait les horaires qui en dependent,
+         *     et donc des departs deja vendus, sous des passagers qui ont achete un
+         *     Douala-Bafoussam. Une autre paire est un autre itineraire.
+         *
+         *     Fermer arrete la generation pour **tous** ses horaires d'un coup — c'est
+         *     le geste qu'on cherche quand une ligne entiere cesse, plutot que
+         *     d'arreter les horaires un par un et d'en oublier un.
+         *
+         *     Les departs deja crees ne bougent pas : les retirer annulerait des
+         *     reservations sans le dire.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reference_duration_minutes?: number | null;
+                        is_active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyRoute"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/agency/routes/{routeId}/schedules": {
         parameters: {
             query?: never;
@@ -4414,6 +4594,76 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/agency/routes/{routeId}/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Modifier un horaire, ou l'arreter
+         * @description **C'etait le manque le plus couteux de l'espace agence.** Un horaire cree
+         *     produisait des departs sur tout l'horizon, pour toujours : une ligne qui
+         *     cesse d'etre desservie continuait d'etre vendue, et les passagers
+         *     l'apprenaient a la gare. `is_active` et `valid_until` existaient en base
+         *     depuis le debut, et aucun endpoint ne pouvait les ecrire.
+         *
+         *     **Les departs deja generes ne bougent pas.** Desactiver arrete la
+         *     production des suivants ; ceux qui existent portent leur propre prix et
+         *     restent vendables. Les retirer ici annulerait des reservations sans le
+         *     dire — `trips/{reference}/cancel` est le geste qui rembourse et previent,
+         *     et il doit rester delibere.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    routeId: number;
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @example 07:30 */
+                        departure_time?: string;
+                        days_of_week?: number[];
+                        /** Format: int64 */
+                        default_vehicle_id?: number;
+                        /** Format: int64 */
+                        default_driver_id?: number | null;
+                        price?: number;
+                        /** Format: date */
+                        valid_until?: string | null;
+                        is_active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencySchedule"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
         trace?: never;
     };
     "/v1/agency/trips/generate": {

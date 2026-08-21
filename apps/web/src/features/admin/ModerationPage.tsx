@@ -9,7 +9,8 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Skeleton,
+  SkeletonText,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import {
@@ -89,7 +90,7 @@ function CityRequests() {
         pas ouvrir la ligne qu’elle voulait vendre.
       </p>
 
-      {requests.isPending ? <Skeleton rows={2} /> : null}
+      {requests.isPending ? <SkeletonText lines={3} /> : null}
       {requests.error ? <ErrorNote message={describeError(requests.error)} /> : null}
       {resolve.error ? <ErrorNote message={describeError(resolve.error)} /> : null}
 
@@ -171,7 +172,7 @@ function Stations() {
         déjà émis.
       </p>
 
-      {stations.isPending ? <Skeleton rows={3} /> : null}
+      {stations.isPending ? <SkeletonTable columns={4} rows={3} /> : null}
       {stations.error ? <ErrorNote message={describeError(stations.error)} /> : null}
       {moderate.error ? <ErrorNote message={describeError(moderate.error)} /> : null}
 

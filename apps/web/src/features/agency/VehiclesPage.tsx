@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { AgencyVehicle } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Button,
   Cell,
   EmptyState,
@@ -16,7 +17,12 @@ import {
   SkeletonTable,
   Table,
 } from '../../shared/ui'
-import { useCreateVehicle, useVehicleSeats, useVehicles } from './useInventory'
+import {
+  useCreateVehicle,
+  useUpdateVehicle,
+  useVehicleSeats,
+  useVehicles,
+} from './useInventory'
 
 /**
  * Le parc de l'agence.
@@ -32,6 +38,7 @@ export function VehiclesPage() {
   const vehicles = useVehicles()
   const [adding, setAdding] = useState(false)
   const [seatsOf, setSeatsOf] = useState<AgencyVehicle | null>(null)
+  const [editing, setEditing] = useState<AgencyVehicle | null>(null)
 
   const rows = vehicles.data?.data ?? []
 
@@ -48,7 +55,7 @@ export function VehiclesPage() {
         }
       />
 
-      {vehicles.isPending ? <SkeletonTable columns={6} /> : null}
+      {vehicles.isPending ? <SkeletonTable columns={7} /> : null}
       {vehicles.error ? <ErrorNote message={describeError(vehicles.error)} /> : null}
 
       {vehicles.data !== undefined && rows.length === 0 ? (
@@ -72,6 +79,7 @@ export function VehiclesPage() {
             t('agency:inventory.vehicles.head.type'),
             t('agency:inventory.vehicles.head.seating'),
             t('agency:inventory.vehicles.head.seats'),
+            'État',
             '',
           ]}
         >
@@ -88,21 +96,38 @@ export function VehiclesPage() {
                   : t('agency:inventory.vehicles.byCapacity')}
               </Cell>
               <Cell>{vehicle.capacity}</Cell>
+              {/*
+                **Un véhicule retiré ne se distinguait pas d'un véhicule en
+                service.** Rien ne pouvait le retirer, donc rien n'avait à le
+                montrer ; maintenant que le geste existe, son absence
+                laisserait croire qu'il n'a pas pris.
+              */}
               <Cell>
+                <Badge
+                  label={CONDITIONS[vehicle.condition ?? 'ACTIVE'] ?? 'En service'}
+                  tone={vehicle.condition === 'ACTIVE' ? 'good' : 'neutral'}
+                />
+              </Cell>
+              <Cell className="whitespace-nowrap">
                 {/*
                   Le plan ne se consulte que pour les véhicules qui en ont un :
                   proposer un lien vide sur un véhicule à capacité laisserait
                   croire à un plan manquant.
                 */}
                 {vehicle.seating_mode === 'SEATED' ? (
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-brand-600 hover:underline"
-                    onClick={() => setSeatsOf(vehicle)}
-                  >
-                    Voir le plan
-                  </button>
+                  <Button
+                    label="Voir le plan"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => setSeatsOf(vehicle)}
+                  />
                 ) : null}
+                <Button
+                  label="Modifier"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setEditing(vehicle)}
+                />
               </Cell>
             </tr>
           ))}
@@ -110,10 +135,128 @@ export function VehiclesPage() {
       )}
 
       {adding ? <VehiclePanel onClose={() => setAdding(false)} /> : null}
+      {editing === null ? null : (
+        <VehicleEditPanel vehicle={editing} onClose={() => setEditing(null)} />
+      )}
       {seatsOf === null ? null : (
         <SeatMapPanel vehicle={seatsOf} onClose={() => setSeatsOf(null)} />
       )}
     </div>
+  )
+}
+
+/**
+ * Les états d'un véhicule, nommés.
+ *
+ * `MAINTENANCE` et `RETIRED` ne se valent pas : l'un revient, l'autre non. Les
+ * confondre sous « inactif » ferait rayer du parc un bus qui rentre de
+ * révision.
+ */
+const CONDITIONS: Record<string, string> = {
+  ACTIVE: 'En service',
+  MAINTENANCE: 'En révision',
+  RETIRED: 'Retiré',
+}
+
+/**
+ * Corriger un véhicule, ou le retirer du service.
+ *
+ * **Un panneau distinct de la création, et plus court.** Celui-ci n'offre que
+ * ce qui peut encore changer : le mode de placement et la capacité sont
+ * immuables — des départs vendus portent déjà un plan de sièges, et le changer
+ * sous eux déplacerait des passagers placés. Les afficher grisés serait pire
+ * que les omettre : on chercherait comment les débloquer.
+ */
+function VehicleEditPanel({
+  vehicle,
+  onClose,
+}: {
+  vehicle: AgencyVehicle
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const update = useUpdateVehicle()
+
+  const [registration, setRegistration] = useState(vehicle.registration)
+  const [brand, setBrand] = useState(vehicle.brand ?? '')
+  const [model, setModel] = useState(vehicle.model ?? '')
+  const [condition, setCondition] = useState(vehicle.condition ?? 'ACTIVE')
+
+  return (
+    <SheetForm
+      title={vehicle.registration}
+      description="Le placement et le nombre de sièges ne se modifient plus."
+      onClose={onClose}
+      submitLabel="Enregistrer"
+      submitDisabled={registration.trim() === ''}
+      pending={update.isPending}
+      error={update.error ? describeError(update.error) : undefined}
+      onSubmit={() =>
+        update.mutate(
+          {
+            id: vehicle.id,
+            registration: registration.trim().toUpperCase(),
+            brand: brand.trim() === '' ? null : brand.trim(),
+            model: model.trim() === '' ? null : model.trim(),
+            condition: condition as 'ACTIVE' | 'MAINTENANCE' | 'RETIRED',
+          },
+          { onSuccess: onClose },
+        )
+      }
+    >
+      <Field label={t('agency:inventory.vehicles.plate')}>
+        <input
+          className={`${INPUT} uppercase`}
+          required
+          maxLength={20}
+          value={registration}
+          onChange={(event) => setRegistration(event.target.value)}
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('agency:inventory.vehicles.make')}>
+          <input
+            className={INPUT}
+            value={brand}
+            onChange={(event) => setBrand(event.target.value)}
+          />
+        </Field>
+        <Field label={t('agency:inventory.vehicles.model')}>
+          <input
+            className={INPUT}
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
+        </Field>
+      </div>
+
+      {/*
+        Dit sous le champ : retirer un véhicule ne retire pas les départs qu'il
+        assure déjà. Sans cette phrase, une agence croit avoir annulé sa
+        journée.
+      */}
+      <Field
+        label="État"
+        hint={
+          condition === 'ACTIVE'
+            ? undefined
+            : 'Les départs déjà créés avec ce véhicule restent en vente. Les annuler se fait depuis l’onglet Départs.'
+        }
+      >
+        <select
+          className={INPUT}
+          value={condition}
+          onChange={(event) => setCondition(event.target.value)}
+        >
+          {Object.entries(CONDITIONS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </SheetForm>
   )
 }
 

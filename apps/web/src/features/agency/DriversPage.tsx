@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { AgencyDriver } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
 import {
   Badge,
@@ -16,7 +17,7 @@ import {
   StatCard,
   Table,
 } from '../../shared/ui'
-import { useCreateDriver, useDrivers, useVehicles } from './useInventory'
+import { useCreateDriver, useDrivers, useUpdateDriver, useVehicles } from './useInventory'
 
 /**
  * Les chauffeurs de l'agence.
@@ -30,6 +31,7 @@ export function DriversPage() {
   const { t } = useTranslation()
   const drivers = useDrivers()
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<AgencyDriver | null>(null)
 
   const rows = drivers.data?.data ?? []
 
@@ -49,7 +51,7 @@ export function DriversPage() {
       {drivers.isPending ? (
         <div className="flex flex-col gap-4">
           <SkeletonCards count={3} columns={3} />
-          <SkeletonTable columns={5} />
+          <SkeletonTable columns={6} />
         </div>
       ) : null}
       {drivers.error ? <ErrorNote message={describeError(drivers.error)} /> : null}
@@ -77,6 +79,7 @@ export function DriversPage() {
             t('agency:inventory.drivers.head.licence'),
             t('agency:inventory.drivers.head.expiry'),
             t('agency:inventory.drivers.head.status'),
+            '',
           ]}
         >
           {rows.map((driver) => (
@@ -89,13 +92,29 @@ export function DriversPage() {
               <Cell>
                 <Expiry date={driver.license_expires_at ?? null} />
               </Cell>
-              <Cell>{driver.status}</Cell>
+              <Cell>
+                <Badge
+                  label={driver.status === 'ACTIVE' ? 'Actif' : 'Inactif'}
+                  tone={driver.status === 'ACTIVE' ? 'good' : 'neutral'}
+                />
+              </Cell>
+              <Cell>
+                <Button
+                  label="Modifier"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setEditing(driver)}
+                />
+              </Cell>
             </tr>
           ))}
         </Table>
       )}
 
       {adding ? <DriverPanel onClose={() => setAdding(false)} /> : null}
+      {editing === null ? null : (
+        <DriverEditPanel driver={editing} onClose={() => setEditing(null)} />
+      )}
     </div>
   )
 }
@@ -170,6 +189,141 @@ function Expiry({ date }: { date: string | null }) {
   }
 
   return <span>{formatted}</span>
+}
+
+/**
+ * Corriger un chauffeur, ou le retirer.
+ *
+ * **Le permis est le champ qui compte.** L'écran comptait déjà les échéances —
+ * « permis à renouveler », « permis expirés » — sans offrir aucun moyen d'y
+ * répondre : un compteur qui désigne un problème sans donner le geste finit par
+ * être ignoré.
+ *
+ * `INACTIVE` plutôt qu'une suppression : le chauffeur reste attaché aux départs
+ * qu'il a assurés, et les effacer réécrirait l'histoire d'un embarquement.
+ */
+function DriverEditPanel({
+  driver,
+  onClose,
+}: {
+  driver: AgencyDriver
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const update = useUpdateDriver()
+  const vehicles = useVehicles()
+
+  const [firstName, setFirstName] = useState(driver.first_name)
+  const [lastName, setLastName] = useState(driver.last_name)
+  const [phone, setPhone] = useState(driver.phone)
+  const [licence, setLicence] = useState(driver.license_number)
+  const [expiry, setExpiry] = useState(driver.license_expires_at ?? '')
+  const [vehicleId, setVehicleId] = useState(String(driver.assigned_vehicle_id ?? ''))
+  const [status, setStatus] = useState(driver.status)
+
+  return (
+    <SheetForm
+      title={`${driver.first_name} ${driver.last_name}`}
+      onClose={onClose}
+      submitLabel="Enregistrer"
+      submitDisabled={firstName.trim() === '' || lastName.trim() === ''}
+      pending={update.isPending}
+      error={update.error ? describeError(update.error) : undefined}
+      onSubmit={() =>
+        update.mutate(
+          {
+            id: driver.id,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            phone: phone.trim(),
+            license_number: licence.trim(),
+            license_expires_at: expiry === '' ? null : expiry,
+            assigned_vehicle_id: vehicleId === '' ? null : Number(vehicleId),
+            status: status as 'ACTIVE' | 'INACTIVE',
+          },
+          { onSuccess: onClose },
+        )
+      }
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('agency:inventory.drivers.firstName')}>
+          <input
+            className={INPUT}
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+          />
+        </Field>
+        <Field label={t('agency:inventory.drivers.lastName')}>
+          <input
+            className={INPUT}
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+          />
+        </Field>
+      </div>
+
+      <Field label={t('agency:inventory.drivers.phone')}>
+        <input
+          className={INPUT}
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+        />
+      </Field>
+
+      <Field label={t('agency:inventory.drivers.licence')}>
+        <input
+          className={INPUT}
+          value={licence}
+          onChange={(event) => setLicence(event.target.value)}
+        />
+      </Field>
+
+      <Field
+        label={t('agency:inventory.drivers.licenceExpiry')}
+        hint="C’est ce champ que les compteurs de la page comptent."
+      >
+        <input
+          className={INPUT}
+          type="date"
+          value={expiry}
+          onChange={(event) => setExpiry(event.target.value)}
+        />
+      </Field>
+
+      <Field label={t('agency:inventory.drivers.vehicle')}>
+        <select
+          className={INPUT}
+          value={vehicleId}
+          onChange={(event) => setVehicleId(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.drivers.noVehicle')}</option>
+          {(vehicles.data?.data ?? []).map((vehicle) => (
+            <option key={vehicle.id} value={vehicle.id}>
+              {vehicle.registration}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field
+        label="État"
+        hint={
+          status === 'ACTIVE'
+            ? undefined
+            : 'Un chauffeur inactif reste attaché aux départs qu’il a assurés.'
+        }
+      >
+        <select
+          className={INPUT}
+          value={status}
+          onChange={(event) => setStatus(event.target.value as typeof status)}
+        >
+          <option value="ACTIVE">Actif</option>
+          <option value="INACTIVE">Inactif</option>
+        </select>
+      </Field>
+    </SheetForm>
+  )
 }
 
 function DriverPanel({ onClose }: { onClose: () => void }) {

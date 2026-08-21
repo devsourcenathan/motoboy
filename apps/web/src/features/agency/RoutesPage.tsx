@@ -5,6 +5,7 @@ import { formatMoney } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
 import {
   Button,
+  Badge,
   Card,
   EmptyState,
   ErrorNote,
@@ -20,6 +21,8 @@ import {
   useDrivers,
   useGenerateTrips,
   useRoutes,
+  useUpdateRoute,
+  useUpdateSchedule,
   useStations,
   useVehicles,
 } from './useInventory'
@@ -128,9 +131,12 @@ function RouteCard({
   onSchedule: () => void
 }) {
   const { t } = useTranslation()
+  // Nommé `ligne` et non `close` : ce dernier existe déjà sur `window`, et
+  // TypeScript prend alors le global sans rien signaler avant l'usage.
+  const ligne = useUpdateRoute()
 
   return (
-    <Card>
+    <Card className={route.is_active ? '' : 'opacity-70'}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-semibold text-neutral-900">
@@ -144,12 +150,22 @@ function RouteCard({
               : ` · ${route.reference_duration_minutes} min`}
           </p>
         </div>
-        <Button
-          label={t('agency:inventory.routes.addSchedule')}
-          variant="secondary"
-          icon="trips"
-          onPress={onSchedule}
-        />
+        <span className="flex items-center gap-2">
+          {route.is_active ? null : <Badge label="Ligne fermée" />}
+          <Button
+            label={route.is_active ? 'Fermer la ligne' : 'Rouvrir'}
+            variant="ghost"
+            size="sm"
+            loading={ligne.isPending}
+            onPress={() => ligne.mutate({ id: route.id, is_active: !route.is_active })}
+          />
+          <Button
+            label={t('agency:inventory.routes.addSchedule')}
+            variant="secondary"
+            icon="trips"
+            onPress={onSchedule}
+          />
+        </span>
       </div>
 
       {route.schedules.length === 0 ? (
@@ -162,20 +178,14 @@ function RouteCard({
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {route.schedules.map((schedule) => (
-            <li
-              key={schedule.id}
-              className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-2 text-sm"
-            >
-              <span className="font-mono font-medium tabular-nums">
-                {schedule.departure_time}
-              </span>
-              <DayDots days={schedule.days_of_week} />
-              <span className="font-semibold tabular-nums">
-                {formatMoney(schedule.price, 'fr')}
-              </span>
-            </li>
+            <ScheduleRow key={schedule.id} routeId={route.id} schedule={schedule} />
           ))}
         </ul>
+      )}
+
+      {route.is_active &&
+      route.schedules.every((schedule) => schedule.is_active) ? null : (
+        <StopNotice />
       )}
     </Card>
   )
@@ -221,6 +231,68 @@ function GenerateCard() {
       )}
       {generate.error ? <ErrorNote message={describeError(generate.error)} /> : null}
     </Card>
+  )
+}
+
+/**
+ * Un horaire, et le seul geste qui compte sur lui.
+ *
+ * **Rien ne pouvait l'arrêter.** Un horaire produisait des départs sur tout
+ * l'horizon, pour toujours : une ligne qui cesse d'être desservie continuait
+ * d'être vendue, et les passagers l'apprenaient à la gare.
+ */
+function ScheduleRow({
+  routeId,
+  schedule,
+}: {
+  routeId: number
+  schedule: AgencyRoute['schedules'][number]
+}) {
+  const update = useUpdateSchedule()
+  const actif = schedule.is_active
+
+  return (
+    <li
+      className={`flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-2 text-sm ${
+        actif ? '' : 'opacity-60'
+      }`}
+    >
+      <span className="font-mono font-medium tabular-nums">
+        {schedule.departure_time}
+      </span>
+      <DayDots days={schedule.days_of_week} />
+      <span className="font-semibold tabular-nums">
+        {formatMoney(schedule.price, 'fr')}
+      </span>
+
+      <span className="flex items-center gap-2">
+        {actif ? null : <Badge label="Arrêté" />}
+        <Button
+          label={actif ? 'Arrêter' : 'Reprendre'}
+          variant={actif ? 'ghost' : 'secondary'}
+          size="sm"
+          loading={update.isPending}
+          onPress={() => update.mutate({ routeId, id: schedule.id, is_active: !actif })}
+        />
+      </span>
+    </li>
+  )
+}
+
+/**
+ * Arrêter ne défait pas ce qui est vendu.
+ *
+ * Dit à l'endroit du geste : la question qui vient aussitôt est « et mes
+ * départs de la semaine prochaine ? ». Sans cette phrase, une agence croit
+ * avoir annulé ce qu'elle a vendu.
+ */
+function StopNotice() {
+  return (
+    <p className="mt-3 text-xs text-neutral-500">
+      Arrêter un horaire empêche les départs <strong>suivants</strong> d’être créés. Ceux
+      qui existent restent en vente : les annuler rembourse les passagers et les prévient,
+      depuis l’onglet Départs.
+    </p>
   )
 }
 

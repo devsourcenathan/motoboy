@@ -89,6 +89,37 @@ final class RoutingController
         )), 201);
     }
 
+    /**
+     * Corriger un itinéraire, ou fermer la ligne.
+     *
+     * **Les gares ne se changent pas.** Un itinéraire *est* la paire qu'il
+     * relie : le réattacher ailleurs déplacerait les horaires qui en dépendent,
+     * et donc des départs déjà vendus, sous des passagers qui ont acheté un
+     * Douala–Bafoussam. Une autre paire est un autre itinéraire.
+     *
+     * Reste ce qui décrit la ligne sans la définir : la durée de référence, et
+     * son ouverture. Fermer arrête la génération de départs pour **tous** ses
+     * horaires d'un coup — c'est le geste qu'on cherche quand une ligne entière
+     * cesse, plutôt que d'arrêter les horaires un par un et d'en oublier un.
+     */
+    public function updateRoute(Request $request, int $id): JsonResponse
+    {
+        $agency = $this->context->require($request);
+        $route = Route::query()->whereKey($id)->firstOrFail();
+
+        $this->context->own($agency, $route->agency_id);
+
+        $route->update($request->validate([
+            'reference_duration_minutes' => ['nullable', 'integer', 'min:1', 'max:2880'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]));
+
+        return response()->json($this->presentRoute($route->refresh()->load([
+            'originCity', 'originStation', 'destinationCity', 'destinationStation',
+            'stops.city', 'schedules',
+        ])));
+    }
+
     public function storeSchedule(Request $request, int $routeId): JsonResponse
     {
         $agency = $this->context->require($request);
@@ -127,6 +158,60 @@ final class RoutingController
      * vient de créer : attendre le job quotidien lui laisserait croire que rien
      * ne s'est passé.
      */
+    /**
+     * Modifier un horaire, ou l'arrêter.
+     *
+     * **Rien ne le permettait, et c'est le manque le plus coûteux de l'espace
+     * agence.** Un horaire créé produisait des départs sur tout l'horizon, pour
+     * toujours : une ligne qui cesse d'être desservie continuait d'être vendue,
+     * et les passagers l'apprenaient à la gare. `schedules.is_active` et
+     * `valid_until` existaient en base depuis le début — aucun endpoint ne
+     * pouvait les écrire.
+     *
+     * `sometimes` partout : une correction de tarif ne doit pas obliger à
+     * renvoyer les jours, sous peine de les écraser par ce que le formulaire
+     * avait sous la main.
+     *
+     * **Les départs déjà générés ne bougent pas.** Désactiver arrête la
+     * production des suivants ; ceux qui existent portent leur propre prix et
+     * peuvent être vendus. Les retirer ici annulerait des réservations sans le
+     * dire — `trips/{reference}/cancel` est le geste qui rembourse et prévient,
+     * et il doit rester délibéré.
+     */
+    public function updateSchedule(Request $request, int $routeId, int $id): JsonResponse
+    {
+        $agency = $this->context->require($request);
+        $route = Route::query()->whereKey($routeId)->firstOrFail();
+
+        $this->context->own($agency, $route->agency_id);
+
+        $schedule = Schedule::query()->whereKey($id)->firstOrFail();
+
+        if ($schedule->route_id !== $route->id) {
+            throw ApiException::of(ErrorCode::NotFound, 'Horaire introuvable.');
+        }
+
+        $validated = $request->validate([
+            'departure_time' => ['sometimes', 'date_format:H:i'],
+            'days_of_week' => ['sometimes', 'array', 'min:1', 'max:7'],
+            'days_of_week.*' => ['integer', 'between:1,7'],
+            'default_vehicle_id' => ['sometimes', 'integer'],
+            'default_driver_id' => ['nullable', 'integer'],
+            'price' => ['sometimes', 'integer', 'min:0'],
+            'valid_until' => ['nullable', 'date'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        if (isset($validated['default_vehicle_id'])) {
+            $vehicle = Vehicle::query()->whereKey($validated['default_vehicle_id'])->firstOrFail();
+            $this->context->own($agency, $vehicle->agency_id);
+        }
+
+        $schedule->update($validated);
+
+        return response()->json($this->presentSchedule($schedule->refresh()));
+    }
+
     public function generate(Request $request, GenerateTrips $generate): JsonResponse
     {
         $agency = $this->context->requireApproved($request);

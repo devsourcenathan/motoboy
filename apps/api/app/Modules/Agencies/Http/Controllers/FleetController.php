@@ -95,6 +95,35 @@ final class FleetController
         ]);
     }
 
+    /**
+     * Corriger un véhicule, ou le retirer du service.
+     *
+     * **Une plaque mal saisie était définitive**, et un bus vendu restait
+     * `ACTIVE` — donc porteur d'horaires, donc générateur de départs qu'aucun
+     * véhicule ne ferait.
+     *
+     * Le **mode de placement et la capacité ne sont pas modifiables** ici, et
+     * c'est délibéré : des départs vendus portent déjà un plan de sièges, et le
+     * changer sous eux déplacerait des passagers déjà placés. Un véhicule
+     * reconfiguré est un autre véhicule.
+     */
+    public function updateVehicle(Request $request, int $id): JsonResponse
+    {
+        $agency = $this->context->require($request);
+        $vehicle = Vehicle::query()->whereKey($id)->firstOrFail();
+
+        $this->context->own($agency, $vehicle->agency_id);
+
+        $vehicle->update($request->validate([
+            'registration' => ['sometimes', 'string', 'max:20'],
+            'brand' => ['nullable', 'string', 'max:80'],
+            'model' => ['nullable', 'string', 'max:80'],
+            'condition' => ['sometimes', 'string', 'in:ACTIVE,MAINTENANCE,RETIRED'],
+        ]));
+
+        return response()->json($this->presentVehicle($vehicle->refresh()));
+    }
+
     public function drivers(Request $request): JsonResponse
     {
         $agency = $this->context->require($request);
@@ -138,6 +167,40 @@ final class FleetController
         ]);
 
         return response()->json($this->presentDriver($driver), 201);
+    }
+
+    /**
+     * Corriger un chauffeur, ou le retirer.
+     *
+     * **Un permis expiré ne pouvait pas être renouvelé** : l'écran comptait les
+     * échéances et n'offrait aucun moyen d'y répondre. Un chauffeur qui quitte
+     * l'agence restait dans la liste, et dans les horaires qui le désignent.
+     */
+    public function updateDriver(Request $request, int $id): JsonResponse
+    {
+        $agency = $this->context->require($request);
+        $driver = Driver::query()->whereKey($id)->firstOrFail();
+
+        $this->context->own($agency, $driver->agency_id);
+
+        $validated = $request->validate([
+            'first_name' => ['sometimes', 'string', 'max:100'],
+            'last_name' => ['sometimes', 'string', 'max:100'],
+            'phone' => ['sometimes', 'string', 'max:20'],
+            'license_number' => ['sometimes', 'string', 'max:50'],
+            'license_expires_at' => ['nullable', 'date'],
+            'assigned_vehicle_id' => ['nullable', 'integer'],
+            'status' => ['sometimes', 'string', 'in:ACTIVE,INACTIVE'],
+        ]);
+
+        if (isset($validated['assigned_vehicle_id'])) {
+            $vehicle = Vehicle::query()->whereKey($validated['assigned_vehicle_id'])->firstOrFail();
+            $this->context->own($agency, $vehicle->agency_id);
+        }
+
+        $driver->update($validated);
+
+        return response()->json($this->presentDriver($driver->refresh()));
     }
 
     /** @return array<string, mixed> */

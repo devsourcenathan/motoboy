@@ -61,6 +61,15 @@ final class Schedule extends Model
     public function scopeGeneratable(Builder $query): void
     {
         $query->where('is_active', true)
+            /*
+             * **L'itinéraire compte autant que l'horaire.**
+             *
+             * `routes.is_active` existait et n'était filtré nulle part : fermer
+             * une ligne entière ne l'empêchait pas de produire des départs, et
+             * il fallait arrêter ses horaires un par un — en en oubliant un.
+             * La colonne promettait quelque chose que rien ne tenait.
+             */
+            ->whereHas('route', fn (Builder $route) => $route->where('is_active', true))
             ->where('valid_from', '<=', now())
             ->where(fn (Builder $q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()));
     }

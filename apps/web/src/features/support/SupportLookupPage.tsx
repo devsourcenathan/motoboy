@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { unwrap } from '@motoboy/api-client'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
-import { Badge } from '../../shared/ui'
+import { Badge, ErrorNote, PageHeader } from '../../shared/ui'
 import { describeError } from '../../lib/errors'
 
 /**
@@ -42,12 +42,10 @@ export function SupportLookupPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-ink-700">Suivi d’une course</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Référence de demande (SRV-…) ou de course (RID-…) — les deux fonctionnent.
-        </p>
-      </header>
+      <PageHeader
+        title="Suivi d’une course"
+        subtitle="Référence de demande (SRV-…) ou de course (RID-…) — les deux fonctionnent."
+      />
 
       <form
         className="mb-6 flex gap-2"
@@ -72,11 +70,7 @@ export function SupportLookupPage() {
 
       {lookup.isFetching ? <p className="text-sm text-neutral-500">Recherche…</p> : null}
 
-      {lookup.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">
-          {describeError(lookup.error)}
-        </p>
-      ) : null}
+      {lookup.error ? <ErrorNote message={describeError(lookup.error)} /> : null}
 
       {data === undefined ? null : (
         <div className="space-y-4">

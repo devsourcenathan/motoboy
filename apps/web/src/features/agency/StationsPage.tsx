@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
+import type { AgencyStation } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
 import {
   Badge,
@@ -19,7 +20,7 @@ import {
   Table,
 } from '../../shared/ui'
 import { CityField, type CityChoice } from './CityField'
-import { useCreateStation, useStations } from './useInventory'
+import { useCreateStation, useStations, useUpdateStation } from './useInventory'
 
 /**
  * Reclamer une ville absente du referentiel.
@@ -138,6 +139,7 @@ export function StationsPage() {
   const { t } = useTranslation()
   const stations = useStations()
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<AgencyStation | null>(null)
 
   const rows = stations.data?.data ?? []
 
@@ -154,7 +156,7 @@ export function StationsPage() {
         }
       />
 
-      {stations.isPending ? <SkeletonTable columns={4} /> : null}
+      {stations.isPending ? <SkeletonTable columns={5} /> : null}
       {stations.error ? <ErrorNote message={describeError(stations.error)} /> : null}
 
       <div className="mb-6">
@@ -181,6 +183,7 @@ export function StationsPage() {
             t('agency:inventory.stations.head.city'),
             t('agency:inventory.stations.head.address'),
             t('agency:inventory.stations.head.status'),
+            '',
           ]}
         >
           {rows.map((station) => (
@@ -196,12 +199,23 @@ export function StationsPage() {
                   active={station.is_active}
                 />
               </Cell>
+              <Cell>
+                <Button
+                  label="Modifier"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setEditing(station)}
+                />
+              </Cell>
             </tr>
           ))}
         </Table>
       )}
 
       {adding ? <StationPanel onClose={() => setAdding(false)} /> : null}
+      {editing === null ? null : (
+        <StationEditPanel station={editing} onClose={() => setEditing(null)} />
+      )}
     </div>
   )
 }
@@ -217,6 +231,95 @@ function StationState({ moderated, active }: { moderated: boolean; active: boole
   if (!moderated) return <Badge label="En vérification" tone="action" />
 
   return active ? <Badge label="Active" tone="good" /> : <Badge label="Inactive" />
+}
+
+/**
+ * Corriger une gare, ou la désactiver.
+ *
+ * **L'endpoint existait depuis le début et aucun écran ne l'appelait.** Une
+ * gare mal nommée l'était pour toujours, et une gare fermée continuait de
+ * figurer dans les itinéraires.
+ *
+ * La **ville ne se change pas** : une gare rattachée ailleurs déplacerait les
+ * itinéraires qui la traversent, et donc des départs déjà vendus. Une gare
+ * d'une autre ville est une autre gare.
+ *
+ * Désactiver plutôt que supprimer, comme partout : les itinéraires et les
+ * départs passés la référencent, et l'effacer réécrirait ce qui a eu lieu.
+ */
+function StationEditPanel({
+  station,
+  onClose,
+}: {
+  station: AgencyStation
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const update = useUpdateStation()
+
+  const [name, setName] = useState(station.name)
+  const [address, setAddress] = useState(station.address ?? '')
+  const [active, setActive] = useState(station.is_active)
+
+  return (
+    <SheetForm
+      title={station.name}
+      description={station.city ?? undefined}
+      onClose={onClose}
+      submitLabel="Enregistrer"
+      submitDisabled={name.trim() === ''}
+      pending={update.isPending}
+      error={update.error ? describeError(update.error) : undefined}
+      onSubmit={() =>
+        update.mutate(
+          {
+            id: station.id,
+            name: name.trim(),
+            address: address.trim() === '' ? null : address.trim(),
+            is_active: active,
+          } as never,
+          { onSuccess: onClose },
+        )
+      }
+    >
+      <Field label={t('agency:inventory.stations.name')}>
+        <input
+          className={INPUT}
+          required
+          maxLength={150}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </Field>
+
+      <Field label={t('agency:inventory.stations.address')}>
+        <input
+          className={INPUT}
+          maxLength={255}
+          value={address}
+          onChange={(event) => setAddress(event.target.value)}
+        />
+      </Field>
+
+      <Field
+        label="État"
+        hint={
+          active
+            ? undefined
+            : 'Une gare désactivée disparaît des nouveaux itinéraires. Ceux qui l’utilisent déjà ne changent pas.'
+        }
+      >
+        <select
+          className={INPUT}
+          value={active ? 'ACTIVE' : 'INACTIVE'}
+          onChange={(event) => setActive(event.target.value === 'ACTIVE')}
+        >
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+      </Field>
+    </SheetForm>
+  )
 }
 
 function StationPanel({ onClose }: { onClose: () => void }) {

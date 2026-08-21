@@ -14,6 +14,7 @@ import { RoutesPage } from './RoutesPage'
  */
 const route = {
   id: 1,
+  is_active: true,
   origin: { city: 'Douala', station: 'Bonabéri' },
   destination: { city: 'Bafoussam', station: 'Gare routière' },
   reference_duration_minutes: 240,
@@ -147,5 +148,67 @@ describe('RoutesPage', () => {
 
     expect(jours).toHaveLength(7)
     expect(screen.queryByText(/Aucun horaire/)).toBeNull()
+  })
+  /**
+   * **Un horaire vendait pour toujours.**
+   *
+   * Créé, il produisait des départs sur tout l'horizon sans qu'aucun écran ne
+   * puisse l'arrêter : une ligne qui cesse d'être desservie continuait d'être
+   * vendue, et les passagers l'apprenaient à la gare.
+   */
+  it('arrête un horaire, et dit ce que cela ne défait pas', async () => {
+    mockRoutes(
+      routes({
+        '/schedules/9': () => jsonResponse({ id: 9, is_active: false }),
+        '/agency/routes': () =>
+          jsonResponse({
+            data: [
+              {
+                ...route,
+                schedules: [
+                  {
+                    id: 9,
+                    departure_time: '07:30',
+                    days_of_week: [1, 2, 3],
+                    price: { amount: 6500, currency: 'XAF' },
+                    is_active: true,
+                  },
+                ],
+              },
+            ],
+          }),
+      }),
+    )
+
+    render(<RoutesPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Arrêter' }))
+
+    expect(
+      await sentRequest((request) => request.url.includes('/schedules/9')),
+    ).toMatchObject({ is_active: false })
+  })
+  /**
+   * **Fermer la ligne arrête tous ses horaires d'un coup.**
+   *
+   * `routes.is_active` existait et n'était filtré nulle part : il fallait
+   * arrêter les horaires un par un, et en oublier un suffisait à continuer de
+   * vendre une ligne qui ne roule plus.
+   */
+  it('ferme une ligne entière, sans toucher aux départs déjà vendus', async () => {
+    mockRoutes(
+      routes({
+        '/agency/routes/1': () => jsonResponse({ ...route, is_active: false }),
+        '/agency/routes': () => jsonResponse({ data: [{ ...route, is_active: true }] }),
+      }),
+    )
+
+    render(<RoutesPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Fermer la ligne' }))
+
+    expect(
+      await sentRequest((request) => request.url.endsWith('/agency/routes/1')),
+    ).toMatchObject({ is_active: false })
   })
 })

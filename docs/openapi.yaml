@@ -2544,6 +2544,74 @@ paths:
               schema: { $ref: '#/components/schemas/AgencyVehicle' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /v1/agency/vehicles/{id}:
+    patch:
+      tags: [Agency]
+      summary: Corriger un vehicule, ou le retirer du service
+      description: |
+        Une plaque mal saisie etait definitive, et un bus vendu restait `ACTIVE`
+        — donc porteur d'horaires, donc generateur de departs qu'aucun vehicule
+        ne ferait.
+
+        **Le mode de placement et la capacite ne sont pas modifiables**, et c'est
+        delibere : des departs vendus portent deja un plan de sieges, et le
+        changer sous eux deplacerait des passagers deja places. Un vehicule
+        reconfigure est un autre vehicule.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                registration: { type: string, maxLength: 20 }
+                brand: { type: [string, 'null'], maxLength: 80 }
+                model: { type: [string, 'null'], maxLength: 80 }
+                condition: { type: string, enum: [ACTIVE, MAINTENANCE, RETIRED] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyVehicle' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /v1/agency/drivers/{id}:
+    patch:
+      tags: [Agency]
+      summary: Corriger un chauffeur, ou le retirer
+      description: |
+        Un permis expire ne pouvait pas etre renouvele : l'ecran comptait les
+        echeances et n'offrait aucun moyen d'y repondre. Un chauffeur qui quitte
+        l'agence restait dans la liste, et dans les horaires qui le designent.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string, maxLength: 100 }
+                last_name: { type: string, maxLength: 100 }
+                phone: { type: string, maxLength: 20 }
+                license_number: { type: string, maxLength: 50 }
+                license_expires_at: { type: [string, 'null'], format: date }
+                assigned_vehicle_id: { type: [integer, 'null'], format: int64 }
+                status: { type: string, enum: [ACTIVE, INACTIVE] }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyDriver' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /v1/agency/vehicles/{id}/seats:
     get:
       tags: [Agency]
@@ -2647,6 +2715,45 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /v1/agency/routes/{id}:
+    patch:
+      tags: [Agency]
+      summary: Corriger un itineraire, ou fermer la ligne
+      description: |
+        **Les gares ne se changent pas.** Un itineraire *est* la paire qu'il
+        relie : le reattacher ailleurs deplacerait les horaires qui en dependent,
+        et donc des departs deja vendus, sous des passagers qui ont achete un
+        Douala-Bafoussam. Une autre paire est un autre itineraire.
+
+        Fermer arrete la generation pour **tous** ses horaires d'un coup — c'est
+        le geste qu'on cherche quand une ligne entiere cesse, plutot que
+        d'arreter les horaires un par un et d'en oublier un.
+
+        Les departs deja crees ne bougent pas : les retirer annulerait des
+        reservations sans le dire.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference_duration_minutes:
+                  type: [integer, 'null']
+                  minimum: 1
+                  maximum: 2880
+                is_active: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyRoute' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /v1/agency/routes/{routeId}/schedules:
     post:
       tags: [Agency]
@@ -2678,6 +2785,53 @@ paths:
               schema: { $ref: '#/components/schemas/AgencySchedule' }
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
+
+  /v1/agency/routes/{routeId}/schedules/{id}:
+    patch:
+      tags: [Agency]
+      summary: Modifier un horaire, ou l'arreter
+      description: |
+        **C'etait le manque le plus couteux de l'espace agence.** Un horaire cree
+        produisait des departs sur tout l'horizon, pour toujours : une ligne qui
+        cesse d'etre desservie continuait d'etre vendue, et les passagers
+        l'apprenaient a la gare. `is_active` et `valid_until` existaient en base
+        depuis le debut, et aucun endpoint ne pouvait les ecrire.
+
+        **Les departs deja generes ne bougent pas.** Desactiver arrete la
+        production des suivants ; ceux qui existent portent leur propre prix et
+        restent vendables. Les retirer ici annulerait des reservations sans le
+        dire — `trips/{reference}/cancel` est le geste qui rembourse et previent,
+        et il doit rester delibere.
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                departure_time: { type: string, examples: ['07:30'] }
+                days_of_week:
+                  type: array
+                  items: { type: integer, minimum: 1, maximum: 7 }
+                default_vehicle_id: { type: integer, format: int64 }
+                default_driver_id: { type: [integer, 'null'], format: int64 }
+                price: { type: integer, minimum: 0 }
+                valid_until: { type: [string, 'null'], format: date }
+                is_active: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencySchedule' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /v1/agency/trips/generate:
     post:

@@ -1,14 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ApiError } from '@motoboy/api-client'
-import {
-  BrowserRouter,
-  Link,
-  Navigate,
-  NavLink as RouterNavLink,
-  Route,
-  Routes,
-  useLocation,
-} from 'react-router'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router'
 import { SignInPage } from './features/auth/SignInPage'
 import { useCurrentUser, useSignOut } from './features/auth/useAuth'
 import { DriverQueuePage } from './features/drivers/DriverQueuePage'
@@ -29,7 +21,7 @@ import { MoneyPage } from './features/agency/MoneyPage'
 import { StaffPage } from './features/agency/StaffPage'
 import { StationsPage } from './features/agency/StationsPage'
 import { VehiclesPage } from './features/agency/VehiclesPage'
-import { Logo } from './shared/ui'
+import { AdminLayout } from './features/admin/AdminLayout'
 import { AgenciesPage } from './features/admin/AgenciesPage'
 import { AuditLogPage } from './features/admin/AuditLogPage'
 import { DashboardPage } from './features/admin/DashboardPage'
@@ -133,13 +125,41 @@ export function AppRoutes() {
       />
 
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <RequireSession allow={['ADMIN', 'SUPER_ADMIN']}>
             <AdminLayout />
           </RequireSession>
         }
-      />
+      >
+        {/*
+          **`index` et non `*`** : à `/admin` exactement, le reste du chemin est
+          vide, et un attrape-tout ne l'attrape pas. Sans cette route, la
+          coquille s'affichait avec sa barre et un contenu vide — ce qui se lit
+          comme une page cassée, pas comme une adresse incomplète.
+        */}
+        <Route index element={<Navigate to="/admin/drivers" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="agencies" element={<AgenciesPage />} />
+        <Route path="drivers" element={<DriverQueuePage />} />
+        <Route path="payouts" element={<PayoutQueuePage />} />
+        <Route path="payout-accounts" element={<PayoutAccountsPage />} />
+        <Route path="moderation" element={<ModerationPage />} />
+        <Route path="support" element={<SupportLookupPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="audit" element={<AuditLogPage />} />
+        {/*
+          **La file des chauffeurs reste l'accueil**, et le tableau de bord ne
+          la remplace pas. Le faire accueillir paraissait naturel — il nomme ce
+          qui attend une décision — mais il ne compte pas les chauffeurs en
+          attente : l'API ne renvoie pas ce nombre. Accueillir sur lui ferait
+          disparaître la seule barrière entre la plateforme et quelqu'un dont
+          personne n'a vu le permis, en échange d'une vue incomplète.
+
+          À revoir le jour où `GET /v1/admin/dashboard` les comptera.
+        */}
+        <Route path="*" element={<Navigate to="/admin/drivers" replace />} />
+      </Route>
 
       {/*
         **L'attrape-tout public, qui manquait.** Sans lui, une URL inconnue rendait
@@ -237,88 +257,3 @@ function RequireSession({
  * ecrite a la main oublie les sous-chemins, et le lien s'eteint des qu'on ouvre
  * un detail.
  */
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
-  return (
-    <RouterNavLink
-      to={to}
-      className={({ isActive }) =>
-        isActive
-          ? 'border-b-2 border-brand-500 pb-0.5 text-sm font-semibold text-neutral-0'
-          : 'pb-0.5 text-sm text-neutral-0/70 hover:text-neutral-0'
-      }
-    >
-      {children}
-    </RouterNavLink>
-  )
-}
-
-function AdminLayout() {
-  const signOut = useSignOut()
-
-  return (
-    <div className="min-h-screen">
-      <header className="bg-ink-700 px-6 py-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <nav className="flex items-center gap-6">
-            <Link
-              to="/admin/drivers"
-              className="flex items-center gap-2 font-bold text-neutral-0"
-            >
-              <Logo variant="mark" size={26} />
-              MOTOBOY
-            </Link>
-            {/*
-              L'ordre suit ce qui attend une décision. Le tableau de bord ouvre
-              parce qu'il dit *où* il y en a ; les agences le suivent parce que
-              c'est la file dont l'absence bloquait l'entrée sur la plateforme.
-            */}
-            <NavLink to="/admin/dashboard">Tableau de bord</NavLink>
-            <NavLink to="/admin/agencies">Agences</NavLink>
-            <NavLink to="/admin/drivers">Chauffeurs</NavLink>
-            <NavLink to="/admin/payouts">Reversements</NavLink>
-            <NavLink to="/admin/payout-accounts">Comptes</NavLink>
-            <NavLink to="/admin/moderation">Référentiel</NavLink>
-            <NavLink to="/admin/support">Suivi</NavLink>
-            <NavLink to="/admin/settings">Réglages</NavLink>
-            <NavLink to="/admin/audit">Journal</NavLink>
-          </nav>
-          <button
-            type="button"
-            onClick={() => signOut.mutate()}
-            className="text-sm text-neutral-0/80 hover:text-neutral-0"
-          >
-            Se déconnecter
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl p-6">
-        <Routes>
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="agencies" element={<AgenciesPage />} />
-          <Route path="drivers" element={<DriverQueuePage />} />
-          <Route path="payouts" element={<PayoutQueuePage />} />
-          <Route path="payout-accounts" element={<PayoutAccountsPage />} />
-          <Route path="moderation" element={<ModerationPage />} />
-          <Route path="support" element={<SupportLookupPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="audit" element={<AuditLogPage />} />
-          {/*
-            **La file des chauffeurs reste l'accueil**, et le tableau de bord ne
-            la remplace pas.
-            
-            Le faire accueillir paraissait naturel — il nomme ce qui attend une
-            décision. Mais il ne compte pas les chauffeurs en attente : l'API ne
-            renvoie pas ce nombre. Accueillir sur lui aurait donc fait disparaître
-            la seule barrière entre la plateforme et quelqu'un dont personne n'a vu
-            le permis, en échange d'une vue d'ensemble incomplète.
-
-            À revoir le jour où `GET /v1/admin/dashboard` comptera les dossiers de
-            chauffeur en attente.
-          */}
-          <Route path="*" element={<Navigate to="/admin/drivers" replace />} />
-        </Routes>
-      </main>
-    </div>
-  )
-}
