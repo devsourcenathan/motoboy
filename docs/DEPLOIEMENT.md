@@ -256,9 +256,17 @@ fait passer par la CI, la fusion dans `main` déclenche le déploiement.
 `LOG_CHANNEL=stderr` : un conteneur journalise sur sa sortie d'erreur, que
 l'hébergeur collecte. Rien n'est écrit dans un fichier que personne ne lira.
 
-**`LOG_EMERGENCY_PATH=php://stderr` compte autant**, et c'est moins évident.
-C'est le recours de Laravel quand le canal configuré ne peut pas être construit —
-et il visait par défaut `storage/logs/laravel.log`.
+**Le journaliseur de secours écrit sur `stderr` par défaut**, sans qu'aucune
+variable ait à être posée — et cette nuance a coûté deux déploiements.
+C'est le recours de Laravel quand le canal configuré ne peut pas être construit,
+et il visait `storage/logs/laravel.log`.
+
+Je l'avais d'abord rendu configurable, en déclarant `LOG_EMERGENCY_PATH` dans
+`render.yaml`. **Rien n'a changé** : les variables d'un blueprint ne s'appliquent
+qu'à sa synchronisation, et le service tournait toujours sur l'ancien défaut. Un
+garde-fou qui dépend d'un réglage posé ailleurs ne protège que sur le papier —
+c'est maintenant le défaut du code, et la variable sert à demander un fichier, pas
+à s'en passer.
 
 Ce qui s'est passé le 20 août 2026 : l'ordonnanceur et le worker tournaient en
 **root** (supervisord démarre en root, et ses programmes n'avaient pas d'`user`).
@@ -295,6 +303,17 @@ avait disparu.
 À reprendre le jour où l'on voudra vraiment quitter root — avec `HOME`, en
 vérifiant ce que supervisord sait signaler, et **sur un déploiement de recette**,
 pas sur celui qui sert les paiements.
+
+### Et un `chown` au démarrage
+
+L'entrypoint tourne en root, et tout ce qu'il crée lui appartient : découverte des
+paquets, mises en cache, migrations, seeders — toutes journalisent. Il rend donc
+`storage` et `bootstrap/cache` à `www-data` juste avant de lancer les services.
+
+Ça traite le symptôme là où la configuration traite la cause. Le garder coûte une
+milliseconde, rattrape les fichiers laissés par un déploiement précédent, et
+couvre ce qu'on n'a pas prévu — un cache, une session, une vue compilée écrite
+trop tôt.
 
 ⚠️ **Une panne de journalisation qui remplace l'erreur qu'elle devait consigner
 est le pire des masques** : elle transforme un diagnostic d'une minute en une

@@ -185,6 +185,25 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     fi
 fi
 
+# ────────────────────────── Droits sur `storage` ──────────────────────────
+#
+# **Ce script tourne en root, et tout ce qu'il vient de créer lui appartient.**
+#
+# Les commandes ci-dessus — découverte des paquets, mises en cache, migrations,
+# seeders — journalisent. Si la journalisation vise un fichier, ce fichier naît
+# donc à root, et php-fpm, qui sert les requêtes en `www-data`, ne peut plus
+# jamais y ajouter une ligne. Laravel bascule alors sur son journaliseur de
+# secours, échoue aussi, et **cet échec remonte en 500 à la place de l'erreur
+# qu'il devait consigner** : une inscription d'agence refusée n'a rien dit
+# d'autre que « permission denied » pendant deux jours.
+#
+# La configuration écrit désormais sur `stderr` par défaut, ce qui supprime la
+# cause. Ce `chown` traite le symptôme quand même : il coûte une milliseconde,
+# rattrape les fichiers déjà créés par un déploiement précédent, et couvre tout
+# ce qu'on n'a pas prévu — un cache, une session, une vue compilée écrite trop
+# tôt.
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
 # ──────────────────────────────── Démarrage ────────────────────────────────
 
 case "${CONTAINER_ROLE:-web}" in
