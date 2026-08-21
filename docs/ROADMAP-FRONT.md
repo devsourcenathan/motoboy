@@ -1057,3 +1057,56 @@ porte le statut en détail.
 vérifiait qu'une agence `PENDING` ne peut pas lister ses gares. Il passait, et
 gardait la panne en place. Remplacé par la garantie réelle — préparer oui,
 générer non, ne pas paraître dans la recherche, et paraître à l'admission.
+
+---
+
+## 18. Les pièces déposées — 21 août 2026
+
+L'administration ne pouvait ouvrir aucun document. Ni ceux d'un chauffeur, ni
+ceux d'une agence. **Personne ne le pouvait** — pas même celui qui les avait
+envoyés.
+
+`FileStorage::temporaryUrl` était implémenté, et appelé de nulle part. Le
+commentaire de repli de l'adaptateur annonçait même que « la consultation passe
+par l'endpoint authentifié » : cet endpoint n'a jamais existé. La capacité avait
+été prévue, jamais branchée.
+
+### Ce que les écrans montraient à la place
+
+| Écran | Ce qu'il affichait | Ce qu'il fallait |
+|---|---|---|
+| File des chauffeurs | Les **types** déposés, en pastilles | Ouvrir le permis avant de mettre quelqu'un au volant |
+| Dossier d'agence | Type, statut, date | Lire le registre de commerce avant d'admettre |
+
+La file portait `documents: [LICENSE, IDENTITY, …]` avec, dans le contrat, ce
+commentaire : « pour voir d'un coup ce qui manque ». C'est utile, et cela permet
+seulement de constater qu'un dossier est **complet** — jamais de l'instruire.
+L'écran d'agence disait déjà la règle dans son état vide : « admettre une agence
+dont personne n'a vu le registre de commerce revient à ne pas l'avoir
+instruite ». C'était vrai même une fois la pièce déposée.
+
+### La forme retenue
+
+Un endpoint **signé**, hors du groupe authentifié, qui diffuse le fichier.
+
+Signé parce qu'un document s'ouvre dans un onglet, et qu'un onglet ne porte pas
+le jeton que le client garde en mémoire. Sans cela il faudrait télécharger la
+pièce en arrière-plan pour la ré-exposer — ce qui recrée une URL locale non
+révocable et fait passer chaque document par la mémoire du navigateur. Dix
+minutes : le temps d'instruire, pas celui d'oublier un lien dans une
+conversation.
+
+Diffusé par l'API plutôt que servi par une URL de seau signée. Le seau n'est
+jamais exposé, l'autorisation reste d'un seul côté, et surtout la consultation
+fonctionne à l'identique sur le disque local — qui ne sait pas signer. **Une
+fonctionnalité qui n'existe qu'en production n'est jamais éprouvée avant d'y
+arriver**, et c'est exactement ce qui a laissé ce trou ouvert.
+
+### Au passage
+
+`toInternational` **redoublait l'indicatif** : `237651212331`, tapé sans son `+`,
+donnait `+237237651212331`. Le format restait plausible, le serveur l'acceptait,
+et le code partait vers un numéro inexistant — un SMS attendu que rien n'avait
+envoyé. C'est la quatrième saisie courante, et la seule que les tests ne
+couvraient pas. Seule la longueur permet de trancher : un national de neuf
+chiffres peut commencer par `237`, les fixes camerounais s'ouvrant par un 2.

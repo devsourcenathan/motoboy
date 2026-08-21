@@ -1083,6 +1083,53 @@ paths:
                         code: { type: string, example: CM }
                         name: { type: string, example: Cameroun }
 
+  /v1/documents/{kind}/{document}:
+    get:
+      tags: [Administration]
+      summary: Ouvrir une pièce déposée
+      description: |
+        Diffuse le fichier — registre de commerce d'une agence, permis d'un
+        chauffeur.
+
+        **L'autorisation tient à la signature du lien**, pas à une session : un
+        document s'ouvre dans un onglet, et un onglet ne porte pas le jeton que
+        le client garde en mémoire. Le lien est produit par les listes qui
+        exposent ces pièces, et vaut dix minutes.
+
+        Le fichier est servi par l'API et non par une URL de seau : le seau n'est
+        jamais exposé, et la consultation fonctionne à l'identique sur le disque
+        local, qui ne sait pas signer une URL.
+      security: []
+      parameters:
+        - name: kind
+          in: path
+          required: true
+          schema: { type: string, enum: [agency, driver] }
+        - name: document
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: expires
+          in: query
+          required: true
+          schema: { type: integer }
+          description: Horodatage d'expiration, posé par le générateur du lien.
+        - name: signature
+          in: query
+          required: true
+          schema: { type: string }
+          description: Signature dérivée d'`APP_KEY`.
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: Le fichier
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '403':
+          description: Lien expiré ou signature invalide
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /v1/places/autocomplete:
     get:
       tags: [Places]
@@ -3595,8 +3642,24 @@ components:
         vehicle_plate: { type: [string, 'null'] }
         documents:
           type: array
-          description: Types de pieces deja deposees, pour voir d'un coup ce qui manque.
-          items: { $ref: '#/components/schemas/DriverDocumentType' }
+          description: |
+            Les pièces déposées, **avec de quoi les ouvrir**.
+
+            Ce tableau ne portait que les types — « voir d'un coup ce qui
+            manque ». Cela permet de constater qu'un dossier est complet, et
+            jamais de l'instruire : on approuvait un chauffeur sans avoir pu
+            lire son permis.
+          items:
+            type: object
+            required: [id, type, url]
+            properties:
+              id: { type: integer, format: int64 }
+              type: { $ref: '#/components/schemas/DriverDocumentType' }
+              expires_at: { type: [string, 'null'], format: date }
+              url:
+                type: string
+                format: uri
+                description: Lien signé, valable dix minutes.
 
     DriverEarnings:
       type: object
@@ -4305,6 +4368,15 @@ components:
         status: { type: string, enum: [PENDING, ACCEPTED, REJECTED] }
         expires_at: { type: [string, 'null'], format: date }
         uploaded_at: { type: [string, 'null'], format: date-time }
+        url:
+          type: string
+          format: uri
+          description: |
+            Lien signé, valable dix minutes, vers le fichier lui-même.
+
+            **Il n'existait pas.** Les pièces partaient au stockage et rien ne
+            les rendait : l'admission d'une agence se décidait sur la seule
+            présence des types attendus.
 
     PayoutAccountInput:
       type: object

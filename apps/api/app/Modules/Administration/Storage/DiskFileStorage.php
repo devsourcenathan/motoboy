@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Pilote adossé à un disque Laravel.
@@ -48,6 +49,16 @@ final class DiskFileStorage implements FileStorage
             // consultation passe par l'endpoint authentifié, pas par le disque.
             return $path;
         }
+    }
+
+    public function respond(string $path, string $filename): StreamedResponse
+    {
+        // `inline` et non `attachment` : une pièce se regarde pour décider, et
+        // forcer un téléchargement obligerait à ouvrir chaque fichier depuis le
+        // dossier des téléchargements pour instruire un seul dossier.
+        return Storage::disk($this->disk)->response($path, $filename, [
+            'Content-Disposition' => 'inline; filename="'.addslashes($filename).'"',
+        ]);
     }
 
     public function delete(string $path): void

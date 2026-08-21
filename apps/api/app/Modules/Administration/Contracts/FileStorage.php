@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Administration\Contracts;
 
 use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Port de stockage de fichiers.
@@ -37,6 +38,22 @@ interface FileStorage
      * circulerait ensuite hors de tout contrôle.
      */
     public function temporaryUrl(string $path, int $minutes = 10): string;
+
+    /**
+     * Diffuse le fichier lui-même.
+     *
+     * **Rien ne lisait les documents déposés.** `temporaryUrl` existait, et
+     * aucun appelant ne s'en servait : les pièces d'une agence comme celles
+     * d'un chauffeur partaient au stockage sans que personne — ni
+     * l'administration qui doit décider, ni celui qui les a déposées — ne
+     * puisse les rouvrir. On approuvait un dossier sans pouvoir le lire.
+     *
+     * Diffuser plutôt que renvoyer l'URL signée du fournisseur : le pilote
+     * local ne sait pas signer, et faire dépendre la consultation du disque
+     * choisi rendrait la fonctionnalité absente en développement — donc jamais
+     * éprouvée. L'autorisation reste ici, et le seau n'est jamais exposé.
+     */
+    public function respond(string $path, string $filename): StreamedResponse;
 
     public function delete(string $path): void;
 }

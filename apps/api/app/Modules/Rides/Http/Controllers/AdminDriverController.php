@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Rides\Http\Controllers;
 
+use App\Modules\Administration\Support\DocumentLink;
 use App\Modules\Identity\Models\User;
 use App\Modules\Rides\Actions\ReviewDriverApplication;
 use App\Modules\Rides\Enums\DriverStatus;
 use App\Modules\Rides\Http\Resources\DriverProfileResource;
+use App\Modules\Rides\Models\DriverDocument;
 use App\Modules\Rides\Models\DriverProfile;
 use App\Support\Http\ApiException;
 use App\Support\Http\ErrorCode;
@@ -108,7 +110,18 @@ final class AdminDriverController
             ],
             'city_id' => $profile->city_id,
             'vehicle_plate' => $profile->vehicle_plate,
-            'documents' => $profile->documents->pluck('type')->map(fn ($type) => $type->value)->all(),
+            /*
+             * **Le type ne suffisait pas.** Cette liste ne portait que les types
+             * déposés — « ce qui manque, d'un coup d'œil » — ce qui permet de
+             * voir un dossier complet et jamais de l'instruire. On approuvait
+             * un chauffeur sans avoir pu ouvrir son permis.
+             */
+            'documents' => $profile->documents->map(fn (DriverDocument $doc): array => [
+                'id' => $doc->id,
+                'type' => $doc->type->value,
+                'expires_at' => $doc->expires_at?->toDateString(),
+                'url' => DocumentLink::for('driver', $doc->id),
+            ])->all(),
         ];
     }
 

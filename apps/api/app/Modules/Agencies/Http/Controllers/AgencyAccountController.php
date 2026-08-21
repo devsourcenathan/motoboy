@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Agencies\Http\Controllers;
 
 use App\Modules\Administration\Contracts\FileStorage;
+use App\Modules\Administration\Support\DocumentLink;
 use App\Modules\Agencies\Actions\ManagePayoutAccount;
 use App\Modules\Agencies\Actions\RegisterAgency;
 use App\Modules\Agencies\Models\AgencyDocument;
@@ -170,6 +171,9 @@ final class AgencyAccountController
             'status' => $document->status,
             'expires_at' => $document->expires_at?->toDateString(),
             'uploaded_at' => $document->created_at?->toIso8601String(),
+            // L'agence relit ce qu'elle a déposé : sans quoi elle ne peut pas
+            // vérifier qu'elle n'a pas envoyé deux fois la mauvaise page.
+            'url' => DocumentLink::for('agency', $document->id),
         ];
     }
 }

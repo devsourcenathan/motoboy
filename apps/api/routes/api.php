@@ -7,6 +7,7 @@ use App\Modules\Administration\Http\Controllers\AdminDashboardController;
 use App\Modules\Administration\Http\Controllers\AdminPayoutAccountController;
 use App\Modules\Administration\Http\Controllers\AdminReferenceController;
 use App\Modules\Administration\Http\Controllers\ClientConfigController;
+use App\Modules\Administration\Http\Controllers\DocumentController;
 use App\Modules\Administration\Http\Controllers\PlatformSettingController;
 use App\Modules\Agencies\Http\Controllers\AgencyAccountController;
 use App\Modules\Agencies\Http\Controllers\AgencyStaffController;
@@ -58,6 +59,21 @@ Route::prefix('v1')->group(function (): void {
      * a besoin avant tout compte.
      */
     Route::get('config', ClientConfigController::class);
+
+    /*
+     * Consultation d'une pièce déposée.
+     *
+     * **Hors du groupe authentifié, et c'est l'intention** : l'autorisation
+     * tient à la signature du lien, que `signed` vérifie. Un document s'ouvre
+     * dans un onglet, et un onglet ne porte pas le jeton gardé en mémoire par
+     * le client. Le lien vaut dix minutes ; passé ce délai, il ne vaut plus
+     * rien.
+     */
+    Route::get('documents/{kind}/{document}', DocumentController::class)
+        ->middleware('signed')
+        ->whereIn('kind', ['agency', 'driver'])
+        ->whereNumber('document')
+        ->name('documents.show');
 
     Route::get('places/autocomplete', [PlaceController::class, 'autocomplete']);
     Route::get('search', SearchController::class);

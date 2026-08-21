@@ -102,7 +102,8 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
   const [reason, setReason] = useState('')
   const [asking, setAsking] = useState<'reject' | 'suspend' | null>(null)
 
-  const missing = REQUIRED.filter((type) => !row.documents.includes(type))
+  const filed = new Map(row.documents.map((doc) => [doc.type, doc]))
+  const missing = REQUIRED.filter((type) => !filed.has(type))
   const complete = missing.length === 0
 
   return (
@@ -137,22 +138,38 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
       {/*
         Ce qui manque, nommé. Lister les pièces déposées laisserait l'instructeur
         faire lui-même la soustraction, à chaque dossier.
+
+        **Et ce qui est là s'ouvre.** Ces pastilles ne disaient que la présence,
+        parce que l'API ne rendait que des types : on approuvait un chauffeur
+        sans avoir pu regarder son permis. Une pièce déposée est désormais un
+        lien — nouvel onglet, le lien étant signé et valable dix minutes, et la
+        décision se prend en gardant la file ouverte.
       */}
       <div className="mt-4 flex flex-wrap gap-2">
         {REQUIRED.map((type) => {
-          const present = row.documents.includes(type)
+          const doc = filed.get(type)
+
+          if (doc === undefined) {
+            return (
+              <span
+                key={type}
+                className="rounded-md bg-danger-soft px-2 py-1 text-xs text-danger-strong"
+              >
+                ✗ {DOCUMENT_LABELS[type]}
+              </span>
+            )
+          }
 
           return (
-            <span
+            <a
               key={type}
-              className={
-                present
-                  ? 'rounded-md bg-success-50 px-2 py-1 text-xs text-success-700'
-                  : 'rounded-md bg-danger-soft px-2 py-1 text-xs text-danger-strong'
-              }
+              href={doc.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md bg-success-50 px-2 py-1 text-xs text-success-700 underline decoration-success-700/40 underline-offset-2 hover:decoration-success-700"
             >
-              {present ? '✓' : '✗'} {DOCUMENT_LABELS[type]}
-            </span>
+              ✓ {DOCUMENT_LABELS[type]}
+            </a>
           )
         })}
       </div>
