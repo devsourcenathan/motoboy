@@ -233,6 +233,32 @@ final class AgencyBackOfficeTest extends TestCase
         $this->assertSame(30, $vehicle->capacity);
     }
 
+    /**
+     * **Fermer une ligne arrête tous ses horaires d'un coup.**
+     *
+     * `routes.is_active` existait et n'était filtré nulle part : fermer une
+     * ligne entière ne l'empêchait pas de produire des départs, et il fallait
+     * arrêter ses horaires un par un — en en oubliant un. La colonne promettait
+     * ce que rien ne tenait.
+     */
+    public function test_closing_a_route_stops_every_schedule_it_carries(): void
+    {
+        $schedule = $this->buildSchedule();
+
+        $this->assertGreaterThan(0, (new GenerateTrips)->handle($this->agency->id));
+
+        $this->actingAs($this->manager)
+            ->patchJson("/api/v1/agency/routes/{$schedule->route_id}", ['is_active' => false])
+            ->assertOk()
+            ->assertJsonPath('is_active', false);
+
+        Trip::query()->where('schedule_id', $schedule->id)->delete();
+
+        // L'horaire, lui, est resté actif : c'est bien l'itinéraire qui arrête.
+        $this->assertTrue($schedule->refresh()->is_active);
+        $this->assertSame(0, (new GenerateTrips)->handle($this->agency->id));
+    }
+
     public function test_generation_never_touches_an_existing_departure(): void
     {
         $schedule = $this->buildSchedule();

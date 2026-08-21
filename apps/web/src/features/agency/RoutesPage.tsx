@@ -21,6 +21,7 @@ import {
   useDrivers,
   useGenerateTrips,
   useRoutes,
+  useUpdateRoute,
   useUpdateSchedule,
   useStations,
   useVehicles,
@@ -130,9 +131,12 @@ function RouteCard({
   onSchedule: () => void
 }) {
   const { t } = useTranslation()
+  // Nommé `ligne` et non `close` : ce dernier existe déjà sur `window`, et
+  // TypeScript prend alors le global sans rien signaler avant l'usage.
+  const ligne = useUpdateRoute()
 
   return (
-    <Card>
+    <Card className={route.is_active ? '' : 'opacity-70'}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-semibold text-neutral-900">
@@ -146,12 +150,22 @@ function RouteCard({
               : ` · ${route.reference_duration_minutes} min`}
           </p>
         </div>
-        <Button
-          label={t('agency:inventory.routes.addSchedule')}
-          variant="secondary"
-          icon="trips"
-          onPress={onSchedule}
-        />
+        <span className="flex items-center gap-2">
+          {route.is_active ? null : <Badge label="Ligne fermée" />}
+          <Button
+            label={route.is_active ? 'Fermer la ligne' : 'Rouvrir'}
+            variant="ghost"
+            size="sm"
+            loading={ligne.isPending}
+            onPress={() => ligne.mutate({ id: route.id, is_active: !route.is_active })}
+          />
+          <Button
+            label={t('agency:inventory.routes.addSchedule')}
+            variant="secondary"
+            icon="trips"
+            onPress={onSchedule}
+          />
+        </span>
       </div>
 
       {route.schedules.length === 0 ? (
@@ -169,7 +183,10 @@ function RouteCard({
         </ul>
       )}
 
-      {route.schedules.some((schedule) => !schedule.is_active) ? <StopNotice /> : null}
+      {route.is_active &&
+      route.schedules.every((schedule) => schedule.is_active) ? null : (
+        <StopNotice />
+      )}
     </Card>
   )
 }

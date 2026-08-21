@@ -89,6 +89,37 @@ final class RoutingController
         )), 201);
     }
 
+    /**
+     * Corriger un itinéraire, ou fermer la ligne.
+     *
+     * **Les gares ne se changent pas.** Un itinéraire *est* la paire qu'il
+     * relie : le réattacher ailleurs déplacerait les horaires qui en dépendent,
+     * et donc des départs déjà vendus, sous des passagers qui ont acheté un
+     * Douala–Bafoussam. Une autre paire est un autre itinéraire.
+     *
+     * Reste ce qui décrit la ligne sans la définir : la durée de référence, et
+     * son ouverture. Fermer arrête la génération de départs pour **tous** ses
+     * horaires d'un coup — c'est le geste qu'on cherche quand une ligne entière
+     * cesse, plutôt que d'arrêter les horaires un par un et d'en oublier un.
+     */
+    public function updateRoute(Request $request, int $id): JsonResponse
+    {
+        $agency = $this->context->require($request);
+        $route = Route::query()->whereKey($id)->firstOrFail();
+
+        $this->context->own($agency, $route->agency_id);
+
+        $route->update($request->validate([
+            'reference_duration_minutes' => ['nullable', 'integer', 'min:1', 'max:2880'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]));
+
+        return response()->json($this->presentRoute($route->refresh()->load([
+            'originCity', 'originStation', 'destinationCity', 'destinationStation',
+            'stops.city', 'schedules',
+        ])));
+    }
+
     public function storeSchedule(Request $request, int $routeId): JsonResponse
     {
         $agency = $this->context->require($request);

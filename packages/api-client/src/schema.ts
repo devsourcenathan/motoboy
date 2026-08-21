@@ -4482,6 +4482,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency/routes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Corriger un itineraire, ou fermer la ligne
+         * @description **Les gares ne se changent pas.** Un itineraire *est* la paire qu'il
+         *     relie : le reattacher ailleurs deplacerait les horaires qui en dependent,
+         *     et donc des departs deja vendus, sous des passagers qui ont achete un
+         *     Douala-Bafoussam. Une autre paire est un autre itineraire.
+         *
+         *     Fermer arrete la generation pour **tous** ses horaires d'un coup — c'est
+         *     le geste qu'on cherche quand une ligne entiere cesse, plutot que
+         *     d'arreter les horaires un par un et d'en oublier un.
+         *
+         *     Les departs deja crees ne bougent pas : les retirer annulerait des
+         *     reservations sans le dire.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["ResourceId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reference_duration_minutes?: number | null;
+                        is_active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencyRoute"];
+                    };
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/agency/routes/{routeId}/schedules": {
         parameters: {
             query?: never;

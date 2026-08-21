@@ -225,6 +225,7 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('routes', [RoutingController::class, 'routes']);
             Route::post('routes', [RoutingController::class, 'storeRoute']);
+            Route::patch('routes/{id}', [RoutingController::class, 'updateRoute']);
             Route::post('routes/{routeId}/schedules', [RoutingController::class, 'storeSchedule']);
             /*
              * **Arrêter un horaire, faute de quoi il vend pour toujours.**

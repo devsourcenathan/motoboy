@@ -2715,6 +2715,45 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
 
+  /v1/agency/routes/{id}:
+    patch:
+      tags: [Agency]
+      summary: Corriger un itineraire, ou fermer la ligne
+      description: |
+        **Les gares ne se changent pas.** Un itineraire *est* la paire qu'il
+        relie : le reattacher ailleurs deplacerait les horaires qui en dependent,
+        et donc des departs deja vendus, sous des passagers qui ont achete un
+        Douala-Bafoussam. Une autre paire est un autre itineraire.
+
+        Fermer arrete la generation pour **tous** ses horaires d'un coup — c'est
+        le geste qu'on cherche quand une ligne entiere cesse, plutot que
+        d'arreter les horaires un par un et d'en oublier un.
+
+        Les departs deja crees ne bougent pas : les retirer annulerait des
+        reservations sans le dire.
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reference_duration_minutes:
+                  type: [integer, 'null']
+                  minimum: 1
+                  maximum: 2880
+                is_active: { type: boolean }
+      responses:
+        default: { $ref: '#/components/responses/DefaultError' }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgencyRoute' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /v1/agency/routes/{routeId}/schedules:
     post:
       tags: [Agency]

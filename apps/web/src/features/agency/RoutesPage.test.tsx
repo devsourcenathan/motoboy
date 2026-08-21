@@ -14,6 +14,7 @@ import { RoutesPage } from './RoutesPage'
  */
 const route = {
   id: 1,
+  is_active: true,
   origin: { city: 'Douala', station: 'Bonabéri' },
   destination: { city: 'Bafoussam', station: 'Gare routière' },
   reference_duration_minutes: 240,
@@ -185,6 +186,29 @@ describe('RoutesPage', () => {
 
     expect(
       await sentRequest((request) => request.url.includes('/schedules/9')),
+    ).toMatchObject({ is_active: false })
+  })
+  /**
+   * **Fermer la ligne arrête tous ses horaires d'un coup.**
+   *
+   * `routes.is_active` existait et n'était filtré nulle part : il fallait
+   * arrêter les horaires un par un, et en oublier un suffisait à continuer de
+   * vendre une ligne qui ne roule plus.
+   */
+  it('ferme une ligne entière, sans toucher aux départs déjà vendus', async () => {
+    mockRoutes(
+      routes({
+        '/agency/routes/1': () => jsonResponse({ ...route, is_active: false }),
+        '/agency/routes': () => jsonResponse({ data: [{ ...route, is_active: true }] }),
+      }),
+    )
+
+    render(<RoutesPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Fermer la ligne' }))
+
+    expect(
+      await sentRequest((request) => request.url.endsWith('/agency/routes/1')),
     ).toMatchObject({ is_active: false })
   })
 })

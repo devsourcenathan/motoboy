@@ -127,6 +127,32 @@ export function useUpdateDriver() {
 }
 
 /**
+ * Corriger un itinéraire, ou fermer la ligne.
+ *
+ * Fermer arrête la génération pour **tous** ses horaires d'un coup — le geste
+ * qu'on cherche quand une ligne entière cesse, plutôt que d'arrêter les
+ * horaires un par un et d'en oublier un.
+ */
+export function useUpdateRoute() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...body
+    }: {
+      id: number
+      reference_duration_minutes?: number | null
+      is_active?: boolean
+    }) =>
+      unwrap(
+        await api.PATCH('/v1/agency/routes/{id}', { params: { path: { id } }, body }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.routes }),
+  })
+}
+
+/**
  * Arrêter un horaire, ou le corriger.
  *
  * Invalide **les itinéraires** et non une liste d'horaires : ils sont rendus
