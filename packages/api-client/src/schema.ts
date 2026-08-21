@@ -1798,6 +1798,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/documents/{kind}/{document}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ouvrir une pièce déposée
+         * @description Diffuse le fichier — registre de commerce d'une agence, permis d'un
+         *     chauffeur.
+         *
+         *     **L'autorisation tient à la signature du lien**, pas à une session : un
+         *     document s'ouvre dans un onglet, et un onglet ne porte pas le jeton que
+         *     le client garde en mémoire. Le lien est produit par les listes qui
+         *     exposent ces pièces, et vaut dix minutes.
+         *
+         *     Le fichier est servi par l'API et non par une URL de seau : le seau n'est
+         *     jamais exposé, et la consultation fonctionne à l'identique sur le disque
+         *     local, qui ne sait pas signer une URL.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Horodatage d'expiration, posé par le générateur du lien. */
+                    expires: number;
+                    /** @description Signature dérivée d'`APP_KEY`. */
+                    signature: string;
+                };
+                header?: never;
+                path: {
+                    kind: "agency" | "driver";
+                    document: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Le fichier */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": string;
+                    };
+                };
+                /** @description Lien expiré ou signature invalide */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["NotFound"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/places/autocomplete": {
         parameters: {
             query?: never;
@@ -5460,7 +5526,7 @@ export interface components {
          *     l'affichage et peut changer sans préavis.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "SERVER_ERROR" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "ACCOUNT_NOT_FOUND" | "ACCOUNT_NOT_VERIFIED" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "SERVICE_REQUEST_ALREADY_OPEN" | "SERVICE_REQUEST_CLOSED" | "DRIVER_NOT_APPROVED" | "DRIVER_BUSY" | "OFFER_NOT_ACCEPTABLE" | "OFFER_ALREADY_TAKEN" | "RIDE_NOT_PAID" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING";
+        ErrorCode: "VALIDATION_FAILED" | "SERVER_ERROR" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "RATE_LIMITED" | "OTP_INVALID" | "OTP_EXPIRED" | "OTP_TOO_MANY_ATTEMPTS" | "ACCOUNT_NOT_FOUND" | "ACCOUNT_NOT_VERIFIED" | "SEAT_ALREADY_HELD" | "TRIP_FULL" | "ONLINE_SALES_CLOSED" | "TRIP_CANCELLED" | "BOOKING_EXPIRED" | "BOOKING_NOT_CANCELLABLE" | "CANCELLATION_DEADLINE_PASSED" | "PAYMENT_ALREADY_SUCCEEDED" | "PAYMENT_FAILED" | "TICKET_NOT_FOUND" | "TICKET_ALREADY_VALIDATED" | "TICKET_WRONG_TRIP" | "TICKET_CANCELLED" | "SERVICE_REQUEST_ALREADY_OPEN" | "SERVICE_REQUEST_CLOSED" | "DRIVER_NOT_APPROVED" | "DRIVER_BUSY" | "OFFER_NOT_ACCEPTABLE" | "OFFER_ALREADY_TAKEN" | "RIDE_NOT_PAID" | "PAYOUT_NOT_APPROVABLE" | "PAYOUT_NOT_SENDABLE" | "PAYOUT_ACCOUNT_UNVERIFIED" | "AGENCY_NOT_PENDING" | "AGENCY_NOT_APPROVED";
         Error: {
             code: components["schemas"]["ErrorCode"];
             /**
@@ -5509,8 +5575,26 @@ export interface components {
             /** Format: int64 */
             city_id: number;
             vehicle_plate: string | null;
-            /** @description Types de pieces deja deposees, pour voir d'un coup ce qui manque. */
-            documents: components["schemas"]["DriverDocumentType"][];
+            /**
+             * @description Les pièces déposées, **avec de quoi les ouvrir**.
+             *
+             *     Ce tableau ne portait que les types — « voir d'un coup ce qui
+             *     manque ». Cela permet de constater qu'un dossier est complet, et
+             *     jamais de l'instruire : on approuvait un chauffeur sans avoir pu
+             *     lire son permis.
+             */
+            documents: {
+                /** Format: int64 */
+                id: number;
+                type: components["schemas"]["DriverDocumentType"];
+                /** Format: date */
+                expires_at?: string | null;
+                /**
+                 * Format: uri
+                 * @description Lien signé, valable dix minutes.
+                 */
+                url: string;
+            }[];
         };
         DriverEarnings: {
             /** @description Le solde du compte courant, reversable ou non. */
@@ -6036,6 +6120,15 @@ export interface components {
             expires_at?: string | null;
             /** Format: date-time */
             uploaded_at?: string | null;
+            /**
+             * Format: uri
+             * @description Lien signé, valable dix minutes, vers le fichier lui-même.
+             *
+             *     **Il n'existait pas.** Les pièces partaient au stockage et rien ne
+             *     les rendait : l'admission d'une agence se décidait sur la seule
+             *     présence des types attendus.
+             */
+            url?: string;
         };
         PayoutAccountInput: {
             /** @enum {string} */

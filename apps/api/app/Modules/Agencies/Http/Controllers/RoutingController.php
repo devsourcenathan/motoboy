@@ -129,7 +129,7 @@ final class RoutingController
      */
     public function generate(Request $request, GenerateTrips $generate): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->requireApproved($request);
 
         return response()->json([
             'created' => $generate->handle($agency->id),

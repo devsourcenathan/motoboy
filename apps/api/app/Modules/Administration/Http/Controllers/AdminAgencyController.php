@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Administration\Http\Controllers;
 
 use App\Modules\Administration\Support\AdminContext;
+use App\Modules\Administration\Support\DocumentLink;
 use App\Modules\Agencies\Actions\ManagePayoutAccount;
 use App\Modules\Agencies\Actions\ReviewAgency;
 use App\Modules\Agencies\Actions\UpdateCommercialTerms;
@@ -66,6 +67,10 @@ final class AdminAgencyController
                     'status' => $doc->status,
                     'expires_at' => $doc->expires_at?->toDateString(),
                     'uploaded_at' => $doc->created_at?->toIso8601String(),
+                    // Sans ce lien, l'écran énumère des pièces qu'on ne peut pas
+                    // ouvrir, et l'admission se décide sur la seule présence des
+                    // types attendus.
+                    'url' => DocumentLink::for('agency', $doc->id),
                 ])->all(),
             'payout_accounts' => $agency->payoutAccounts()->orderByDesc('created_at')->get()
                 ->map($this->account(...))->all(),

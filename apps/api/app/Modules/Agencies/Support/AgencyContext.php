@@ -51,6 +51,23 @@ final class AgencyContext
      *
      * Chaque endpoint que le personnel doit atteindre declare donc ce qu'il exige,
      * et le silence reste fermé.
+     *
+     * ---
+     *
+     * **Cette méthode ne vérifie pas l'admission, et c'est délibéré.**
+     *
+     * Elle le faisait, pour tous les endpoints d'agence sans distinction. Une
+     * agence fraîchement inscrite naît `PENDING` : elle recevait donc un 403 sur
+     * la totalité de son espace, y compris le dépôt de ses pièces — dont
+     * l'admission dépend. Le circuit se refermait sur lui-même, et aucune agence
+     * ne pouvait être admise autrement qu'en aveugle.
+     *
+     * L'intention derrière cette garde était de **ne rien publier** ; sa
+     * formulation interdisait aussi de se préparer. Les deux sont maintenant
+     * distincts : `requireApproved()` garde la publication et la vente, et la
+     * garantie côté public ne repose plus sur elle seule — `Trip::openForOnlineSale`
+     * écarte désormais les agences non admises, quelle que soit la façon dont le
+     * départ a été créé.
      */
     public function require(Request $request, ?string $permission = null): Agency
     {
@@ -96,11 +113,39 @@ final class AgencyContext
             throw ApiException::of(ErrorCode::Forbidden, 'Permission insuffisante.');
         }
 
-        // Une agence non validée ne publie rien : elle doit d'abord fournir ses
-        // documents et être approuvée (§23 du brief).
-        if ($agency->status !== 'APPROVED') {
+        /*
+         * **Une agence rejetée n'a plus rien à préparer.** `ReviewAgency` ne
+         * transite que depuis `PENDING` : le refus est terminal, et laisser
+         * l'espace ouvert ferait déposer des pièces que personne n'instruira.
+         *
+         * `PENDING`, en revanche, passe — voir le docbloc de cette méthode.
+         */
+        if ($agency->status === 'REJECTED') {
             throw ApiException::of(
                 ErrorCode::Forbidden,
+                'Candidature refusée.',
+                ['status' => $agency->status],
+            );
+        }
+
+        return $agency;
+    }
+
+    /**
+     * L'agence, **et** son admission.
+     *
+     * Réservée à ce qui expose l'agence au public ou fait circuler de l'argent :
+     * générer des départs, vendre au guichet, embarquer, annuler. Tout le reste
+     * — pièces, gares, parc, personnel, coordonnées de reversement — relève de
+     * la préparation et passe par `require()`.
+     */
+    public function requireApproved(Request $request, ?string $permission = null): Agency
+    {
+        $agency = $this->require($request, $permission);
+
+        if ($agency->status !== 'APPROVED') {
+            throw ApiException::of(
+                ErrorCode::AgencyNotApproved,
                 'Agence non validée : publication impossible.',
                 ['status' => $agency->status],
             );

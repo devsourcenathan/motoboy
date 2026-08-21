@@ -171,6 +171,7 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
           type: string
           status: string
           expires_at?: string | null
+          url?: string
         }[]
         commercial_terms?: Terms | null
       }
@@ -192,9 +193,28 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
               </p>
             ) : (
               <ul className="flex flex-col gap-1 text-sm">
+                {/*
+                  **Le type devient un lien.** Cette liste énumérait des pièces
+                  que rien ne permettait d'ouvrir : le message ci-dessus disait
+                  déjà qu'admettre sans avoir vu le registre revient à ne pas
+                  instruire, et c'était vrai même une fois la pièce déposée.
+                  Nouvel onglet — le lien est signé, valable dix minutes, et le
+                  dossier reste ouvert derrière.
+                */}
                 {(agency.documents ?? []).map((doc) => (
-                  <li key={doc.id} className="flex justify-between">
-                    <span>{doc.type}</span>
+                  <li key={doc.id} className="flex justify-between gap-4">
+                    {doc.url === undefined ? (
+                      <span>{doc.type}</span>
+                    ) : (
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        {doc.type}
+                      </a>
+                    )}
                     <span className="text-neutral-500">
                       {doc.status}
                       {doc.expires_at ? ` — expire le ${doc.expires_at}` : ''}

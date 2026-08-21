@@ -50,7 +50,22 @@ final class CreateAdminCommand extends Command
         $roleId = RoleModel::query()->where('name', $role->value)->value('id');
 
         if ($roleId === null) {
-            $this->error("Rôle {$role->value} absent. Lancer `php artisan db:seed` d'abord.");
+            /*
+             * **La classe est nommée, et ce n'est pas du zèle.**
+             *
+             * Ce message disait `php artisan db:seed`. Or cette commande sans
+             * `--class` passe par `DatabaseSeeder`, dont la garde teste
+             * `APP_ENV` — pas la base visée. Lancée depuis un poste de
+             * développement branché sur la base de production, ce qui est
+             * précisément la situation où l'on crée un premier administrateur
+             * sans accès au serveur, elle y sème agences et départs fictifs.
+             *
+             * Le conseil donné au moment de l'erreur est suivi tel quel : c'est
+             * la dernière chose qu'on relit.
+             */
+            $this->error("Rôle {$role->value} absent.");
+            $this->line('  php artisan db:seed --force --class=RoleAndPermissionSeeder');
+            $this->line('  (jamais `db:seed` seul : il sèmerait les données de démonstration)');
 
             return self::FAILURE;
         }

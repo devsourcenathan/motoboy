@@ -95,6 +95,29 @@ describe('toInternational', () => {
     expect(toInternational('6 90 00 00 01')).toBe('+237690000001')
     expect(toInternational('690-000-001')).toBe('+237690000001')
   })
+
+  /**
+   * **L'indicatif était redoublé** : `237690000001` donnait `+237237690000001`.
+   *
+   * C'est la quatrième saisie courante, et la plus traître — recopier un numéro
+   * depuis une carte de visite ou un contact donne souvent l'indicatif sans son
+   * `+`. Le résultat ressemblait à un numéro valide, passait la validation du
+   * serveur, et le code partait vers un numéro inexistant : on attendait un SMS
+   * jamais envoyé, sans rien à corriger à l'écran.
+   */
+  it('ne redouble pas un indicatif déjà tapé sans son plus', () => {
+    expect(toInternational('237690000001')).toBe('+237690000001')
+    expect(toInternational('237 690 00 00 01')).toBe('+237690000001')
+  })
+
+  /**
+   * La longueur tranche, et elle seule : un national de neuf chiffres peut
+   * commencer par `237`, les fixes camerounais s'ouvrant par un 2. Le prendre
+   * pour un international lui amputerait trois chiffres.
+   */
+  it('ne prend pas un national commençant par 237 pour un international', () => {
+    expect(toInternational('237000001')).toBe('+237237000001')
+  })
 })
 
 /**

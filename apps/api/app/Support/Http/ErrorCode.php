@@ -82,6 +82,14 @@ enum ErrorCode: string
     case OfferAlreadyTaken = 'OFFER_ALREADY_TAKEN';
     case RideNotPaid = 'RIDE_NOT_PAID';
 
+    /**
+     * L'agence existe et le compte lui appartient : c'est l'admission qui
+     * manque. Un `FORBIDDEN` générique ferait lire « vous n'avez pas accès à
+     * cette ressource » — faux, et sans rien à faire de la réponse. Ici le
+     * client peut dire ce qui bloque et ce qu'on attend.
+     */
+    case AgencyNotApproved = 'AGENCY_NOT_APPROVED';
+
     case PayoutNotApprovable = 'PAYOUT_NOT_APPROVABLE';
     case PayoutNotSendable = 'PAYOUT_NOT_SENDABLE';
     case PayoutAccountUnverified = 'PAYOUT_ACCOUNT_UNVERIFIED';
@@ -93,7 +101,7 @@ enum ErrorCode: string
         return match ($this) {
             self::ValidationFailed => 422,
             self::Unauthenticated => 401,
-            self::Forbidden => 403,
+            self::Forbidden, self::AgencyNotApproved => 403,
             self::NotFound, self::TicketNotFound, self::AccountNotFound => 404,
             /*
              * 409 et non 404 : le compte **existe**, c'est son état qui bloque.

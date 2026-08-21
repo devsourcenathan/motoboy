@@ -17,6 +17,7 @@ use Database\Seeders\CountrySeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -163,6 +164,63 @@ final class DriverApplicationTest extends TestCase
             ->getJson('/api/v1/admin/drivers')
             ->assertOk()
             ->assertJsonPath('meta.total', 1);
+    }
+
+    /**
+     * **On approuvait sans pouvoir lire.**
+     *
+     * La file ne portait que les *types* de pièces déposées — « voir d'un coup
+     * ce qui manque ». Cela suffit à constater qu'un dossier est complet, et
+     * jamais à l'instruire : aucun endpoint ne rendait le fichier, ni à
+     * l'administration qui décide, ni au chauffeur qui l'avait envoyé.
+     * `FileStorage::temporaryUrl` était implémenté et appelé de nulle part.
+     */
+    public function test_the_queue_hands_over_a_way_to_open_each_document(): void
+    {
+        Storage::fake('documents');
+
+        $profile = $this->submitted();
+        $this->attachEveryDocument($profile);
+        Storage::disk('documents')->put("drivers/{$profile->id}/LICENSE.pdf", '%PDF-1.4 permis');
+
+        $document = $profile->documents()->where('type', DriverDocumentType::License->value)->firstOrFail();
+
+        $documents = $this->actingAs($this->admin())
+            ->getJson('/api/v1/admin/drivers')
+            ->assertOk()
+            ->json('data.0.documents');
+
+        $this->assertIsArray($documents);
+
+        $lien = null;
+
+        foreach ($documents as $doc) {
+            if (is_array($doc) && ($doc['id'] ?? null) === $document->id) {
+                $lien = is_string($doc['url'] ?? null) ? $doc['url'] : null;
+            }
+        }
+
+        $this->assertNotNull($lien, 'La file doit fournir un lien par pièce.');
+
+        // Le lien s'ouvre **sans session** : un document se consulte dans un
+        // onglet, qui ne porte pas le jeton gardé en mémoire par le client.
+        $this->get($lien)->assertOk();
+    }
+
+    /**
+     * La signature **est** l'autorisation : sans elle, le lien ne vaut rien.
+     * Sans quoi l'endpoint publierait les pièces de tout le monde à qui devine
+     * un identifiant.
+     */
+    public function test_an_unsigned_link_opens_nothing(): void
+    {
+        Storage::fake('documents');
+
+        $profile = $this->submitted();
+        $this->attachEveryDocument($profile);
+        $document = $profile->documents()->firstOrFail();
+
+        $this->get("/api/v1/documents/driver/{$document->id}")->assertForbidden();
     }
 
     public function test_a_passenger_reaches_neither_the_queue_nor_a_decision(): void

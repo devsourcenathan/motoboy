@@ -60,6 +60,49 @@ Le conteneur refuse désormais de démarrer sur cette combinaison, en la nommant
 Dans l'environnement Render, **seule `DB_URL` doit exister** : supprimer
 `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` et `DB_PASSWORD`.
 
+### ⚠️ SNI — la connexion échoue depuis un poste, pas depuis le conteneur
+
+```
+SQLSTATE[08006] ERROR: Endpoint ID is not specified. Either please upgrade the
+postgres client library (libpq) for SNI support…
+```
+
+Neon héberge tous les endpoints d'une région derrière **une seule adresse IP** et
+distingue le vôtre par le nom de serveur transmis pendant la poignée de main TLS
+(SNI). Une libpq trop ancienne ne l'envoie pas, et le mandataire ne sait pas
+quelle base ouvrir.
+
+L'image Docker embarque une libpq récente : **la production n'est pas concernée**.
+C'est le PHP d'un poste de développement qui bute — or c'est précisément par là
+que passent les migrations et la création du premier administrateur, faute de
+shell chez l'hébergeur.
+
+Neon documente quatre contournements. Un seul survit à Laravel :
+
+| Contournement | Verdict |
+|---|---|
+| `?options=endpoint%3D…` dans l'URL | ❌ `options` est **déjà** la clé des options PDO dans la configuration Laravel. La fusion lève `array_diff_key(): Argument #2 must be of type array, string given` |
+| L'option dans le nom de base | ❌ `PostgresConnector` écrit `dbname='…'` **entre apostrophes**, si bien que libpq n'y voit qu'un nom littéral et ne le ré-analyse pas |
+| `sslmode=verify-full` | ❌ propre aux clients Go |
+| **Le préfixe sur le mot de passe** | ✅ Laravel passe le mot de passe à PDO en argument séparé — rien ne le cite |
+
+```
+DB_URL="postgresql://<user>:endpoint%3D<endpoint-id>%3B<motdepasse>@<hôte>/neondb?sslmode=require"
+```
+
+`%3D` et `%3B` parce que Laravel décode l'userinfo (`ConfigurationUrlParser`
+applique `rawurldecode`). L'identifiant d'endpoint est la **première étiquette de
+l'hôte**, `ep-…`.
+
+⚠️ Ce préfixe **dégrade l'authentification** : il force le mot de passe en clair
+dans le tunnel, au lieu de SCRAM. Le transport reste chiffré par TLS, et c'est le
+prix explicite d'une libpq ancienne. La correction durable est de mettre à jour
+le client Postgres du poste, pas de généraliser ce contournement — et il n'a
+**rien à faire** dans la configuration du service en ligne, dont la libpq gère
+SNI.
+
+---
+
 ### Endpoint direct, pas le pooler
 
 Neon expose deux endpoints : le direct et le **pooler**, reconnaissable au

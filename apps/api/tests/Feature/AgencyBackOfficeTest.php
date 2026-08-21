@@ -210,9 +210,77 @@ final class AgencyBackOfficeTest extends TestCase
             ->assertJsonPath('code', 'NOT_FOUND');
     }
 
-    public function test_an_unapproved_agency_publishes_nothing(): void
+    /**
+     * **Une agence en attente prépare tout, et ne publie rien.**
+     *
+     * Ce test affirmait l'inverse : que `PENDING` valait 403 sur l'espace
+     * entier, y compris la liste de ses propres gares. La garde le faisait bel
+     * et bien — et refermait le circuit sur lui-même, puisque l'admission exige
+     * des pièces que l'agence ne pouvait plus déposer. Aucune agence ne pouvait
+     * être admise autrement qu'en aveugle.
+     *
+     * L'intention était de ne rien publier ; la formulation interdisait aussi de
+     * se préparer. Ce qu'il faut vraiment garantir est vérifié ici.
+     */
+    public function test_an_unapproved_agency_prepares_everything_and_publishes_nothing(): void
     {
+        $this->buildSchedule();
+        (new GenerateTrips)->handle($this->agency->id);
+
         $this->agency->update(['status' => 'PENDING']);
+
+        // 1. Elle circule dans son espace : sans quoi elle ne peut pas déposer
+        //    les pièces dont dépend son admission.
+        $this->actingAs($this->manager)
+            ->getJson('/api/v1/agency/stations')
+            ->assertOk();
+
+        $this->actingAs($this->manager)
+            ->getJson('/api/v1/agency/documents')
+            ->assertOk();
+
+        // 2. Elle ne crée aucun départ — et le refus **dit lequel des deux**
+        //    problèmes se pose. Un `FORBIDDEN` générique ferait lire « vous
+        //    n'avez pas accès à cette ressource » à une agence qui vient de tout
+        //    paramétrer, sans rien à faire de la réponse.
+        $this->actingAs($this->manager)
+            ->postJson('/api/v1/agency/trips/generate')
+            ->assertStatus(403)
+            ->assertJsonPath('code', 'AGENCY_NOT_APPROVED')
+            ->assertJsonPath('details.status', 'PENDING');
+
+        // 3. **Et ceux qui existent déjà disparaissent de la recherche.**
+        //    C'est la garantie qui compte : elle porte sur le départ, pas sur le
+        //    geste qui l'a créé, et vaut donc aussi pour un statut qui change
+        //    après coup.
+        $douala = City::query()->where('slug', 'douala')->firstOrFail();
+        $bafoussam = City::query()->where('slug', 'bafoussam')->firstOrFail();
+        $tomorrow = CarbonImmutable::now(config('app.display_timezone'))->addDay();
+
+        $url = sprintf(
+            '/api/v1/search?origin_city_id=%d&destination_city_id=%d&date=%s',
+            $douala->id,
+            $bafoussam->id,
+            $tomorrow->toDateString(),
+        );
+
+        $this->assertCount(0, $this->getJson($url)->assertOk()->json('data'));
+
+        // Et reparaissent à l'admission, sans rien régénérer : l'agence a bâti
+        // son réseau pendant l'instruction, et tout paraît d'un coup.
+        $this->agency->update(['status' => 'APPROVED']);
+
+        $this->assertCount(1, $this->getJson($url)->assertOk()->json('data'));
+    }
+
+    /**
+     * Une candidature refusée est terminale — `ReviewAgency` ne transite que
+     * depuis `PENDING`. Laisser l'espace ouvert ferait déposer des pièces que
+     * personne n'instruira.
+     */
+    public function test_a_rejected_agency_keeps_nothing_open(): void
+    {
+        $this->agency->update(['status' => 'REJECTED']);
 
         $this->actingAs($this->manager)
             ->getJson('/api/v1/agency/stations')

@@ -53,10 +53,41 @@ export const DIALLING_CODE = '+237'
  * jour où le second pays arrive, il y aura un appelant à corriger, pas une
  * constante à débusquer dans deux applications.
  */
+/**
+ * Longueur d'un numéro national camerounais : neuf chiffres, indicatif exclu.
+ *
+ * Sert à distinguer `237651212331` — déjà international, le `+` en moins — d'un
+ * numéro national de neuf chiffres. Les deux commencent par les mêmes chiffres
+ * et seule la longueur les sépare.
+ *
+ * Constante, comme `DIALLING_CODE`, parce qu'un seul pays est desservi. Le jour
+ * du second, les deux valeurs viendront ensemble de `/v1/config` — la colonne
+ * `countries.phone_prefix` existe déjà.
+ */
+const NATIONAL_DIGITS = 9
+
 export function toInternational(input: string, code: string = DIALLING_CODE): string {
   const digits = normalisePhone(input)
 
   if (digits.startsWith('+')) return digits
 
-  return `${code}${digits.replace(/^0+/, '')}`
+  const national = digits.replace(/^0+/, '')
+  const bare = code.replace('+', '')
+
+  /*
+   * **L'indicatif était redoublé.** `237651212331` — tapé sans le `+`, ce qui
+   * est le geste le plus naturel quand on recopie un numéro depuis un contact
+   * ou une carte de visite — devenait `+237237651212331`. Le serveur acceptait
+   * le format, puisqu'il ressemble à un numéro valide, et le code partait vers
+   * un numéro qui n'existe pas : on attendait un SMS jamais envoyé, sans rien
+   * à corriger à l'écran.
+   *
+   * La longueur tranche, et elle seule : un national de neuf chiffres peut
+   * commencer par `237` — les fixes camerounais s'ouvrent par un 2.
+   */
+  if (national.startsWith(bare) && national.length === bare.length + NATIONAL_DIGITS) {
+    return `+${national}`
+  }
+
+  return `${code}${national}`
 }

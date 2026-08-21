@@ -22,14 +22,23 @@ const COMPLETE: AdminDriverRow = {
   driver: { first_name: 'Jean', last_name: 'Kamdem', phone: '+237690000101' },
   city_id: 23,
   vehicle_plate: 'LT-4412-AB',
-  documents: ['LICENSE', 'REGISTRATION', 'IDENTITY', 'INSURANCE'],
+  documents: (['LICENSE', 'REGISTRATION', 'IDENTITY', 'INSURANCE'] as const).map(
+    (type, index) => ({
+      id: index + 1,
+      type,
+      // Ce que l'API produit : un lien signé, valable dix minutes.
+      url: `https://api.test/v1/documents/driver/${index + 1}?expires=1&signature=abc`,
+    }),
+  ),
 }
 
 const INCOMPLETE: AdminDriverRow = {
   ...COMPLETE,
   id: 8,
   driver: { first_name: 'Awa', last_name: 'Nkeng', phone: '+237690000202' },
-  documents: ['LICENSE', 'IDENTITY'],
+  documents: COMPLETE.documents.filter(
+    (doc) => doc.type === 'LICENSE' || doc.type === 'IDENTITY',
+  ),
 }
 
 function page(...rows: AdminDriverRow[]) {
@@ -172,5 +181,40 @@ describe('DriverQueuePage', () => {
     expect(
       await screen.findByText(errorLabel('FORBIDDEN', resolveLocale(i18next.language))),
     ).toBeInTheDocument()
+  })
+  /**
+   * **On approuvait sans pouvoir lire.**
+   *
+   * Ces pastilles ne disaient que la présence d'une pièce, parce que l'API ne
+   * rendait que des types : le fichier partait au stockage et aucun endpoint ne
+   * le rouvrait. Cet écran décide de mettre un inconnu au volant avec des
+   * passagers — le permis doit s'ouvrir depuis là.
+   */
+  it('ouvre chaque pièce déposée, dans un onglet', async () => {
+    mockFetch(page(COMPLETE))
+
+    render(<DriverQueuePage />)
+
+    const permis = await screen.findByRole('link', { name: /Permis/ })
+
+    expect(permis).toHaveAttribute(
+      'href',
+      'https://api.test/v1/documents/driver/1?expires=1&signature=abc',
+    )
+    // Nouvel onglet : la décision se prend en gardant la file ouverte derrière.
+    expect(permis).toHaveAttribute('target', '_blank')
+  })
+
+  /** Une pièce absente n'est pas un lien mort : il n'y a rien à ouvrir. */
+  it('n’offre aucun lien pour une pièce manquante', async () => {
+    mockFetch(page(INCOMPLETE))
+
+    render(<DriverQueuePage />)
+
+    // Le permis est là et s'ouvre ; l'assurance manque et n'est donc pas un
+    // lien — pas un lien mort, pas de lien du tout.
+    await screen.findByRole('link', { name: /Permis/ })
+
+    expect(screen.queryByRole('link', { name: /Assurance/ })).toBeNull()
   })
 })

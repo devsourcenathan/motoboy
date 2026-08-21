@@ -1008,3 +1008,105 @@ le cas réel pas du tout.
 Quatre régressions ajoutées, et vérifiées en remettant l'ancienne règle : les
 deux tests serveur rendent alors 201 au lieu de 422, les deux tests web laissent
 partir le numéro brut.
+
+---
+
+## 17. L'agence en attente — 21 août 2026
+
+Le compte créé, l'agence a reçu un 403 sur **presque toutes** les routes de son
+espace. Y compris la liste de ses propres gares, et le dépôt de ses pièces.
+
+`AgencyContext::require` refusait tout endpoint d'agence dont le statut n'était
+pas `APPROVED`. Une agence naît `PENDING`. Or l'admission suppose l'instruction
+d'un dossier que l'agence ne pouvait plus déposer : **le circuit se refermait sur
+lui-même**, et aucune agence n'était admissible autrement qu'en aveugle.
+
+L'écran d'inscription promettait exactement l'inverse — « votre espace s'ouvre
+immédiatement : déposez vos pièces, déclarez vos gares et vos véhicules ». La
+promesse était juste ; c'est l'API qui ne la tenait pas.
+
+### Trop large et trop étroite à la fois
+
+L'intention de la garde était de **ne rien publier**. Sa formulation interdisait
+aussi de se préparer — et, dans l'autre sens, elle ne portait que sur le geste de
+création, jamais sur le départ. Rien n'aurait retiré de la vente les départs
+d'une agence dont le statut change ensuite : `scopeApproved` existait sur le
+modèle, et **n'était appelé nulle part**.
+
+| Ce qui garde quoi | Avant | Après |
+|---|---|---|
+| Préparer (pièces, gares, parc, personnel) | refusé si `PENDING` | `require()` — ouvert, sauf `REJECTED` |
+| Publier, vendre, embarquer, annuler | `require()` | `requireApproved()` |
+| Paraître dans la recherche | rien | `Trip::openForOnlineSale` filtre l'agence |
+
+Portée sur le départ, la garantie tient d'elle-même : un départ n'est en vente
+que si l'agence qui le vend est admise, quelle que soit la façon dont il a été
+créé. L'agence bâtit donc son réseau complet pendant l'instruction, et **tout
+paraît le jour de l'admission**, sans rien régénérer.
+
+### Un refus qui dit lequel
+
+`FORBIDDEN` aurait fait lire « vous n'avez pas accès à cette ressource » à une
+agence qui vient de tout paramétrer — faux, et sans rien à faire de la réponse.
+`AGENCY_NOT_APPROVED` suit le motif de `DRIVER_NOT_APPROVED`, déjà présent, et
+porte le statut en détail.
+
+### Ce que le test disait
+
+`test_an_unapproved_agency_publishes_nothing` **affirmait le blocage** : il
+vérifiait qu'une agence `PENDING` ne peut pas lister ses gares. Il passait, et
+gardait la panne en place. Remplacé par la garantie réelle — préparer oui,
+générer non, ne pas paraître dans la recherche, et paraître à l'admission.
+
+---
+
+## 18. Les pièces déposées — 21 août 2026
+
+L'administration ne pouvait ouvrir aucun document. Ni ceux d'un chauffeur, ni
+ceux d'une agence. **Personne ne le pouvait** — pas même celui qui les avait
+envoyés.
+
+`FileStorage::temporaryUrl` était implémenté, et appelé de nulle part. Le
+commentaire de repli de l'adaptateur annonçait même que « la consultation passe
+par l'endpoint authentifié » : cet endpoint n'a jamais existé. La capacité avait
+été prévue, jamais branchée.
+
+### Ce que les écrans montraient à la place
+
+| Écran | Ce qu'il affichait | Ce qu'il fallait |
+|---|---|---|
+| File des chauffeurs | Les **types** déposés, en pastilles | Ouvrir le permis avant de mettre quelqu'un au volant |
+| Dossier d'agence | Type, statut, date | Lire le registre de commerce avant d'admettre |
+
+La file portait `documents: [LICENSE, IDENTITY, …]` avec, dans le contrat, ce
+commentaire : « pour voir d'un coup ce qui manque ». C'est utile, et cela permet
+seulement de constater qu'un dossier est **complet** — jamais de l'instruire.
+L'écran d'agence disait déjà la règle dans son état vide : « admettre une agence
+dont personne n'a vu le registre de commerce revient à ne pas l'avoir
+instruite ». C'était vrai même une fois la pièce déposée.
+
+### La forme retenue
+
+Un endpoint **signé**, hors du groupe authentifié, qui diffuse le fichier.
+
+Signé parce qu'un document s'ouvre dans un onglet, et qu'un onglet ne porte pas
+le jeton que le client garde en mémoire. Sans cela il faudrait télécharger la
+pièce en arrière-plan pour la ré-exposer — ce qui recrée une URL locale non
+révocable et fait passer chaque document par la mémoire du navigateur. Dix
+minutes : le temps d'instruire, pas celui d'oublier un lien dans une
+conversation.
+
+Diffusé par l'API plutôt que servi par une URL de seau signée. Le seau n'est
+jamais exposé, l'autorisation reste d'un seul côté, et surtout la consultation
+fonctionne à l'identique sur le disque local — qui ne sait pas signer. **Une
+fonctionnalité qui n'existe qu'en production n'est jamais éprouvée avant d'y
+arriver**, et c'est exactement ce qui a laissé ce trou ouvert.
+
+### Au passage
+
+`toInternational` **redoublait l'indicatif** : `237651212331`, tapé sans son `+`,
+donnait `+237237651212331`. Le format restait plausible, le serveur l'acceptait,
+et le code partait vers un numéro inexistant — un SMS attendu que rien n'avait
+envoyé. C'est la quatrième saisie courante, et la seule que les tests ne
+couvraient pas. Seule la longueur permet de trancher : un national de neuf
+chiffres peut commencer par `237`, les fixes camerounais s'ouvrant par un 2.
