@@ -71,6 +71,12 @@ services:
       - key: LOG_CHANNEL
         value: stderr
 
+      # Le recours quand `stderr` lui-même ne se construit pas. Sans lui, Laravel
+      # tombait sur un fichier qu'il ne pouvait pas ouvrir, et cette panne de
+      # journalisation remplaçait l'erreur qu'elle devait consigner.
+      - key: LOG_EMERGENCY_PATH
+        value: php://stderr
+
       - key: LOG_LEVEL
         value: info
 

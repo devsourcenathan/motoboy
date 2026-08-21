@@ -133,8 +133,24 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        /*
+         * Le journaliseur de dernier recours, quand le canal configure ne peut
+         * pas etre construit.
+         *
+         * **Il visait un fichier, et c'est ce qui a masque une vraie erreur.**
+         * Dans un conteneur, `storage/logs` n'est ecrivable que par le
+         * proprietaire du premier processus qui y touche : le jour ou
+         * l'ordonnanceur, alors lance en root, y a cree `laravel.log`, php-fpm
+         * n'a plus pu y ajouter une ligne. Laravel a bascule ici, a echoue aussi,
+         * et **cet echec** est remonte en 500 a la place de l'erreur d'origine.
+         *
+         * `LOG_EMERGENCY_PATH=php://stderr` en production : un conteneur
+         * journalise sur sa sortie d'erreur, jamais dans un fichier que personne
+         * ne lira. Le defaut reste le fichier pour le developpement local, ou il
+         * est commode et sans piege.
+         */
         'emergency' => [
-            'path' => storage_path('logs/laravel.log'),
+            'path' => env('LOG_EMERGENCY_PATH', storage_path('logs/laravel.log')),
         ],
 
     ],
