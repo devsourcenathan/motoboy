@@ -216,14 +216,23 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('vehicles', [FleetController::class, 'vehicles']);
             Route::post('vehicles', [FleetController::class, 'storeVehicle']);
+            Route::patch('vehicles/{id}', [FleetController::class, 'updateVehicle']);
             Route::get('vehicles/{id}/seats', [FleetController::class, 'seats']);
 
             Route::get('drivers', [FleetController::class, 'drivers']);
             Route::post('drivers', [FleetController::class, 'storeDriver']);
+            Route::patch('drivers/{id}', [FleetController::class, 'updateDriver']);
 
             Route::get('routes', [RoutingController::class, 'routes']);
             Route::post('routes', [RoutingController::class, 'storeRoute']);
             Route::post('routes/{routeId}/schedules', [RoutingController::class, 'storeSchedule']);
+            /*
+             * **Arrêter un horaire, faute de quoi il vend pour toujours.**
+             * `is_active` et `valid_until` existaient en base et rien ne
+             * pouvait les écrire : une ligne qui cesse d'être desservie
+             * continuait de produire des départs.
+             */
+            Route::patch('routes/{routeId}/schedules/{id}', [RoutingController::class, 'updateSchedule']);
             Route::post('trips/generate', [RoutingController::class, 'generate']);
 
             /*

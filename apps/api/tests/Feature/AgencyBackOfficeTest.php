@@ -158,6 +158,81 @@ final class AgencyBackOfficeTest extends TestCase
         $this->assertSame(30, $results[0]['seats_available']);
     }
 
+    /**
+     * **Un horaire vendait pour toujours.**
+     *
+     * Créé, il produisait des départs sur tout l'horizon sans qu'aucun endpoint
+     * ne puisse l'arrêter : `is_active` et `valid_until` existaient en base
+     * depuis le début, et rien ne pouvait les écrire. Une ligne qui cesse d'être
+     * desservie continuait donc d'être vendue, et les passagers l'apprenaient à
+     * la gare.
+     */
+    public function test_a_schedule_can_be_stopped_and_stops_producing_departures(): void
+    {
+        $schedule = $this->buildSchedule();
+
+        $premier = (new GenerateTrips)->handle($this->agency->id);
+        $this->assertGreaterThan(0, $premier);
+
+        $this->actingAs($this->manager)
+            ->patchJson("/api/v1/agency/routes/{$schedule->route_id}/schedules/{$schedule->id}", [
+                'is_active' => false,
+            ])
+            ->assertOk()
+            ->assertJsonPath('is_active', false);
+
+        // Les départs **déjà créés** restent : les retirer annulerait des
+        // réservations sans le dire. Seule la production s'arrête.
+        Trip::query()->where('schedule_id', $schedule->id)->delete();
+
+        $this->assertSame(0, (new GenerateTrips)->handle($this->agency->id));
+    }
+
+    /** Le tarif se corrige sans avoir à renvoyer les jours, qu'on écraserait. */
+    public function test_a_schedule_price_changes_without_touching_its_days(): void
+    {
+        $schedule = $this->buildSchedule();
+
+        $this->actingAs($this->manager)
+            ->patchJson("/api/v1/agency/routes/{$schedule->route_id}/schedules/{$schedule->id}", [
+                'price' => 8000,
+            ])
+            ->assertOk();
+
+        $schedule->refresh();
+
+        $this->assertSame(8000, $schedule->price);
+        $this->assertSame([1, 2, 3, 4, 5, 6, 7], $schedule->days_of_week);
+    }
+
+    /**
+     * **Une plaque mal saisie était définitive.** Le mode de placement, lui,
+     * ne bouge pas : des départs vendus portent déjà un plan de sièges.
+     */
+    public function test_a_vehicle_is_correctable_but_never_reconfigured(): void
+    {
+        $vehicle = $this->agency->vehicles()->create([
+            'registration' => 'LT-000', 'type' => 'BUS',
+            'seating_mode' => 'SEATED', 'capacity' => 30, 'condition' => 'ACTIVE',
+        ]);
+
+        $this->actingAs($this->manager)
+            ->patchJson("/api/v1/agency/vehicles/{$vehicle->id}", [
+                'registration' => 'LT-123-AB',
+                'condition' => 'RETIRED',
+                'seating_mode' => 'CAPACITY',
+                'capacity' => 99,
+            ])
+            ->assertOk();
+
+        $vehicle->refresh();
+
+        $this->assertSame('LT-123-AB', $vehicle->registration);
+        $this->assertSame('RETIRED', $vehicle->condition);
+        $this->assertSame('SEATED', $vehicle->seating_mode->value);
+        $this->assertSame(30, $vehicle->capacity);
+    }
+
     public function test_generation_never_touches_an_existing_departure(): void
     {
         $schedule = $this->buildSchedule();

@@ -52,6 +52,114 @@ export function useCreateStation() {
   })
 }
 
+/**
+ * Corriger ce qui a été déclaré.
+ *
+ * **L'API était en création seule**, et l'espace agence avec elle : une plaque
+ * mal saisie était définitive, un permis expiré ne se renouvelait pas, un
+ * horaire vendait pour toujours. Les colonnes qui servent à arrêter les choses —
+ * `schedules.is_active`, `vehicles.condition` — existaient en base depuis le
+ * début sans qu'aucun endpoint ne puisse les écrire.
+ *
+ * Toutes ces mutations partagent la même forme : un identifiant, un corps
+ * **partiel**, et l'invalidation de la liste d'où la ligne vient. Le corps est
+ * partiel parce qu'un formulaire de correction n'a pas à renvoyer ce qu'il n'a
+ * pas touché — le faire écraserait des champs par ce qu'il avait sous la main.
+ */
+export function useUpdateStation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...body }: { id: number } & Partial<AgencyStationInput>) =>
+      unwrap(
+        await api.PATCH('/v1/agency/stations/{id}', {
+          params: { path: { id } },
+          body,
+        }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.stations }),
+  })
+}
+
+export function useUpdateVehicle() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...body
+    }: {
+      id: number
+      registration?: string
+      brand?: string | null
+      model?: string | null
+      condition?: 'ACTIVE' | 'MAINTENANCE' | 'RETIRED'
+    }) =>
+      unwrap(
+        await api.PATCH('/v1/agency/vehicles/{id}', { params: { path: { id } }, body }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.vehicles }),
+  })
+}
+
+export function useUpdateDriver() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...body
+    }: {
+      id: number
+      first_name?: string
+      last_name?: string
+      phone?: string
+      license_number?: string
+      license_expires_at?: string | null
+      assigned_vehicle_id?: number | null
+      status?: 'ACTIVE' | 'INACTIVE'
+    }) =>
+      unwrap(
+        await api.PATCH('/v1/agency/drivers/{id}', { params: { path: { id } }, body }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.drivers }),
+  })
+}
+
+/**
+ * Arrêter un horaire, ou le corriger.
+ *
+ * Invalide **les itinéraires** et non une liste d'horaires : ils sont rendus
+ * imbriqués dans leur itinéraire, et c'est cette requête-là qui les porte.
+ */
+export function useUpdateSchedule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      routeId,
+      id,
+      ...body
+    }: {
+      routeId: number
+      id: number
+      departure_time?: string
+      days_of_week?: number[]
+      default_vehicle_id?: number
+      price?: number
+      valid_until?: string | null
+      is_active?: boolean
+    }) =>
+      unwrap(
+        await api.PATCH('/v1/agency/routes/{routeId}/schedules/{id}', {
+          params: { path: { routeId, id } },
+          body,
+        }),
+      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.routes }),
+  })
+}
+
 export function useVehicles() {
   return useQuery({
     queryKey: keys.vehicles,
