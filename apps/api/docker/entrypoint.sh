@@ -203,7 +203,24 @@ php_artisan tinker --execute="
     echo 'SMS           : ' . config('sms.driver') . PHP_EOL;
     echo 'Encaissement  : ' . config('payments.gateway') . PHP_EOL;
     echo 'Décaissement  : ' . config('payments.payout_gateway') . PHP_EOL;
-    echo 'Journal       : ' . config('logging.default') . PHP_EOL;
+    echo 'Journal       : ' . config('logging.default') . ' (' . (config('logging.channels.' . config('logging.default') . '.level') ?? 'niveau par canal') . ')' . PHP_EOL;
+
+    /*
+     * Le pilote SMS \`log\` ecrit le code en \`info\`. Sous un niveau plus haut,
+     * il n'ecrit rien du tout — et l'on cherche alors pourquoi aucun OTP
+     * n'apparait, alors que le pilote est bien celui qu'on croit. Ces deux
+     * reglages ne veulent rien dire separement.
+     *
+     * Un niveau inconnu (\`stack\` n'en a pas : il repartit vers ses canaux) ne
+     * declenche rien. Une alerte qui se trompe cesse d'etre lue.
+     */
+    \$niveau = config('logging.channels.' . config('logging.default') . '.level');
+    if (config('sms.driver') === 'log'
+        && \$niveau !== null
+        && !in_array(\$niveau, ['debug', 'info'], true)) {
+        echo PHP_EOL . '  /!\  SMS_DRIVER=log mais LOG_LEVEL masque les lignes info :' . PHP_EOL;
+        echo '       le code OTP ne sera ecrit nulle part.' . PHP_EOL . PHP_EOL;
+    }
 " 2>/dev/null || echo "Configuration effective : illisible."
 
 # ────────────────────────── Droits sur `storage` ──────────────────────────
