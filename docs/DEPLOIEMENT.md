@@ -276,7 +276,14 @@ Deux corrections, complémentaires :
 | Ce qui change | Pourquoi |
 |---|---|
 | L'ordonnanceur et le worker tournent en `www-data` | Rien d'applicatif n'a besoin de root dans un conteneur, et plus rien ne crée de fichier que php-fpm ne pourra pas rouvrir |
+| …avec `HOME=/var/www/html` | **Indissociable du point précédent.** supervisord change d'utilisateur mais pas d'environnement : `HOME` restait `/root`, et libpq y cherchait un certificat client dans un répertoire que `www-data` ne peut pas traverser. La connexion à Neon échouait en boucle, le worker redémarrant chaque seconde |
 | Le secours écrit sur `stderr` | Le mode d'échec disparaît entièrement, y compris pour ce qu'on n'a pas prévu |
+
+Le fichier de certificat n'existe pas et n'a pas à exister : Neon n'exige pas de
+certificat client, il suffit que la sonde de libpq tombe quelque part de lisible.
+`php-fpm` échappait au problème par accident — sa directive `clear_env` vide
+l'environnement des workers, donc `HOME` n'y est pas défini du tout et la sonde
+est ignorée.
 
 ⚠️ **Une panne de journalisation qui remplace l'erreur qu'elle devait consigner
 est le pire des masques** : elle transforme un diagnostic d'une minute en une
