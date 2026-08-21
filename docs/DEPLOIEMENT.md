@@ -251,6 +251,43 @@ fait passer par la CI, la fusion dans `main` déclenche le déploiement.
 
 ---
 
+## 4 ter. ⚠️ `render.yaml` décrit, le tableau de bord décide
+
+**Les variables d'un blueprint ne s'appliquent qu'à sa synchronisation.** Ajouter
+une clé dans `render.yaml` et redéployer ne change rien : le service continue
+d'utiliser ce que porte son onglet *Environment*.
+
+Ce piège a coûté deux jours. `LOG_EMERGENCY_PATH` déclarée dans le fichier n'a
+jamais pris effet, et l'on a cherché un défaut applicatif là où il n'y avait
+qu'une variable non appliquée. Le même écart peut porter sur `SMS_DRIVER`,
+`PAYMENT_GATEWAY` ou `PAYOUT_GATEWAY` — c'est-à-dire sur ce qui décide **si de
+l'argent bouge réellement**.
+
+Deux règles qui en découlent :
+
+1. Ce qui doit être vrai quoi qu'il arrive appartient à **l'image**, pas au
+   blueprint. `LOG_CHANNEL`, `APP_ENV` et `APP_DEBUG` sont dans le `Dockerfile`
+   pour cette raison.
+2. Après toute modification de `render.yaml`, **vérifiez la valeur dans le
+   tableau de bord** — ou synchronisez le blueprint.
+
+### La configuration effective est annoncée au démarrage
+
+L'entrypoint affiche désormais l'environnement, le pilote SMS, les deux
+passerelles et le canal de journal. Aucune n'est secrète — ce sont des noms de
+pilotes, jamais des clés — et elles tranchent en une seconde la question « qu'est-ce
+qui tourne vraiment ».
+
+```
+Environnement : production
+SMS           : log
+Encaissement  : notchpay
+Décaissement  : fake
+Journal       : stderr
+```
+
+---
+
 ## 4 quater. La journalisation
 
 `LOG_CHANNEL=stderr` : un conteneur journalise sur sa sortie d'erreur, que
