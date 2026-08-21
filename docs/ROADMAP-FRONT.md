@@ -1263,3 +1263,53 @@ l'ancien appariement, le test échoue.
 ⚠️ **Et ma vérification masquait le symptôme.** Je filtrais la sortie de Vitest
 sur `Test Files|Tests |FAIL`, jamais sur `Errors`. Une erreur non gérée n'est
 rien d'autre qu'un défaut qui n'a pas encore trouvé son assertion.
+
+---
+
+## 22. Ce qu'une agence ne pouvait pas corriger — 21 août 2026
+
+Le constat de départ était « la plupart des éléments n'ont pas d'actions ». Le
+relevé dit autre chose : **50 des 56 écritures du contrat ont un appelant**. Le
+manque n'était pas dans les écrans.
+
+En comparant ce que l'API permet de **modifier**, ressource par ressource, la
+vraie forme apparaît — elle est en **création seule** :
+
+| Ressource | Avant | Ce que cela produisait |
+|---|---|---|
+| `schedules` | POST | Un horaire vendait **pour toujours** |
+| `vehicles` | GET POST | Une plaque fautive était définitive ; un bus vendu restait en service |
+| `drivers` | GET POST | Un permis expiré ne se renouvelait pas |
+| `stations` | GET POST **PATCH** | L'endpoint existait — **aucun écran ne l'appelait** |
+
+`schedules.is_active`, `valid_until`, `vehicles.condition` sont en base depuis
+la première migration. **Rien ne pouvait les écrire.**
+
+### Ce que les panneaux n'offrent pas, et pourquoi
+
+Un panneau de correction n'est pas le formulaire de création : celui-ci propose
+des champs qui ne peuvent plus changer, et les afficher grisés serait pire que
+les omettre — on chercherait comment les débloquer.
+
+| Champ retiré | Raison |
+|---|---|
+| Placement et capacité d'un véhicule | Des départs vendus portent déjà un plan de sièges. Un véhicule reconfiguré est un autre véhicule |
+| Ville d'une gare | La rattacher ailleurs déplacerait les itinéraires qui la traversent, donc des départs vendus |
+
+Aucune suppression nulle part : on **désactive**. Les départs passés référencent
+ces objets, et les effacer réécrirait ce qui a eu lieu.
+
+### Ce que chaque geste ne défait pas, dit à l'endroit du geste
+
+Arrêter un horaire, retirer un véhicule, désactiver une gare : les trois laissent
+intacts les départs déjà créés. La question qui suit est toujours « et mes
+départs de la semaine prochaine ? », et la réponse est sous le champ plutôt que
+dans une documentation. Annuler un départ rembourse et prévient — c'est un autre
+geste, et il doit le rester.
+
+### Au passage
+
+Trois squelettes de tableau annonçaient une colonne de moins que leur tableau,
+la colonne d'action venant d'y être ajoutée. Vérifié en recomptant chaque
+en-tête, comme la première fois — c'est la seconde fois que ce décalage se
+produit, et toujours en ajoutant une colonne.

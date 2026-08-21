@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { AgencyStation } from '@motoboy/api-client/types'
@@ -105,5 +105,54 @@ describe('StationsPage', () => {
       city_id: 5,
       name: 'Gare du Nord',
     })
+  })
+  /**
+   * **L'endpoint existait depuis le début et aucun écran ne l'appelait.** Une
+   * gare mal nommée l'était pour toujours, et une gare fermée continuait de
+   * figurer dans les itinéraires.
+   *
+   * La ville n'est pas proposée : la changer déplacerait les itinéraires qui
+   * traversent cette gare, donc des départs déjà vendus.
+   */
+  it('corrige une gare sans proposer d’en changer la ville', async () => {
+    mockRoutes({
+      '/agency/stations': () =>
+        jsonResponse({
+          data: [
+            {
+              id: 3,
+              name: 'Gare de Bonabéri',
+              city: 'Douala',
+              address: null,
+              is_active: true,
+              moderated_at: '2026-08-01T00:00:00Z',
+            },
+          ],
+        }),
+      '/stations/3': () => jsonResponse({ id: 3, name: 'Gare centrale' }),
+      '/v1/config': () => jsonResponse({ countries: [] }),
+    })
+
+    render(<StationsPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    /*
+     * Cherché **dans le panneau** : la carte « réclamer une ville » reste
+     * affichée derrière, avec son propre champ « Nom de la ville ». Une requête
+     * sur la page entière en trouve deux et ne dit pas laquelle.
+     */
+    const panneau = within(screen.getByRole('dialog'))
+
+    expect(panneau.queryByLabelText(/Ville/)).toBeNull()
+
+    const nom = panneau.getByLabelText(/Nom/)
+    await userEvent.clear(nom)
+    await userEvent.type(nom, 'Gare centrale')
+    await userEvent.click(panneau.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(
+      await sentRequest((request) => request.url.includes('/stations/3')),
+    ).toMatchObject({ name: 'Gare centrale' })
   })
 })

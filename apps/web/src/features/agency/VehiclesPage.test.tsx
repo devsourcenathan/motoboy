@@ -69,4 +69,45 @@ describe('VehiclesPage', () => {
       ),
     ).toMatchObject({ registration: 'LT-4412-AB', seating_mode: 'SEATED', capacity: 30 })
   })
+  /**
+   * **Une plaque mal saisie était définitive, et un bus vendu restait en
+   * service** — donc porteur d'horaires, donc générateur de départs qu'aucun
+   * véhicule ne ferait.
+   *
+   * Le placement et la capacité ne sont pas proposés : des départs vendus
+   * portent déjà un plan de sièges. Les afficher grisés serait pire que les
+   * omettre — on chercherait comment les débloquer.
+   */
+  it('corrige un véhicule sans proposer d’en changer le placement', async () => {
+    mockRoutes({
+      '/agency/vehicles': () =>
+        jsonResponse({
+          data: [
+            {
+              id: 4,
+              registration: 'LT-000',
+              type: 'BUS',
+              seating_mode: 'SEATED',
+              capacity: 30,
+              condition: 'ACTIVE',
+            },
+          ],
+        }),
+      '/vehicles/4': () => jsonResponse({ id: 4, registration: 'LT-123-AB' }),
+    })
+
+    render(<VehiclesPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+
+    expect(screen.queryByLabelText(/Placement/)).toBeNull()
+    expect(screen.queryByLabelText(/Nombre de sièges/)).toBeNull()
+
+    await userEvent.selectOptions(screen.getByLabelText('État'), 'RETIRED')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(
+      await sentRequest((request) => request.url.includes('/vehicles/4')),
+    ).toMatchObject({ condition: 'RETIRED' })
+  })
 })
