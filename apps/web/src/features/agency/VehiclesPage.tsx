@@ -10,8 +10,10 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
+  Sheet,
+  SheetForm,
   Skeleton,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import { useCreateVehicle, useVehicleSeats, useVehicles } from './useInventory'
@@ -46,7 +48,7 @@ export function VehiclesPage() {
         }
       />
 
-      {vehicles.isPending ? <Skeleton /> : null}
+      {vehicles.isPending ? <SkeletonTable columns={6} /> : null}
       {vehicles.error ? <ErrorNote message={describeError(vehicles.error)} /> : null}
 
       {vehicles.data !== undefined && rows.length === 0 ? (
@@ -127,107 +129,100 @@ function VehiclePanel({ onClose }: { onClose: () => void }) {
   const [capacity, setCapacity] = useState('30')
 
   return (
-    <Panel title={t('agency:inventory.vehicles.newTitle')} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-
-          create.mutate(
-            {
-              registration: registration.trim().toUpperCase(),
-              ...(brand.trim() === '' ? {} : { brand: brand.trim() }),
-              ...(model.trim() === '' ? {} : { model: model.trim() }),
-              type,
-              seating_mode: mode,
-              capacity: Number(capacity),
-            },
-            { onSuccess: onClose },
-          )
-        }}
-      >
-        <Field label={t('agency:inventory.vehicles.plate')}>
-          <input
-            className={`${INPUT} uppercase`}
-            required
-            maxLength={20}
-            value={registration}
-            onChange={(event) => setRegistration(event.target.value)}
-            placeholder={t('agency:inventory.vehicles.platePlaceholder')}
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('agency:inventory.vehicles.make')}>
-            <input
-              className={INPUT}
-              value={brand}
-              onChange={(event) => setBrand(event.target.value)}
-            />
-          </Field>
-          <Field label={t('agency:inventory.vehicles.model')}>
-            <input
-              className={INPUT}
-              value={model}
-              onChange={(event) => setModel(event.target.value)}
-            />
-          </Field>
-        </div>
-
-        <Field label={t('agency:inventory.vehicles.type')}>
-          <select
-            className={INPUT}
-            value={type}
-            onChange={(event) => setType(event.target.value as typeof type)}
-          >
-            <option value="BUS">{t('agency:inventory.vehicles.bus')}</option>
-            <option value="CAR">{t('agency:inventory.vehicles.car')}</option>
-          </select>
-        </Field>
-
-        {/*
-          Le choix qui engage le plus, donc celui qu'on explique. Une agence qui
-          se trompe ici ne s'en aperçoit qu'au premier départ vendu.
-        */}
-        <Field
-          label={t('agency:inventory.vehicles.seating')}
-          hint={
-            mode === 'SEATED'
-              ? t('agency:inventory.vehicles.seatedHint')
-              : t('agency:inventory.vehicles.capacityHint')
-          }
-        >
-          <select
-            className={INPUT}
-            value={mode}
-            onChange={(event) => setMode(event.target.value as typeof mode)}
-          >
-            <option value="SEATED">{t('agency:inventory.vehicles.assignedSeat')}</option>
-            <option value="CAPACITY">{t('agency:inventory.vehicles.byCapacity')}</option>
-          </select>
-        </Field>
-
-        <Field label={t('agency:inventory.vehicles.seats')}>
-          <input
-            className={INPUT}
-            type="number"
-            required
-            min={1}
-            max={100}
-            value={capacity}
-            onChange={(event) => setCapacity(event.target.value)}
-          />
-        </Field>
-
-        {create.error ? <ErrorNote message={describeError(create.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:inventory.vehicles.create')}
-          disabled={registration.trim() === '' || create.isPending}
+    <SheetForm
+      title={t('agency:inventory.vehicles.newTitle')}
+      onClose={onClose}
+      submitLabel={t('agency:inventory.vehicles.create')}
+      submitDisabled={registration.trim() === ''}
+      pending={create.isPending}
+      error={create.error ? describeError(create.error) : undefined}
+      onSubmit={() => {
+        create.mutate(
+          {
+            registration: registration.trim().toUpperCase(),
+            ...(brand.trim() === '' ? {} : { brand: brand.trim() }),
+            ...(model.trim() === '' ? {} : { model: model.trim() }),
+            type,
+            seating_mode: mode,
+            capacity: Number(capacity),
+          },
+          { onSuccess: onClose },
+        )
+      }}
+    >
+      <Field label={t('agency:inventory.vehicles.plate')}>
+        <input
+          className={`${INPUT} uppercase`}
+          required
+          maxLength={20}
+          value={registration}
+          onChange={(event) => setRegistration(event.target.value)}
+          placeholder={t('agency:inventory.vehicles.platePlaceholder')}
         />
-      </form>
-    </Panel>
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('agency:inventory.vehicles.make')}>
+          <input
+            className={INPUT}
+            value={brand}
+            onChange={(event) => setBrand(event.target.value)}
+          />
+        </Field>
+        <Field label={t('agency:inventory.vehicles.model')}>
+          <input
+            className={INPUT}
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          />
+        </Field>
+      </div>
+
+      <Field label={t('agency:inventory.vehicles.type')}>
+        <select
+          className={INPUT}
+          value={type}
+          onChange={(event) => setType(event.target.value as typeof type)}
+        >
+          <option value="BUS">{t('agency:inventory.vehicles.bus')}</option>
+          <option value="CAR">{t('agency:inventory.vehicles.car')}</option>
+        </select>
+      </Field>
+
+      {/*
+        Le choix qui engage le plus, donc celui qu'on explique. Une agence qui
+        se trompe ici ne s'en aperçoit qu'au premier départ vendu.
+      */}
+      <Field
+        label={t('agency:inventory.vehicles.seating')}
+        hint={
+          mode === 'SEATED'
+            ? t('agency:inventory.vehicles.seatedHint')
+            : t('agency:inventory.vehicles.capacityHint')
+        }
+      >
+        <select
+          className={INPUT}
+          value={mode}
+          onChange={(event) => setMode(event.target.value as typeof mode)}
+        >
+          <option value="SEATED">{t('agency:inventory.vehicles.assignedSeat')}</option>
+          <option value="CAPACITY">{t('agency:inventory.vehicles.byCapacity')}</option>
+        </select>
+      </Field>
+
+      <Field label={t('agency:inventory.vehicles.seats')}>
+        <input
+          className={INPUT}
+          type="number"
+          required
+          min={1}
+          max={100}
+          value={capacity}
+          onChange={(event) => setCapacity(event.target.value)}
+        />
+      </Field>
+    </SheetForm>
   )
 }
 
@@ -248,15 +243,17 @@ function SeatMapPanel({
   const seats = useVehicleSeats(vehicle.id)
 
   return (
-    <Panel title={`Plan — ${vehicle.registration}`} onClose={onClose}>
+    <Sheet
+      title={`Plan — ${vehicle.registration}`}
+      description="C’est ce plan que verra le passager."
+      onClose={onClose}
+    >
       {seats.isPending ? <Skeleton rows={3} /> : null}
       {seats.error ? <ErrorNote message={describeError(seats.error)} /> : null}
 
       {seats.data === undefined ? null : (
         <>
-          <p className="mb-3 text-sm text-neutral-500">
-            {seats.data.data.length} sièges. C’est ce plan que verra le passager.
-          </p>
+          <p className="mb-3 text-sm text-neutral-500">{seats.data.data.length} sièges</p>
           <div className="grid grid-cols-4 gap-2">
             {seats.data.data.map((seat) => (
               <div
@@ -269,6 +266,6 @@ function SeatMapPanel({
           </div>
         </>
       )}
-    </Panel>
+    </Sheet>
   )
 }

@@ -266,6 +266,12 @@ Route::prefix('v1')->group(function (): void {
              * s'appliquent pas : elles naissent non vérifiées et n'encaissent
              * rien tant que l'administration ne les a pas vérifiées.
              */
+            /*
+             * Son identité et son statut. Lisible **avant** l'admission : c'est
+             * l'agence en attente qui en a le plus besoin.
+             */
+            Route::get('/', [AgencyAccountController::class, 'show']);
+
             Route::get('payout-accounts', [AgencyAccountController::class, 'payoutAccounts']);
             Route::post('payout-accounts', [AgencyAccountController::class, 'submitPayoutAccount']);
             /*

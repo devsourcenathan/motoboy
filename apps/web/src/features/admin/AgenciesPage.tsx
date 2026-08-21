@@ -10,7 +10,7 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
+  Sheet,
   Skeleton,
   Table,
 } from '../../shared/ui'
@@ -178,7 +178,7 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
     | undefined
 
   return (
-    <Panel title={agency?.name ?? 'Dossier'} onClose={onClose}>
+    <Sheet title={agency?.name ?? 'Dossier'} onClose={onClose}>
       {detail.isPending ? <Skeleton rows={3} /> : null}
       {detail.error ? <ErrorNote message={describeError(detail.error)} /> : null}
 
@@ -292,7 +292,7 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
           <LedgerAdjustment reference={reference} />
         </div>
       )}
-    </Panel>
+    </Sheet>
   )
 }
 

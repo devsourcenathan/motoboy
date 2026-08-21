@@ -4,6 +4,7 @@ import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Card,
   Cell,
   EmptyState,
@@ -151,11 +152,9 @@ function OwnerTrips({ vehicleId }: { vehicleId: number }) {
               </Cell>
               <Cell>
                 {trip.status === 'CANCELLED' ? (
-                  <span className="rounded-full bg-danger-soft px-2 py-1 text-xs text-danger-strong">
-                    Annulé
-                  </span>
+                  <Badge label="Annulé" tone="alert" />
                 ) : (
-                  <span className="text-sm text-neutral-500">Parti</span>
+                  <Badge label="Parti" />
                 )}
               </Cell>
             </tr>

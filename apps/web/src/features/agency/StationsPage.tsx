@@ -5,6 +5,7 @@ import { unwrap } from '@motoboy/api-client'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Button,
   Card,
   Cell,
@@ -13,8 +14,8 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
-  Skeleton,
+  SheetForm,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import { CityField, type CityChoice } from './CityField'
@@ -153,7 +154,7 @@ export function StationsPage() {
         }
       />
 
-      {stations.isPending ? <Skeleton /> : null}
+      {stations.isPending ? <SkeletonTable columns={4} /> : null}
       {stations.error ? <ErrorNote message={describeError(stations.error)} /> : null}
 
       <div className="mb-6">
@@ -213,23 +214,9 @@ export function StationsPage() {
  * ressaisirait sa gare.
  */
 function StationState({ moderated, active }: { moderated: boolean; active: boolean }) {
-  if (!moderated) {
-    return (
-      <span className="rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700">
-        En vérification
-      </span>
-    )
-  }
+  if (!moderated) return <Badge label="En vérification" tone="action" />
 
-  return active ? (
-    <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">
-      Active
-    </span>
-  ) : (
-    <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
-      Inactive
-    </span>
-  )
+  return active ? <Badge label="Active" tone="good" /> : <Badge label="Inactive" />
 }
 
 function StationPanel({ onClose }: { onClose: () => void }) {
@@ -240,58 +227,51 @@ function StationPanel({ onClose }: { onClose: () => void }) {
   const [city, setCity] = useState<CityChoice | null>(null)
 
   return (
-    <Panel title={t('agency:inventory.stations.newTitle')} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
+    <SheetForm
+      title={t('agency:inventory.stations.newTitle')}
+      onClose={onClose}
+      submitLabel={t('agency:inventory.stations.create')}
+      submitDisabled={city === null || name.trim() === ''}
+      pending={create.isPending}
+      error={create.error ? describeError(create.error) : undefined}
+      onSubmit={() => {
+        if (city === null) return
 
-          if (city === null) return
-
-          create.mutate(
-            {
-              city_id: city.id,
-              name: name.trim(),
-              ...(address.trim() === '' ? {} : { address: address.trim() }),
-            },
-            { onSuccess: onClose },
-          )
-        }}
-      >
-        <Field label={t('agency:inventory.stations.name')}>
-          <input
-            className={INPUT}
-            required
-            maxLength={150}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={t('agency:inventory.stations.namePlaceholder')}
-          />
-        </Field>
-
-        <CityField
-          label={t('agency:inventory.stations.city')}
-          value={city}
-          onChange={setCity}
+        create.mutate(
+          {
+            city_id: city.id,
+            name: name.trim(),
+            ...(address.trim() === '' ? {} : { address: address.trim() }),
+          },
+          { onSuccess: onClose },
+        )
+      }}
+    >
+      <Field label={t('agency:inventory.stations.name')}>
+        <input
+          className={INPUT}
+          required
+          maxLength={150}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder={t('agency:inventory.stations.namePlaceholder')}
         />
+      </Field>
 
-        <Field label={t('agency:inventory.stations.address')}>
-          <input
-            className={INPUT}
-            maxLength={255}
-            value={address}
-            onChange={(event) => setAddress(event.target.value)}
-          />
-        </Field>
+      <CityField
+        label={t('agency:inventory.stations.city')}
+        value={city}
+        onChange={setCity}
+      />
 
-        {create.error ? <ErrorNote message={describeError(create.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:inventory.stations.create')}
-          disabled={city === null || name.trim() === '' || create.isPending}
+      <Field label={t('agency:inventory.stations.address')}>
+        <input
+          className={INPUT}
+          maxLength={255}
+          value={address}
+          onChange={(event) => setAddress(event.target.value)}
         />
-      </form>
-    </Panel>
+      </Field>
+    </SheetForm>
   )
 }

@@ -13,19 +13,15 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.7.1",
     "@motoboy/api-client": "workspace:*",
     "@motoboy/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-table": "^9.1.2",
     "dayjs": "^1.11.21",
     "i18next": "^26.3.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-hook-form": "^7.85.0",
     "react-i18next": "^17.0.11",
-    "react-router": "^8.3.0",
-    "zod": "^4.4.3"
+    "react-router": "^8.3.0"
   },
   "devDependencies": {
     "@motoboy/tsconfig": "workspace:*",

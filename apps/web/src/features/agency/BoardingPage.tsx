@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { describeError } from '../../lib/errors'
 import {
+  Badge,
   Button,
   Card,
   Cell,
@@ -176,13 +177,9 @@ function BoardingList({ reference }: { reference: string }) {
                   </Cell>
                   <Cell>
                     {passenger.status === 'USED' ? (
-                      <span className="rounded-full bg-success-50 px-2 py-1 text-xs text-success-700">
-                        {t('boarding:list.boarded')}
-                      </span>
+                      <Badge label={t('boarding:list.boarded')} tone="good" />
                     ) : (
-                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
-                        {t('boarding:list.expected')}
-                      </span>
+                      <Badge label={t('boarding:list.expected')} />
                     )}
                   </Cell>
                 </tr>

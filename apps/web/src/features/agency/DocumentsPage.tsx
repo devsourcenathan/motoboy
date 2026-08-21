@@ -6,15 +6,16 @@ import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
 import {
   Button,
+  Badge,
   Card,
-  Cell,
   EmptyState,
   ErrorNote,
   Field,
   INPUT,
   PageHeader,
   Skeleton,
-  Table,
+  Thumb,
+  type Tone,
 } from '../../shared/ui'
 
 /** Ce que la plateforme attend d'une agence, et les libellés qui le disent. */
@@ -35,12 +36,21 @@ const TYPES = [
 /** Huit mégaoctets, comme la validation côté serveur. */
 const MAX_BYTES = 8192 * 1024
 
+/** Le statut d'une pièce, dit par la couleur autant que par le mot. */
+const STATUS_TONES: Record<string, Tone> = {
+  ACCEPTED: 'good',
+  REJECTED: 'alert',
+  PENDING: 'neutral',
+}
+
 type Document = {
   id?: number
   type?: string
   status?: string
   expires_at?: string | null
-  file_path?: string | null
+  /** Lien signé, valable dix minutes. Absent tant que la pièce n'est pas déposée. */
+  url?: string
+  is_image?: boolean
   created_at?: string | null
 }
 
@@ -222,38 +232,46 @@ export function DocumentsPage() {
             />
           ) : null}
 
-          {rows.length > 0 ? (
-            <Table
-              head={[
-                t('agency:documents.head.document'),
-                t('agency:documents.head.status'),
-                t('agency:documents.head.expiry'),
-              ]}
-            >
+          {/*
+            **Une grille de vignettes, et non un tableau.** Une ligne de texte ne
+            dit pas qu'un document est le bon : on ouvrait le fichier pour
+            découvrir la mauvaise page, on refermait l'onglet, on recommençait.
+            Les pièces attendues apparaissent toutes, déposées ou non, parce que
+            c'est **ce qui manque** qui décide de la suite.
+          */}
+          {rows.length > 0 || documents.isSuccess ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {TYPES.map(([value, key]) => {
                 const found = rows.find((row) => row.type === value)
 
                 if (found === undefined && value === 'OTHER') return null
 
                 return (
-                  <tr key={value} className="border-t border-neutral-200">
-                    <Cell>{t(`agency:documents.types.${key}`)}</Cell>
-                    <Cell>
-                      {found === undefined ? (
-                        // Nommer l'absence : une ligne manquante se lit comme un
-                        // oubli d'affichage, pas comme une pièce à fournir.
-                        <span className="text-neutral-500">
-                          {t('agency:documents.notFiled')}
-                        </span>
-                      ) : (
-                        (found.status ?? '—')
-                      )}
-                    </Cell>
-                    <Cell>{found?.expires_at ?? '—'}</Cell>
-                  </tr>
+                  <Thumb
+                    key={value}
+                    label={t(`agency:documents.types.${key}`)}
+                    url={found?.url}
+                    image={found?.is_image ?? false}
+                    hint={
+                      found?.expires_at === null || found?.expires_at === undefined
+                        ? undefined
+                        : `Expire le ${found.expires_at}`
+                    }
+                  >
+                    {found === undefined ? (
+                      // Nommer l'absence : une case vide se lit comme un défaut
+                      // d'affichage, pas comme une pièce à fournir.
+                      <Badge label={t('agency:documents.notFiled')} />
+                    ) : (
+                      <Badge
+                        label={found.status ?? '—'}
+                        tone={STATUS_TONES[found.status ?? ''] ?? 'neutral'}
+                      />
+                    )}
+                  </Thumb>
                 )
               })}
-            </Table>
+            </div>
           ) : null}
         </Card>
       </div>

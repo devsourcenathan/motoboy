@@ -8,7 +8,7 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Skeleton,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import { useAuditLogs } from './useAdmin'
@@ -68,7 +68,7 @@ export function AuditLogPage() {
         </Field>
       </div>
 
-      {logs.isPending ? <Skeleton rows={5} /> : null}
+      {logs.isPending ? <SkeletonTable columns={4} /> : null}
       {logs.error ? <ErrorNote message={describeError(logs.error)} /> : null}
 
       {logs.isSuccess && rows.length === 0 ? (

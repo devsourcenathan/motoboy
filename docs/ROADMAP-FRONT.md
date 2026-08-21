@@ -1110,3 +1110,111 @@ et le code partait vers un numéro inexistant — un SMS attendu que rien n'avai
 envoyé. C'est la quatrième saisie courante, et la seule que les tests ne
 couvraient pas. Seule la longueur permet de trancher : un national de neuf
 chiffres peut commencer par `237`, les fixes camerounais s'ouvrant par un 2.
+
+---
+
+## 19. L'espace agence — 21 août 2026
+
+### Dix onglets qui défilaient
+
+La barre horizontale dépassait la largeur de la plupart des écrans : « Documents »
+et « Personnel » vivaient hors du champ, et **ce qui défile hors de l'écran cesse
+d'exister**.
+
+Une barre latérale les remplace, groupée par *moment du travail* — ce qu'on
+déclare une fois, ce qu'on fait tous les jours, ce qu'on règle rarement — et non
+par type de donnée. L'ordre à l'intérieur d'un groupe reste imposé par les
+données : un itinéraire a besoin de gares, un horaire a besoin d'un véhicule.
+
+**Une seule arborescence, deux mises en forme.** Rendre une colonne *et* une
+rangée, chacune masquée à son tour par CSS, met les mêmes liens deux fois dans le
+document : un lecteur d'écran les annonce tous les deux, et le test l'a attrapé
+en trouvant deux liens « Gares ».
+
+### L'agence ne savait pas qui elle était
+
+Le bandeau annonçait « MOTOBOY — agence » à tout le monde, et **aucun endpoint ne
+rendait à une agence son propre nom ni son statut**. Le manque est devenu criant
+en même temps que le correctif précédent : une agence en attente entre désormais
+dans son espace, y déclare ses gares, génère ses départs — et ne les trouve pas
+dans la recherche. Sans explication, elle recommence, puis conclut à une panne.
+
+`GET /v1/agency` répond maintenant, et passe par `require()` et non
+`requireApproved()` : c'est précisément l'agence non admise qui a besoin de lire
+son statut. Le bandeau porte son nom, sa référence et son état ; une bande
+explique ce qui est ouvert et ce qui attend.
+
+### Ce qui se répétait
+
+Onze pastilles d'état écrites à la main dans huit fichiers — chacune avec ses
+propres `rounded-full px-2 py-1`, et trois variantes de gris. Toutes passent par
+`Badge`. Trois écrans — la file des chauffeurs, les comptes de reversement, le
+suivi — n'importaient **rien** du dossier partagé : c'était la racine, pas les
+pastilles.
+
+### La densité
+
+`DriversPage` compte les permis expirés et ceux qui le seront dans trente jours.
+Le calcul porte sur la liste déjà chargée : aucun appel de plus, et le compte ne
+peut pas diverger de ce qui est affiché en dessous. **Un permis expiré était
+enfoui dans une cellule** — il fallait parcourir la colonne pour s'en apercevoir,
+ce qu'une agence de vingt chauffeurs ne fait pas.
+
+### Deux détails qui n'en sont pas
+
+`StatCard` rend une **liste de définitions** et non trois paragraphes frères : un
+intitulé et sa valeur, c'est exactement ce que `dl` décrit, et la valeur s'y
+rattache à son libellé pour un lecteur d'écran comme pour un test.
+
+Quatre dépendances installées et utilisées par zéro fichier — `react-hook-form`,
+`zod`, `@hookform/resolvers`, `@tanstack/react-table` — sont retirées. Adopter
+une bibliothèque de formulaires au milieu d'une refonte de huit formulaires qui
+marchent aurait été le contraire de KISS ; les laisser en place invitait à en
+adopter une à moitié.
+
+---
+
+## 20. Les trois plus gros écrans — 21 août 2026
+
+`RoutesPage`, `CounterSalePage` et `MoneyPage` faisaient chacune quatre ou cinq
+métiers dans une seule fonction.
+
+| Écran | Fonction principale |
+|---|---|
+| `RoutesPage` | 158 → **68** lignes |
+| `MoneyPage` | 168 → **45** lignes |
+| `CounterSalePage` | 88 → **56** lignes |
+
+**Les fichiers, eux, ont grandi.** Chaque pièce extraite porte sa raison d'être,
+et c'est le but : ce qui a rétréci n'est pas le total, c'est ce qu'il faut tenir
+en tête pour comprendre une chose à la fois.
+
+### Ce que le découpage a révélé
+
+Les sept pastilles de jours étaient **dessinées deux fois** dans `RoutesPage` —
+une version en lecture, une version cliquable, avec leurs propres classes. Elles
+partagent maintenant `DAY_DOT`, et l'écart de taille (24 px contre 36) reste
+explicite plutôt que dupliqué.
+
+`MoneyPage` déclarait ses trois requêtes en ligne dans le corps de la page, ce
+qui obligeait à réécrire à la main la forme des réponses pour typer les
+composants extraits. Les hooks sont sortis, et les types viennent d'eux par
+`ReturnType` : une réponse qui change casse la compilation au lieu de diverger en
+silence.
+
+L'attente de la génération de départs était portée par un **second libellé**
+(« Génération… »), qui changeait la largeur du bouton. `loading` fait le travail
+depuis la refonte des primitives ; la clé de traduction devenue morte est retirée
+des deux langues.
+
+### Un piège dans les tests, dans sept fichiers
+
+Les passe-plats de mock étalaient leur argument **avant** les routes par défaut :
+
+```ts
+const routes = (extra = {}) => ({ ...extra, '/agency/routes': ... })
+```
+
+Un test qui croyait remplacer une réponse obtenait donc l'autre — **sans erreur,
+et en passant pour la mauvaise raison**. Découvert en écrivant un test qui ne
+voyait pas ses propres données. Corrigé dans les sept fichiers concernés.

@@ -4526,6 +4526,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/agency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Son propre dossier
+         * @description L'identité de l'agence et son statut.
+         *
+         *     **Rien ne le disait.** Une agence entrait dans son espace sans y trouver
+         *     ni son nom ni son statut, et le manque est devenu criant quand les
+         *     agences en attente ont pu entrer : elles y travaillent sans que rien ne
+         *     leur dise que leur dossier est en instruction, ni pourquoi leurs départs
+         *     n'apparaissent pas dans la recherche.
+         *
+         *     Lisible **avant** l'admission, délibérément : c'est l'agence non admise
+         *     qui en a le plus besoin.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgencySelf"];
+                    };
+                };
+                403: components["responses"]["Forbidden"];
+                default: components["responses"]["DefaultError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/agency/payout-accounts": {
         parameters: {
             query?: never;
@@ -6109,6 +6159,17 @@ export interface components {
             payout_accounts: components["schemas"]["PayoutAccount"][];
             commercial_terms?: components["schemas"]["CommercialTerms"];
         };
+        AgencySelf: {
+            reference: string;
+            name: string;
+            legal_name?: string | null;
+            phone?: string | null;
+            email?: string | null;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            /** Format: date-time */
+            approved_at?: string | null;
+        };
         AgencyDocument: {
             /** Format: int64 */
             id: number;
@@ -6129,6 +6190,14 @@ export interface components {
              *     présence des types attendus.
              */
             url?: string;
+            /**
+             * @description Vrai quand le fichier se réduit en vignette.
+             *
+             *     Le client ne peut pas le deviner : le chemin de stockage ne circule
+             *     pas, et tenter l'image pour se rabattre sur l'erreur ferait
+             *     télécharger chaque PDF en entier pour n'afficher qu'une icône.
+             */
+            is_image?: boolean;
         };
         PayoutAccountInput: {
             /** @enum {string} */

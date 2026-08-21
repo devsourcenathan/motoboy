@@ -77,6 +77,33 @@ final class AgencyAccountController
         ], 201);
     }
 
+    /**
+     * Son propre dossier.
+     *
+     * **Rien ne le disait.** Une agence entrait dans son espace sans y trouver
+     * ni son nom ni son statut : le bandeau annonçait « MOTOBOY — agence », et
+     * c'était tout. Le manque est devenu criant quand les agences en attente ont
+     * pu entrer — elles y travaillent sans que rien ne leur dise que leur
+     * dossier est en instruction, ni pourquoi leurs départs ne paraissent pas.
+     *
+     * Passe par `require()` et non `requireApproved()` : c'est précisément
+     * l'agence non admise qui a besoin de lire son statut.
+     */
+    public function show(Request $request): JsonResponse
+    {
+        $agency = $this->context->require($request);
+
+        return response()->json([
+            'reference' => $agency->reference,
+            'name' => $agency->name,
+            'legal_name' => $agency->legal_name,
+            'phone' => $agency->phone,
+            'email' => $agency->email,
+            'status' => $agency->status,
+            'approved_at' => $agency->approved_at?->toIso8601String(),
+        ]);
+    }
+
     public function payoutAccounts(Request $request): JsonResponse
     {
         $agency = $this->context->require($request);
@@ -174,6 +201,15 @@ final class AgencyAccountController
             // L'agence relit ce qu'elle a déposé : sans quoi elle ne peut pas
             // vérifier qu'elle n'a pas envoyé deux fois la mauvaise page.
             'url' => DocumentLink::for('agency', $document->id),
+            // **Une vignette n'a de sens que si le fichier en est une.** Le
+            // client ne peut pas le deviner : le chemin ne circule pas, et
+            // tenter l'image pour se rabattre sur l'erreur ferait télécharger
+            // chaque PDF en entier pour ne rien afficher.
+            'is_image' => in_array(
+                strtolower(pathinfo((string) $document->file_path, PATHINFO_EXTENSION)),
+                ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+                true,
+            ),
         ];
     }
 }

@@ -13,9 +13,13 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Skeleton,
+  SkeletonText,
 } from '../../shared/ui'
+import type { components } from '@motoboy/api-client/types'
 import { useAgencyTrips, useCounterSale, useTripSeats } from './useOperations'
+
+/** Le départ tel que le contrat le décrit — jamais une forme réécrite à la main. */
+type AgencyTrip = components['schemas']['TripSummary']
 
 /**
  * Annuler une réservation apportée au guichet.
@@ -166,7 +170,16 @@ export function CounterSalePage() {
         <CancelBooking />
       </div>
 
-      {trips.isPending ? <Skeleton /> : null}
+      {trips.isPending ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          <Card>
+            <SkeletonText lines={5} />
+          </Card>
+          <Card>
+            <SkeletonText lines={4} />
+          </Card>
+        </div>
+      ) : null}
       {trips.error ? <ErrorNote message={describeError(trips.error)} /> : null}
 
       {trips.data !== undefined && rows.length === 0 ? (
@@ -178,38 +191,7 @@ export function CounterSalePage() {
 
       {rows.length === 0 ? null : (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-          <Card>
-            <p className="mb-3 font-semibold text-neutral-900">
-              {t('agency:counter.departure')}
-            </p>
-            <div className="space-y-1">
-              {rows.map((trip) => (
-                <button
-                  key={trip.reference}
-                  type="button"
-                  onClick={() => setReference(trip.reference)}
-                  className={
-                    trip.reference === reference
-                      ? 'w-full rounded-lg border border-brand-500 bg-brand-50 px-3 py-2 text-left'
-                      : 'w-full rounded-lg border border-transparent px-3 py-2 text-left hover:bg-neutral-50'
-                  }
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      {new Date(trip.departure_at).toLocaleTimeString('fr', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      · {trip.origin_station.city} → {trip.destination_station.city}
-                    </span>
-                    <span className="text-sm whitespace-nowrap text-neutral-500">
-                      {trip.seats_available} libre{trip.seats_available > 1 ? 's' : ''}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Card>
+          <TripPicker rows={rows} chosen={reference} onChoose={setReference} />
 
           {reference === null ? (
             <Card>
@@ -223,6 +205,67 @@ export function CounterSalePage() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Le choix du départ.
+ *
+ * **Une liste de boutons, pas un menu déroulant.** Un guichetier vend en
+ * regardant le client : il doit voir d'un coup les départs du jour et ce qu'il
+ * leur reste de places, sans ouvrir quoi que ce soit. Le nombre de places libres
+ * est sur la même ligne parce que c'est lui qui décide de la vente.
+ *
+ * Sorti du corps de la page pour la même raison que les autres : elle rendait
+ * l'en-tête, l'annulation, l'attente, la liste et le formulaire dans une seule
+ * fonction.
+ */
+function TripPicker({
+  rows,
+  chosen,
+  onChoose,
+}: {
+  rows: readonly AgencyTrip[]
+  chosen: string | null
+  onChoose: (reference: string) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Card>
+      <p className="mb-3 font-semibold text-neutral-900">
+        {t('agency:counter.departure')}
+      </p>
+      <div className="flex flex-col gap-1">
+        {rows.map((trip) => (
+          <button
+            key={trip.reference}
+            type="button"
+            // `aria-pressed` dit au clavier ce que la bordure orange montre.
+            aria-pressed={trip.reference === chosen}
+            onClick={() => onChoose(trip.reference)}
+            className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+              trip.reference === chosen
+                ? 'border-brand-500 bg-brand-50'
+                : 'border-transparent hover:bg-neutral-50'
+            }`}
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">
+                {new Date(trip.departure_at).toLocaleTimeString('fr', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}{' '}
+                · {trip.origin_station.city} → {trip.destination_station.city}
+              </span>
+              <span className="text-sm whitespace-nowrap tabular-nums text-neutral-500">
+                {trip.seats_available} libre{trip.seats_available > 1 ? 's' : ''}
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </Card>
   )
 }
 
@@ -335,7 +378,7 @@ function SaleForm({ reference }: { reference: string }) {
           />
         </Field>
 
-        {seats.isPending ? <Skeleton rows={2} /> : null}
+        {seats.isPending ? <SkeletonText lines={3} /> : null}
 
         {map === undefined ? null : seated ? (
           <div>
