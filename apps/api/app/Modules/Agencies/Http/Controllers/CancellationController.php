@@ -31,7 +31,7 @@ final class CancellationController
      */
     public function trip(Request $request, string $reference, CancelTrip $cancel): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->requireApproved($request);
 
         $validated = $request->validate([
             // Obligatoire : sans motif, le suivi du taux d'annulation ne
@@ -71,7 +71,7 @@ final class CancellationController
      */
     public function booking(Request $request, string $reference, CancelBooking $cancel): JsonResponse
     {
-        $agency = $this->context->require($request);
+        $agency = $this->context->requireApproved($request);
 
         $booking = Booking::query()->where('reference', $reference)->firstOrFail();
         $this->context->own($agency, $booking->agency_id);

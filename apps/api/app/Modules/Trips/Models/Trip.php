@@ -131,12 +131,26 @@ final class Trip extends Model
      * départ, alors que le passager ne peut matériellement pas s'y présenter et
      * que la liste d'embarquement est déjà établie (B2).
      *
+     * **L'agence doit être admise.** Cette condition vivait ailleurs — dans la
+     * garde qui protégeait l'espace d'agence — et elle y était à la fois trop
+     * large et trop étroite. Trop large : elle refusait aussi le dépôt des
+     * pièces, si bien qu'aucune agence ne pouvait franchir l'instruction dont
+     * elle dépendait. Trop étroite : elle ne portait que sur le geste de
+     * création, jamais sur le départ lui-même, et rien n'aurait retiré de la
+     * vente les départs d'une agence dont le statut changerait ensuite.
+     *
+     * Portée ici, elle tient d'elle-même : un départ n'est en vente que si
+     * l'agence qui le vend est admise, quelle que soit la façon dont il a été
+     * créé. L'agence peut donc bâtir son réseau complet pendant l'instruction,
+     * et tout paraît le jour de l'admission.
+     *
      * @param Builder<$this> $query
      */
     public function scopeOpenForOnlineSale(Builder $query): void
     {
         $query->where('status', 'SCHEDULED')
-            ->where('online_sales_close_at', '>', now());
+            ->where('online_sales_close_at', '>', now())
+            ->whereHas('agency', fn (Builder $agency) => $agency->where('status', 'APPROVED'));
     }
 
     /**

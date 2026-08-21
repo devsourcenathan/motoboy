@@ -136,6 +136,10 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     SERVER_ERROR: 'Le service rencontre un incident. Réessayez dans un instant.',
     UNAUTHENTICATED: 'Votre session a expiré, reconnectez-vous.',
     FORBIDDEN: "Vous n'avez pas accès à cette ressource.",
+    // Dit ce qui manque **et** ce qui se passe ensuite : une agence qui vient de
+    // tout paramétrer veut savoir si elle a mal fait ou si elle doit attendre.
+    AGENCY_NOT_APPROVED:
+      'Votre agence est en cours d’instruction. Vos départs paraîtront dans la recherche dès son admission.',
     NOT_FOUND: 'Élément introuvable.',
     ACCOUNT_NOT_FOUND: 'Aucun compte pour ce numéro. Créez-en un.',
     ACCOUNT_NOT_VERIFIED:
@@ -175,6 +179,8 @@ export const errorCodeLabels: Record<Locale, Record<ErrorCode, string>> = {
     SERVER_ERROR: 'The service is having trouble. Try again in a moment.',
     UNAUTHENTICATED: 'Your session has expired, please sign in again.',
     FORBIDDEN: 'You do not have access to this resource.',
+    AGENCY_NOT_APPROVED:
+      'Your agency is under review. Your departures will appear in search once it is approved.',
     NOT_FOUND: 'Not found.',
     ACCOUNT_NOT_FOUND: 'No account for this number. Create one.',
     ACCOUNT_NOT_VERIFIED:

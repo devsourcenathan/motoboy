@@ -1008,3 +1008,52 @@ le cas réel pas du tout.
 Quatre régressions ajoutées, et vérifiées en remettant l'ancienne règle : les
 deux tests serveur rendent alors 201 au lieu de 422, les deux tests web laissent
 partir le numéro brut.
+
+---
+
+## 17. L'agence en attente — 21 août 2026
+
+Le compte créé, l'agence a reçu un 403 sur **presque toutes** les routes de son
+espace. Y compris la liste de ses propres gares, et le dépôt de ses pièces.
+
+`AgencyContext::require` refusait tout endpoint d'agence dont le statut n'était
+pas `APPROVED`. Une agence naît `PENDING`. Or l'admission suppose l'instruction
+d'un dossier que l'agence ne pouvait plus déposer : **le circuit se refermait sur
+lui-même**, et aucune agence n'était admissible autrement qu'en aveugle.
+
+L'écran d'inscription promettait exactement l'inverse — « votre espace s'ouvre
+immédiatement : déposez vos pièces, déclarez vos gares et vos véhicules ». La
+promesse était juste ; c'est l'API qui ne la tenait pas.
+
+### Trop large et trop étroite à la fois
+
+L'intention de la garde était de **ne rien publier**. Sa formulation interdisait
+aussi de se préparer — et, dans l'autre sens, elle ne portait que sur le geste de
+création, jamais sur le départ. Rien n'aurait retiré de la vente les départs
+d'une agence dont le statut change ensuite : `scopeApproved` existait sur le
+modèle, et **n'était appelé nulle part**.
+
+| Ce qui garde quoi | Avant | Après |
+|---|---|---|
+| Préparer (pièces, gares, parc, personnel) | refusé si `PENDING` | `require()` — ouvert, sauf `REJECTED` |
+| Publier, vendre, embarquer, annuler | `require()` | `requireApproved()` |
+| Paraître dans la recherche | rien | `Trip::openForOnlineSale` filtre l'agence |
+
+Portée sur le départ, la garantie tient d'elle-même : un départ n'est en vente
+que si l'agence qui le vend est admise, quelle que soit la façon dont il a été
+créé. L'agence bâtit donc son réseau complet pendant l'instruction, et **tout
+paraît le jour de l'admission**, sans rien régénérer.
+
+### Un refus qui dit lequel
+
+`FORBIDDEN` aurait fait lire « vous n'avez pas accès à cette ressource » à une
+agence qui vient de tout paramétrer — faux, et sans rien à faire de la réponse.
+`AGENCY_NOT_APPROVED` suit le motif de `DRIVER_NOT_APPROVED`, déjà présent, et
+porte le statut en détail.
+
+### Ce que le test disait
+
+`test_an_unapproved_agency_publishes_nothing` **affirmait le blocage** : il
+vérifiait qu'une agence `PENDING` ne peut pas lister ses gares. Il passait, et
+gardait la panne en place. Remplacé par la garantie réelle — préparer oui,
+générer non, ne pas paraître dans la recherche, et paraître à l'admission.

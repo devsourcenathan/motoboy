@@ -3531,6 +3531,10 @@ components:
         - PAYOUT_NOT_SENDABLE
         - PAYOUT_ACCOUNT_UNVERIFIED
         - AGENCY_NOT_PENDING
+        # 403 : l'agence existe et le compte lui appartient, mais elle n'est pas
+        # encore admise. Distinct de FORBIDDEN, qui ferait lire « vous n'avez pas
+        # accès à cette ressource » — faux, et sans rien à faire de la réponse.
+        - AGENCY_NOT_APPROVED
 
     Error:
       type: object
