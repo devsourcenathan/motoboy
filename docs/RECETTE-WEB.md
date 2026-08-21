@@ -96,7 +96,33 @@ son travail.
 
 ## Étape 2 — L'administration
 
-Connectez-vous avec votre compte administrateur.
+### D'abord, en avoir un
+
+Aucun compte d'administration n'existe au départ, et **aucun écran n'en crée**.
+C'est délibéré : une route qui fabrique un super-administrateur reste une porte
+ouverte tant qu'elle existe, et le secret censé la protéger finit dans un dépôt
+ou un historique de commandes. Une commande console n'est atteignable que par
+quelqu'un qui a déjà la main sur la machine.
+
+```
+cd apps/api && php artisan motoboy:create-admin +237XXXXXXXXX --super
+```
+
+Le numéro **au format international** ; la commande refuse le reste. Elle est
+idempotente : la relancer ne duplique rien. Le compte naît déjà vérifié — l'OTP
+atteste la possession d'un téléphone, ce que vous démontrez autrement en lançant
+la commande.
+
+`--super` plutôt que le rôle simple : `ADMIN` suffit à admettre une agence, mais
+`SUPER_ADMIN` ajoute `users.manage`, `commercial_terms.manage` et l'audit — dont
+la commission que vous fixerez en 2.3.
+
+> ⚠️ **Jamais `php artisan db:seed` seul** tant que votre `.env` vise la base de
+> production. Sans `--class`, il passe par `DatabaseSeeder`, dont la garde teste
+> `APP_ENV` — et non la base visée. Il y sèmerait agences et départs fictifs. Si
+> un rôle manque : `php artisan db:seed --force --class=RoleAndPermissionSeeder`.
+
+Connectez-vous ensuite avec ce numéro : vous atterrissez sur `/admin`.
 
 **2.1 — Agences → « À instruire ».** L'agence créée doit y figurer.
 
@@ -144,6 +170,13 @@ orange, **et seulement s'ils ne sont pas à zéro**.
 Déconnectez-vous. Reconnectez-vous avec **le numéro du responsable** et le code
 reçu à l'étape 1 — le même formulaire, qui vous déposera cette fois sur les
 Départs de l'agence.
+
+> **Tout l'espace vous est ouvert alors que l'agence est encore en attente**, et
+> c'est le comportement attendu : l'admission suppose l'instruction de pièces que
+> l'agence doit pouvoir déposer. Seuls la génération des départs, le guichet,
+> l'embarquement et les annulations attendent l'admission — et le refus le dit,
+> « votre agence est en cours d'instruction », plutôt qu'un « vous n'avez pas
+> accès » qui laisserait croire à une erreur de paramétrage.
 
 L'ordre est imposé par les données :
 
@@ -238,6 +271,8 @@ Avant de signaler quelque chose, vérifiez qu'il ne figure pas ici.
 | `TCK-XXXXXX`, `LT-4412-AB` restent tels quels | Ce sont des gabarits. Un format ne change pas de langue |
 | Le tableau de bord ne compte pas les chauffeurs | L'API ne renvoie pas ce nombre. C'est aussi pourquoi la file des chauffeurs reste la page d'accueil |
 | Le paiement en bac à sable n'envoie rien sur votre téléphone | Il n'y a pas de code à saisir en test. Le dénouement arrive par webhook, en une seconde |
+| Une agence en attente circule dans tout son espace | L'admission exige des pièces qu'elle doit pouvoir déposer. Ce qui publie ou vend, lui, attend |
+| Ses départs n'apparaissent pas dans la recherche publique | La garantie porte sur le départ, pas sur le geste qui l'a créé. Ils paraîtront **tous** à l'admission, sans rien régénérer |
 
 ---
 
