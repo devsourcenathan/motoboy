@@ -47,7 +47,6 @@ const DAYS = [
 export function RoutesPage() {
   const { t } = useTranslation()
   const routes = useRoutes()
-  const generate = useGenerateTrips()
   const [adding, setAdding] = useState(false)
   const [scheduling, setScheduling] = useState<AgencyRoute | null>(null)
 
@@ -94,110 +93,197 @@ export function RoutesPage() {
         />
       ) : null}
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {rows.map((route) => (
-          <Card key={route.id}>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="font-semibold text-neutral-900">
-                  {route.origin.station} → {route.destination.station}
-                </p>
-                <p className="text-sm text-neutral-500">
-                  {route.origin.city} → {route.destination.city}
-                  {route.reference_duration_minutes === null ||
-                  route.reference_duration_minutes === undefined
-                    ? ''
-                    : ` · ${route.reference_duration_minutes} min`}
-                </p>
-              </div>
-              <Button
-                label={t('agency:inventory.routes.addSchedule')}
-                variant="secondary"
-                onPress={() => setScheduling(route)}
-              />
-            </div>
-
-            {route.schedules.length === 0 ? (
-              <p className="mt-4 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">
-                Aucun horaire : cet itinéraire ne produit aucun départ, et n’apparaît donc
-                pas dans la recherche.
-              </p>
-            ) : (
-              <ul className="mt-4 space-y-2">
-                {route.schedules.map((schedule) => (
-                  <li
-                    key={schedule.id}
-                    className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-2 text-sm"
-                  >
-                    <span className="font-mono font-medium">
-                      {schedule.departure_time}
-                    </span>
-                    <span className="flex gap-1">
-                      {DAYS.map((day) => (
-                        <span
-                          key={day.value}
-                          className={
-                            schedule.days_of_week.includes(day.value)
-                              ? 'flex h-6 w-6 items-center justify-center rounded-full bg-ink-700 text-xs text-neutral-0'
-                              : 'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-xs text-neutral-500'
-                          }
-                        >
-                          {day.short}
-                        </span>
-                      ))}
-                    </span>
-                    <span className="font-semibold">
-                      {formatMoney(schedule.price, 'fr')}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <RouteCard
+            key={route.id}
+            route={route}
+            onSchedule={() => setScheduling(route)}
+          />
         ))}
       </div>
 
-      {rows.length === 0 ? null : (
-        <Card className="mt-6">
-          <p className="font-semibold text-neutral-900">
-            {t('agency:inventory.routes.generate')}
-          </p>
-          {/*
-            Le geste qui rend l'inventaire visible. Jusqu'ici les horaires ne sont
-            que des intentions : tant qu'on n'a pas généré, la recherche ne renvoie
-            rien et l'agence croit son travail perdu.
-          */}
-          <p className="mt-1 mb-4 text-sm text-neutral-500">
-            Les horaires décrivent une intention ; les départs sont ce que le passager
-            réserve. La génération ne touche jamais un départ existant — elle ne fait
-            qu’ajouter les manquants.
-          </p>
-
-          <Button
-            label={
-              generate.isPending
-                ? t('agency:inventory.routes.generating')
-                : t('agency:inventory.routes.generateNow')
-            }
-            onPress={() => generate.mutate()}
-            disabled={generate.isPending}
-          />
-
-          {generate.data === undefined ? null : (
-            <p className="mt-3 text-sm text-success-700">
-              {generate.data.created} départ{generate.data.created > 1 ? 's' : ''} créé
-              {generate.data.created > 1 ? 's' : ''} sur {generate.data.horizon_days}{' '}
-              jours.
-            </p>
-          )}
-          {generate.error ? <ErrorNote message={describeError(generate.error)} /> : null}
-        </Card>
-      )}
+      {rows.length === 0 ? null : <GenerateCard />}
 
       {adding ? <RoutePanel onClose={() => setAdding(false)} /> : null}
       {scheduling === null ? null : (
         <SchedulePanel route={scheduling} onClose={() => setScheduling(null)} />
       )}
+    </div>
+  )
+}
+
+/**
+ * Un itinéraire et ses horaires.
+ *
+ * Sorti du corps de la page, qui faisait quatre métiers dans une seule fonction
+ * de cent cinquante lignes : l'en-tête, l'attente, la liste, et le geste de
+ * génération. Chacun se relit maintenant seul.
+ */
+function RouteCard({
+  route,
+  onSchedule,
+}: {
+  route: AgencyRoute
+  onSchedule: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-semibold text-neutral-900">
+            {route.origin.station} → {route.destination.station}
+          </p>
+          <p className="text-sm text-neutral-500">
+            {route.origin.city} → {route.destination.city}
+            {route.reference_duration_minutes === null ||
+            route.reference_duration_minutes === undefined
+              ? ''
+              : ` · ${route.reference_duration_minutes} min`}
+          </p>
+        </div>
+        <Button
+          label={t('agency:inventory.routes.addSchedule')}
+          variant="secondary"
+          icon="trips"
+          onPress={onSchedule}
+        />
+      </div>
+
+      {route.schedules.length === 0 ? (
+        // **Un itinéraire sans horaire ne produit rien.** Le taire laisserait
+        // croire le travail fait, jusqu'à ce que la recherche ne renvoie rien.
+        <p className="mt-4 rounded-lg bg-neutral-50 p-3 text-sm text-neutral-500">
+          Aucun horaire : cet itinéraire ne produit aucun départ, et n’apparaît donc pas
+          dans la recherche.
+        </p>
+      ) : (
+        <ul className="mt-4 flex flex-col gap-2">
+          {route.schedules.map((schedule) => (
+            <li
+              key={schedule.id}
+              className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-2 text-sm"
+            >
+              <span className="font-mono font-medium tabular-nums">
+                {schedule.departure_time}
+              </span>
+              <DayDots days={schedule.days_of_week} />
+              <span className="font-semibold tabular-nums">
+                {formatMoney(schedule.price, 'fr')}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  )
+}
+
+/**
+ * Le geste qui rend l'inventaire visible.
+ *
+ * Jusqu'ici les horaires ne sont que des intentions : tant qu'on n'a pas
+ * généré, la recherche ne renvoie rien et l'agence croit son travail perdu.
+ */
+function GenerateCard() {
+  const { t } = useTranslation()
+  const generate = useGenerateTrips()
+
+  return (
+    <Card className="mt-6">
+      <p className="font-semibold text-neutral-900">
+        {t('agency:inventory.routes.generate')}
+      </p>
+      <p className="mt-1 mb-4 text-sm text-neutral-500">
+        Les horaires décrivent une intention ; les départs sont ce que le passager
+        réserve. La génération ne touche jamais un départ existant — elle ne fait
+        qu’ajouter les manquants.
+      </p>
+
+      {/*
+        L'attente est portée par le bouton, non par un second libellé. Échanger
+        le texte contre « Génération… » changeait sa largeur et déplaçait ce
+        qu'on venait de lire.
+      */}
+      <Button
+        label={t('agency:inventory.routes.generateNow')}
+        onPress={() => generate.mutate()}
+        loading={generate.isPending}
+      />
+
+      {generate.data === undefined ? null : (
+        <p className="mt-3 text-sm text-success-700">
+          {generate.data.created} départ{generate.data.created > 1 ? 's' : ''} créé
+          {generate.data.created > 1 ? 's' : ''} sur {generate.data.horizon_days} jours.
+        </p>
+      )}
+      {generate.error ? <ErrorNote message={describeError(generate.error)} /> : null}
+    </Card>
+  )
+}
+
+/** La pastille d'un jour : même dessin qu'on la lise ou qu'on la choisisse. */
+const DAY_DOT = 'flex items-center justify-center rounded-full text-xs transition-colors'
+
+/** Les sept jours d'un horaire, en lecture. */
+function DayDots({ days }: { days: readonly number[] }) {
+  return (
+    <span className="flex gap-1">
+      {DAYS.map((day) => (
+        <span
+          key={day.value}
+          className={`${DAY_DOT} h-6 w-6 ${
+            days.includes(day.value)
+              ? 'bg-ink-700 text-neutral-0'
+              : 'bg-neutral-100 text-neutral-500'
+          }`}
+        >
+          {day.short}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+/**
+ * Les mêmes sept jours, à choisir.
+ *
+ * En boutons plutôt qu'en liste à cocher : un horaire se lit d'un coup d'œil, et
+ * sept cases empilées prennent la moitié du panneau. `aria-pressed` dit l'état
+ * que la couleur montre.
+ */
+function DayPicker({
+  value,
+  onChange,
+}: {
+  value: readonly number[]
+  onChange: (next: number[]) => void
+}) {
+  return (
+    <div className="mt-1 flex gap-1">
+      {DAYS.map((day) => (
+        <button
+          key={day.value}
+          type="button"
+          aria-pressed={value.includes(day.value)}
+          onClick={() =>
+            onChange(
+              value.includes(day.value)
+                ? value.filter((entry) => entry !== day.value)
+                : [...value, day.value].sort(),
+            )
+          }
+          className={`${DAY_DOT} h-9 w-9 text-sm ${
+            value.includes(day.value)
+              ? 'bg-ink-700 font-semibold text-neutral-0'
+              : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+          }`}
+        >
+          {day.short}
+        </button>
+      ))}
     </div>
   )
 }
@@ -334,34 +420,8 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
         />
       </Field>
 
-      {/*
-        Les jours en boutons plutôt qu'en liste à cocher : un horaire se lit
-        d'un coup d'œil, et sept cases empilées prennent la moitié du panneau.
-      */}
       <Field label={t('agency:inventory.routes.days')}>
-        <div className="mt-1 flex gap-1">
-          {DAYS.map((day) => (
-            <button
-              key={day.value}
-              type="button"
-              aria-pressed={days.includes(day.value)}
-              onClick={() =>
-                setDays((current) =>
-                  current.includes(day.value)
-                    ? current.filter((value) => value !== day.value)
-                    : [...current, day.value].sort(),
-                )
-              }
-              className={
-                days.includes(day.value)
-                  ? 'h-9 w-9 rounded-full bg-ink-700 text-sm font-semibold text-neutral-0'
-                  : 'h-9 w-9 rounded-full bg-neutral-100 text-sm text-neutral-500'
-              }
-            >
-              {day.short}
-            </button>
-          ))}
-        </div>
+        <DayPicker value={days} onChange={setDays} />
       </Field>
 
       <Field label={t('agency:inventory.routes.vehicle')}>

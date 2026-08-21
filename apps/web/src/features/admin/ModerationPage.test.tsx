@@ -12,7 +12,6 @@ import { ModerationPage } from './ModerationPage'
  * qui existe.
  */
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/admin/city-requests': () =>
     jsonResponse({
       data: [{ id: 7, requested_name: 'Bafoussam', agency: 'Général Express' }],
@@ -21,6 +20,12 @@ const routes = (extra: Record<string, () => Response> = {}) => ({
     jsonResponse({
       data: [{ id: 3, name: 'Gare de Bonabéri', city: 'Douala', is_active: true }],
     }),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 describe('ModerationPage', () => {

@@ -208,7 +208,6 @@ export interface AgencyMessages {
       readonly unassigned: string
       readonly createSchedule: string
       readonly generate: string
-      readonly generating: string
       readonly generateNow: string
       readonly from: string
       readonly fromHint: string
@@ -498,7 +497,6 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         unassigned: 'Non assigné',
         createSchedule: 'Créer l’horaire',
         generate: 'Générer les départs',
-        generating: 'Génération…',
         generateNow: 'Générer maintenant',
         from: 'À partir du',
         fromHint: 'Les départs ne sont générés qu’à compter de cette date.',
@@ -784,7 +782,6 @@ export const agencyMessages: Record<Locale, AgencyMessages> = {
         unassigned: 'Unassigned',
         createSchedule: 'Create the schedule',
         generate: 'Generate departures',
-        generating: 'Generating…',
         generateNow: 'Generate now',
         from: 'From',
         fromHint: 'Departures are only generated from this date onwards.',

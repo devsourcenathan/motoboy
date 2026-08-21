@@ -21,11 +21,16 @@ const route = {
 }
 
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/agency/routes': () => jsonResponse({ data: [route] }),
   '/agency/vehicles': () => jsonResponse({ data: [{ id: 5, registration: 'LT-1' }] }),
   '/agency/drivers': () => jsonResponse({ data: [] }),
   '/agency/stations': () => jsonResponse({ data: [] }),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 describe('RoutesPage', () => {
@@ -99,5 +104,48 @@ describe('RoutesPage', () => {
       price: 5000,
       days_of_week: [2, 4, 5, 6, 7],
     })
+  })
+  /**
+   * **Les jours d'un horaire se lisent d'un coup d'œil ou ne se lisent pas.**
+   * Un horaire qui ne part que la semaine, affiché comme les autres, fait
+   * promettre un départ le dimanche — et c'est le passager qui l'apprend à la
+   * gare.
+   *
+   * Les mêmes sept pastilles servent à lire et à choisir : le test porte sur ce
+   * que la lecture doit distinguer, l'état choisi étant dit par `aria-pressed`
+   * du côté du formulaire.
+   */
+  it('distingue les jours où un horaire part de ceux où il ne part pas', async () => {
+    mockRoutes(
+      routes({
+        '/agency/routes': () =>
+          jsonResponse({
+            data: [
+              {
+                ...route,
+                schedules: [
+                  {
+                    id: 9,
+                    departure_time: '07:30',
+                    days_of_week: [1, 2, 3, 4, 5],
+                    price: { amount: 6500, currency: 'XAF' },
+                  },
+                ],
+              },
+            ],
+          }),
+      }),
+    )
+
+    render(<RoutesPage />)
+
+    expect(await screen.findByText('07:30')).toBeInTheDocument()
+
+    // Sept pastilles, toujours : masquer les jours creux ferait lire « part le
+    // lundi » là où il faut lire « ne part pas le dimanche ».
+    const jours = screen.getAllByText(/^[LMJVSD]$/)
+
+    expect(jours).toHaveLength(7)
+    expect(screen.queryByText(/Aucun horaire/)).toBeNull()
   })
 })

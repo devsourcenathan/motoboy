@@ -22,8 +22,13 @@ const account = {
 }
 
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/admin/payout-accounts': () => jsonResponse({ data: [account] }),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 describe('PayoutAccountsPage', () => {

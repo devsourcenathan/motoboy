@@ -1171,3 +1171,50 @@ Quatre dépendances installées et utilisées par zéro fichier — `react-hook-
 une bibliothèque de formulaires au milieu d'une refonte de huit formulaires qui
 marchent aurait été le contraire de KISS ; les laisser en place invitait à en
 adopter une à moitié.
+
+---
+
+## 20. Les trois plus gros écrans — 21 août 2026
+
+`RoutesPage`, `CounterSalePage` et `MoneyPage` faisaient chacune quatre ou cinq
+métiers dans une seule fonction.
+
+| Écran | Fonction principale |
+|---|---|
+| `RoutesPage` | 158 → **68** lignes |
+| `MoneyPage` | 168 → **45** lignes |
+| `CounterSalePage` | 88 → **56** lignes |
+
+**Les fichiers, eux, ont grandi.** Chaque pièce extraite porte sa raison d'être,
+et c'est le but : ce qui a rétréci n'est pas le total, c'est ce qu'il faut tenir
+en tête pour comprendre une chose à la fois.
+
+### Ce que le découpage a révélé
+
+Les sept pastilles de jours étaient **dessinées deux fois** dans `RoutesPage` —
+une version en lecture, une version cliquable, avec leurs propres classes. Elles
+partagent maintenant `DAY_DOT`, et l'écart de taille (24 px contre 36) reste
+explicite plutôt que dupliqué.
+
+`MoneyPage` déclarait ses trois requêtes en ligne dans le corps de la page, ce
+qui obligeait à réécrire à la main la forme des réponses pour typer les
+composants extraits. Les hooks sont sortis, et les types viennent d'eux par
+`ReturnType` : une réponse qui change casse la compilation au lieu de diverger en
+silence.
+
+L'attente de la génération de départs était portée par un **second libellé**
+(« Génération… »), qui changeait la largeur du bouton. `loading` fait le travail
+depuis la refonte des primitives ; la clé de traduction devenue morte est retirée
+des deux langues.
+
+### Un piège dans les tests, dans sept fichiers
+
+Les passe-plats de mock étalaient leur argument **avant** les routes par défaut :
+
+```ts
+const routes = (extra = {}) => ({ ...extra, '/agency/routes': ... })
+```
+
+Un test qui croyait remplacer une réponse obtenait donc l'autre — **sans erreur,
+et en passant pour la mauvaise raison**. Découvert en écrivant un test qui ne
+voyait pas ses propres données. Corrigé dans les sept fichiers concernés.

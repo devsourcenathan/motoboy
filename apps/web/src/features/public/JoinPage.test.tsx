@@ -13,9 +13,14 @@ import { JoinPage } from './JoinPage'
  * plateforme, et le seul chemin passait par une commande `curl`.
  */
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/agencies/register': () =>
     jsonResponse({ expires_at: '2026-08-20T09:00:00Z', attempts_remaining: 3 }, 201),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 const remplir = async () => {

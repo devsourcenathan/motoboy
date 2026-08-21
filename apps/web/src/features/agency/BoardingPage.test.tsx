@@ -19,7 +19,6 @@ const trip = {
 }
 
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/boarding-list': () =>
     jsonResponse({
       trip,
@@ -34,6 +33,12 @@ const routes = (extra: Record<string, () => Response> = {}) => ({
       ],
     }),
   '/agency/trips': () => jsonResponse({ data: [trip] }),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 describe('BoardingPage', () => {

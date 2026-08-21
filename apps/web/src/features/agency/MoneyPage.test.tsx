@@ -13,10 +13,15 @@ import { MoneyPage } from './MoneyPage'
  * sur la mise en page.
  */
 const routes = (extra: Record<string, () => Response> = {}) => ({
-  ...extra,
   '/agency/payout-accounts': () => jsonResponse({ data: [] }),
   '/agency/payouts': () => jsonResponse({ data: [] }),
   '/agency/ledger': () => jsonResponse({ data: [] }),
+  /*
+   * `extra` en **dernier** : posé en premier, il se faisait écraser par les
+   * routes par défaut, si bien qu'un test qui croyait remplacer une réponse
+   * obtenait l'autre — sans erreur, et en passant pour la mauvaise raison.
+   */
+  ...extra,
 })
 
 describe('MoneyPage', () => {
