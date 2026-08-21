@@ -443,6 +443,57 @@ enquête, et laisse croire à un défaut d'écriture là où le problème est ai
 
 ---
 
+## 4 quinquies. ⚠️ Les données de démonstration, et comment elles arrivent
+
+Le 21 août 2026, la base de production portait deux agences fictives — `Général
+Express` et `Western Voyages` — avec leur inventaire et **198 départs, dont 174
+en vente dans la recherche publique**.
+
+Elles viennent d'un `php artisan db:seed` **sans `--class`**. La garde de
+`DatabaseSeeder` teste `APP_ENV`, pas la base visée. Or le poste depuis lequel on
+lance les migrations porte `APP_ENV=local` **et** un `DB_URL` qui vise Neon —
+c'est même la manière recommandée ici, faute de shell chez l'hébergeur. La garde
+laissait donc passer, en toute logique et pour rien.
+
+### La garde regarde maintenant la base
+
+`DemoSeeder` refuse un hôte distant :
+
+```
+Base distante (ep-….neon.tech) : les données de démonstration ne s'y sèment pas.
+```
+
+Un nom **sans point** est un service local — `postgres` d'un docker-compose, `db`
+d'un conteneur de CI. Tout ce qui porte un domaine est ailleurs.
+
+> ⚠️ La première version de cette garde lisait `config('database.…host')`, qui
+> rend le défaut du fichier — `127.0.0.1` — tant que la connexion vient de
+> `DB_URL`. Elle aurait laissé semer sur Neon **en affirmant le contraire**.
+> C'est `DB::connection()->getConfig('host')` qu'il faut lire. Une fausse
+> sécurité est pire que pas de garde du tout.
+
+### Nettoyer ce qui est déjà là
+
+```bash
+php artisan motoboy:purge-demo
+```
+
+À blanc par défaut : elle décrit ce qu'elle ferait et ne touche à rien.
+`--confirm` exécute.
+
+**Elle ne supprime pas les agences**, et ne le peut pas : `bookings.agency_id`,
+`commissions.agency_id` et `agency_ledger_entries` sont en `RESTRICT`. Une agence
+qui porte une histoire financière n'est pas effaçable — c'est une garantie du
+schéma, qu'on ne contourne pas pour faire du ménage.
+
+Elle épargne donc chaque départ portant une réservation, un billet ou une
+validation, arrête les horaires **avant** de supprimer — sans quoi
+l'ordonnanceur régénérerait tout la nuit suivante — et remet les agences en
+`PENDING`. Leurs départs restants quittent la recherche par la règle qui vaut
+pour toute agence non admise, sans rien détruire, et cela se défait d'un clic.
+
+---
+
 ## 5. Ce qui se passe au démarrage d'un conteneur
 
 1. Refus immédiat si `APP_KEY` est absente.

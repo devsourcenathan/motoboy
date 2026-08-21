@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Administration\Console\PurgeDemoDataCommand;
 use App\Modules\Identity\Console\CreateAdminCommand;
 use App\Modules\Payments\Console\ConfirmPaymentCommand;
 use App\Modules\Payouts\Console\BuildDriverPayoutsCommand;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
      */
     ->withCommands([
         CreateAdminCommand::class,
+        PurgeDemoDataCommand::class,
         ConfirmPaymentCommand::class,
         ApproveDriverCommand::class,
         BuildDriverPayoutsCommand::class,
