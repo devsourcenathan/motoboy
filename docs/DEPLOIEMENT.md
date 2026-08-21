@@ -283,8 +283,32 @@ Environnement : production
 SMS           : log
 Encaissement  : notchpay
 Décaissement  : fake
-Journal       : stderr
+Journal       : stderr (info)
 ```
+
+Le **niveau** figure entre parenthèses, et il ne s'y trouve pas par symétrie.
+
+### ⚠️ `SMS_DRIVER=log` ne veut rien dire sans le niveau
+
+Le pilote SMS `log` écrit le code OTP en `info`. Sous un `LOG_LEVEL` plus haut —
+`warning`, `error` — il **n'écrit rien du tout**, et le code n'existe alors nulle
+part : ni SMS, ni journal.
+
+Ce qui rend le cas coûteux, c'est qu'il ne ressemble pas à une panne de
+journalisation. Les erreurs, elles, continuent de passer : on voit des traces
+d'exception défiler, la ligne de démarrage confirme `SMS : log`, et le pilote est
+bel et bien celui qu'on croit. Tout est vrai, et le code reste introuvable.
+
+L'entrypoint le signale donc lui-même quand les deux réglages se contredisent :
+
+```
+  /!\  SMS_DRIVER=log mais LOG_LEVEL masque les lignes info :
+       le code OTP ne sera ecrit nulle part.
+```
+
+Un niveau inconnu ne déclenche rien : `stack` n'en a pas — il répartit vers ses
+canaux, qui portent le leur. **Une alerte qui se trompe cesse d'être lue**, et
+c'est un prix bien plus élevé que le silence qu'elle remplace.
 
 ---
 
