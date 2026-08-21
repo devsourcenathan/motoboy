@@ -276,8 +276,26 @@ journaliseur de secours, qui visait ce même fichier, a échoué aussi — et **
 échec-là** est remonté en 500, à la place de l'erreur qu'il devait consigner.
 
 Une candidature d'agence refusée ne disait donc rien d'autre que
-« permission denied » sur un fichier de journal. L'erreur réelle n'a jamais été
-écrite nulle part.
+« permission denied » sur un fichier de journal.
+
+**Et il n'y avait aucune autre erreur.** J'ai cherché deux jours ce qui cassait
+l'inscription en supposant que la panne de journalisation *masquait* un défaut :
+elle *était* le défaut. Le pilote SMS en mode `log` écrit le code par
+`Log::info` — cette écriture échouait, l'exception remontait, et une requête par
+ailleurs parfaitement valide rendait un 500.
+
+Ce qui explique les trois symptômes d'un coup : la durée de plusieurs secondes
+(la requête allait jusqu'au bout), l'OTP absent des journaux (la ligne qui
+échouait *était* celle de l'OTP), et le 500 sans message exploitable.
+
+⚠️ **Chaque tentative échouée a laissé une agence en base.** La transaction
+committe avant l'envoi du SMS : l'agence, ses conditions commerciales et le compte
+du responsable existaient déjà quand l'exception survenait. Les retrouver :
+
+```sql
+select reference, name, phone, status, created_at
+from agencies order by id desc limit 10;
+```
 
 Deux corrections, complémentaires :
 
