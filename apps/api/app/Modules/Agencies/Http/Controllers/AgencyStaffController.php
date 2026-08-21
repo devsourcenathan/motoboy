@@ -10,6 +10,7 @@ use App\Modules\Identity\Enums\Locale;
 use App\Modules\Identity\Enums\Role as RoleEnum;
 use App\Modules\Identity\Models\Role;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Rules\PhoneNumber;
 use App\Support\Http\ApiException;
 use App\Support\Http\ErrorCode;
 use Illuminate\Http\JsonResponse;
@@ -84,7 +85,7 @@ final class AgencyStaffController
         $actor = $request->user();
 
         $validated = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => PhoneNumber::rules(),
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'role' => ['required', 'string', 'in:AGENT,COUNTER'],

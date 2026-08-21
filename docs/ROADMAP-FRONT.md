@@ -954,3 +954,57 @@ lance pas sous charge, `pnpm -r` faisant tourner Jest et Vitest de front. Non
 reproduit en quatre exécutions suivantes, donc noté plutôt que corrigé : à
 reconnaître si la CI la rencontre, parce qu'un décompte incomplet se lit beaucoup
 plus facilement comme un succès que comme une panne.
+
+---
+
+## 16. Le numéro de téléphone — 21 août 2026
+
+Une agence s'est inscrite avec `651212331`, comme on dicte un numéro. Le serveur
+l'a accepté et lui a envoyé son code. `auth/otp/verify` l'a ensuite refusé —
+**sur le format**, pas sur le code.
+
+Le compte existait déjà à ce moment-là, et portait un numéro qu'aucune connexion
+n'accepterait jamais. Rien à l'écran ne disait quoi corriger : le SMS était bien
+arrivé.
+
+### Deux moitiés d'un même défaut
+
+**Le contrat ne décrivait pas le format.** Il ne vivait que dans les règles
+Laravel, recopié en sept exemplaires — et deux avaient cessé de s'accorder :
+
+| Point d'entrée | Ce qu'il exigeait |
+|---|---|
+| `login`, `register`, `resend`, `verify` | `^\+[1-9][0-9]{7,14}$` |
+| `agencies/register`, `agency/staff` | `string`, `max:20` |
+
+Les deux laxistes créent pourtant un compte. Pire, `AgencyStaffController`
+retrouve l'existant par `where('phone', ...)` : deux formats du même numéro y
+désignent **deux personnes**.
+
+**Et le web ne traduisait pas ce qu'on tape.** Le mobile le faisait depuis
+toujours — `toInternational`, avec ses tests. Le web ignorait la fonction et
+envoyait la saisie telle quelle, alors que ses propres champs affichent un
+gabarit à espaces, `+237 6XX XX XX XX`, que le contrat refuse.
+
+### Ce qui a changé
+
+`PhoneNumber` porte la règle une fois, `@motoboy/shared` porte la traduction une
+fois — le mobile s'y branche plutôt que d'en garder une copie. Le contrat gagne
+un schéma `PhoneNumber` avec son motif : le format y est désormais **écrit**, et
+non sous-entendu.
+
+Ni le chauffeur ni l'accompagnant n'y sont soumis. Ils ne reçoivent aucun code
+et n'ouvrent aucune session — `storeDriver` ne crée qu'un enregistrement métier.
+Une règle appliquée là refuserait des saisies utiles sans rien protéger, et une
+validation plus stricte que le serveur est la même dérive, dans l'autre sens.
+
+### Ce que les tests ne voyaient pas
+
+Les 47 tests touchant ces points d'entrée passaient déjà — **tous écrivaient
+l'international sans y penser**. C'est très exactement ainsi que deux règles
+divergent sans que rien ne le signale : le cas nominal est couvert deux fois, et
+le cas réel pas du tout.
+
+Quatre régressions ajoutées, et vérifiées en remettant l'ancienne règle : les
+deux tests serveur rendent alors 201 au lieu de 422, les deux tests web laissent
+partir le numéro brut.

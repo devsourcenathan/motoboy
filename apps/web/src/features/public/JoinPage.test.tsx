@@ -125,4 +125,51 @@ describe('JoinPage', () => {
       phone: '+237690000011',
     })
   })
+  /**
+   * **Le numéro tapé n'est jamais celui que le contrat accepte.**
+   *
+   * Une agence a rempli ce formulaire avec `651212331`, comme on dicte un
+   * numéro. Le serveur l'a pris — sa règle était laxiste — et lui a envoyé un
+   * code. La vérification l'a ensuite refusé sur le format, avec un compte déjà
+   * créé portant un numéro qu'aucune connexion n'accepterait. Le SMS était bien
+   * arrivé : rien à l'écran ne disait quoi corriger.
+   *
+   * Les **deux** étapes doivent traduire, et de la même façon : le code est
+   * indexé sur ce que l'inscription a enregistré, et lui seul le retrouve.
+   */
+  it('envoie le numéro à l’international, à l’inscription comme à la vérification', async () => {
+    mockRoutes(
+      routes({
+        '/otp/verify': () => jsonResponse({ token: 'jeton', user: { id: 1, roles: [] } }),
+      }),
+    )
+
+    render(<JoinPage />)
+
+    await userEvent.type(
+      await screen.findByLabelText(/Nom commercial/),
+      'Général Express',
+    )
+    // Le gabarit du champ affiche lui-même des espaces : les recopier est le
+    // geste attendu, et se faisait refuser.
+    await userEvent.type(screen.getByLabelText(/Téléphone de l’agence/), '690 00 00 10')
+    await userEvent.type(screen.getByLabelText(/^Prénom/), 'Awa')
+    await userEvent.type(screen.getByLabelText(/^Nom$/), 'Nkeng')
+    await userEvent.type(screen.getByLabelText(/Son téléphone/), '651212331')
+    await userEvent.click(screen.getByRole('button', { name: 'Envoyer la candidature' }))
+
+    expect(
+      await sentRequest((request) => request.url.includes('/agencies/register')),
+    ).toMatchObject({
+      phone: '+237690000010',
+      manager_phone: '+237651212331',
+    })
+
+    await userEvent.type(await screen.findByLabelText(/Code reçu/), '123456')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmer' }))
+
+    expect(
+      await sentRequest((request) => request.url.includes('/otp/verify')),
+    ).toMatchObject({ phone: '+237651212331' })
+  })
 })

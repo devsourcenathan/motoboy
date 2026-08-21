@@ -120,10 +120,7 @@ paths:
               type: object
               required: [phone, first_name, last_name]
               properties:
-                phone:
-                  type: string
-                  description: Format E.164
-                  examples: ['+237690000000']
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
                 email:
                   type: string
                   format: email
@@ -161,7 +158,7 @@ paths:
               type: object
               required: [phone]
               properties:
-                phone: { type: string }
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
       responses:
         default: { $ref: '#/components/responses/DefaultError' }
         '202':
@@ -191,7 +188,7 @@ paths:
               type: object
               required: [phone, code, purpose]
               properties:
-                phone: { type: string }
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
                 code: { type: string, minLength: 4, maxLength: 8 }
                 purpose: { $ref: '#/components/schemas/OtpPurpose' }
       responses:
@@ -227,7 +224,7 @@ paths:
               type: object
               required: [phone, purpose]
               properties:
-                phone: { type: string }
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
                 purpose: { $ref: '#/components/schemas/OtpPurpose' }
       responses:
         default: { $ref: '#/components/responses/DefaultError' }
@@ -1329,7 +1326,10 @@ paths:
                     properties:
                       first_name: { type: string, maxLength: 100 }
                       last_name: { type: string, maxLength: 100 }
-                      phone: { type: string }
+                      # Un accompagnant n'est pas un compte et ne reçoit aucun
+                      # code : le serveur l'accepte tel qu'il vient, et exiger
+                      # l'international ici refuserait des saisies utiles.
+                      phone: { type: [string, 'null'], maxLength: 20 }
                       seat_id:
                         type: [integer, 'null']
                         format: int64
@@ -2688,14 +2688,13 @@ paths:
               properties:
                 name: { type: string, maxLength: 150 }
                 legal_name: { type: [string, 'null'], maxLength: 200 }
-                phone: { type: string, maxLength: 20 }
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
                 email: { type: [string, 'null'], format: email }
                 manager_first_name: { type: string, maxLength: 100 }
                 manager_last_name: { type: string, maxLength: 100 }
                 manager_phone:
-                  type: string
-                  maxLength: 20
-                  description: Reçoit le code de vérification.
+                  allOf: [{ $ref: '#/components/schemas/PhoneNumber' }]
+                  description: Reçoit le code de vérification, et devient le compte.
                 locale: { $ref: '#/components/schemas/Locale' }
 
   /v1/agency/payout-accounts:
@@ -2782,7 +2781,7 @@ paths:
               type: object
               required: [phone, first_name, last_name, role]
               properties:
-                phone: { type: string, maxLength: 20 }
+                phone: { $ref: '#/components/schemas/PhoneNumber' }
                 first_name: { type: string, maxLength: 100 }
                 last_name: { type: string, maxLength: 100 }
                 role: { type: string, enum: [AGENT, COUNTER] }
@@ -3460,6 +3459,24 @@ components:
       description: |
         Un OTP est lié à son intention : un code demandé pour se connecter ne
         doit pas pouvoir valider une inscription.
+
+    PhoneNumber:
+      type: string
+      pattern: '^\+[1-9][0-9]{7,14}$'
+      maxLength: 20
+      examples: ['+237690000000']
+      description: |
+        Format international (E.164), indicatif compris.
+
+        **Le format n'était écrit nulle part dans ce contrat**, et vivait
+        seulement dans les règles de validation du serveur. Sept points
+        d'entrée le recopiaient, trois avaient cessé de s'accorder : une
+        agence pouvait s'inscrire avec un numéro national, recevoir son code,
+        puis se le faire refuser sur le format à la vérification — avec un
+        compte déjà créé portant un numéro inutilisable.
+
+        Un numéro porte l'identité du compte **et** la destination des SMS.
+        Écrit ici, il oblige les clients comme le serveur.
 
     Locale:
       type: string

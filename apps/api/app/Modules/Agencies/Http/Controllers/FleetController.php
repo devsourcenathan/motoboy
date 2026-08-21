@@ -114,6 +114,12 @@ final class FleetController
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
+            /*
+             * Volontairement libre, contrairement aux numéros qui portent un
+             * compte : un chauffeur n'en a pas — `storeDriver` ne crée qu'un
+             * enregistrement métier, et rien ne lui envoie de code. On appelle
+             * ce numéro, on ne s'y authentifie pas.
+             */
             'phone' => ['required', 'string', 'max:20'],
             'license_number' => ['required', 'string', 'max:50'],
             'license_expires_at' => ['nullable', 'date'],

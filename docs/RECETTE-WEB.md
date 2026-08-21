@@ -65,6 +65,11 @@ l'agence, et c'est lui qui recevra le code.
 > l'agence dépose ses pièces et déclare son parc pendant que MOTOBOY instruit.
 > Seule la parution des départs dans la recherche attend l'admission.
 
+**Tapez le numéro comme vous le diriez** — `651212331`, ou `690 00 00 10` avec
+ses espaces, ou `0690000010`. L'écran le traduit à l'envoi. Les trois formes
+doivent mener au même compte, et le code doit arriver dans les trois cas ; c'est
+précisément ce qui ne marchait pas.
+
 À éprouver au passage : laissez la raison sociale et l'email vides, ils sont
 facultatifs. Et basculez l'écran en anglais avant d'envoyer — **le SMS doit
 arriver en anglais**, puisque c'est cette langue qui part avec le formulaire.
