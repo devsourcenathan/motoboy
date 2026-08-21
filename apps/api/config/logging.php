@@ -144,13 +144,18 @@ return [
          * n'a plus pu y ajouter une ligne. Laravel a bascule ici, a echoue aussi,
          * et **cet echec** est remonte en 500 a la place de l'erreur d'origine.
          *
-         * `LOG_EMERGENCY_PATH=php://stderr` en production : un conteneur
-         * journalise sur sa sortie d'erreur, jamais dans un fichier que personne
-         * ne lira. Le defaut reste le fichier pour le developpement local, ou il
-         * est commode et sans piege.
+         * **Le defaut est `stderr`, pas une variable a positionner.** Je l'avais
+         * d'abord rendu configurable, avec `php://stderr` declare dans
+         * `render.yaml` — et rien n'a change : les variables d'un blueprint ne
+         * s'appliquent qu'a sa synchronisation, si bien que le service tournait
+         * toujours sur l'ancien defaut. Un garde-fou qui depend d'un reglage
+         * ailleurs ne protege que sur le papier.
+         *
+         * La variable reste, pour qui voudrait un fichier en local. Mais il faut
+         * desormais la demander, au lieu de devoir la desactiver.
          */
         'emergency' => [
-            'path' => env('LOG_EMERGENCY_PATH', storage_path('logs/laravel.log')),
+            'path' => env('LOG_EMERGENCY_PATH', 'php://stderr'),
         ],
 
     ],
