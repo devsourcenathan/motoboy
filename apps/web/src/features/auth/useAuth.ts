@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { unwrap, type User } from '@motoboy/api-client'
 import { api, session } from '../../lib/api'
@@ -77,8 +78,26 @@ export function useVerifyOtp() {
   })
 }
 
+/**
+ * Fermer la session.
+ *
+ * **La navigation est ici, et non chez l'appelant.** Elle y était nulle part :
+ * la mutation révoquait le jeton, l'oubliait, vidait le cache — et l'écran
+ * restait sur `/admin/…`. `queryClient.clear()` **retire** les requêtes sans en
+ * relancer aucune, si bien que les observateurs déjà montés demeurent en
+ * attente : le garde de session, faute de réponse, affichait « Vérification de
+ * la session… » indéfiniment. On se croyait connecté jusqu'au premier clic.
+ *
+ * Où atterrir n'est pas une décision d'appelant : une session close mène à la
+ * connexion, depuis l'espace agence comme depuis l'administration. Le laisser à
+ * chacun garantit qu'un troisième appelant l'oubliera.
+ *
+ * `replace` : le retour arrière ne doit pas ramener dans un back-office dont
+ * plus aucun appel n'aboutira.
+ */
 export function useSignOut() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   return useMutation({
     mutationFn: async () => {
@@ -93,6 +112,12 @@ export function useSignOut() {
     onSettled: () => {
       // Même en cas d'échec : l'utilisateur a demandé à partir.
       session.expire()
+
+      /*
+       * On navigue **avant** de vider le cache : l'inverse laisse le garde
+       * rendre son écran d'attente sur une requête qui ne repartira jamais.
+       */
+      navigate('/sign-in', { replace: true })
       queryClient.clear()
     },
   })

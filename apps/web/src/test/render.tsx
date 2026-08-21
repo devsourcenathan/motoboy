@@ -16,7 +16,24 @@ import { expect, vi } from 'vitest'
 export function render(ui: ReactElement, { route = '/' }: { route?: string } = {}) {
   const client = new QueryClient({
     defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
+      queries: {
+        retry: false,
+        gcTime: 0,
+        /*
+         * **Le même `staleTime` que l'application.**
+         *
+         * Il manquait, et le harnais rafraîchissait donc là où l'application
+         * sert son cache : deux composants qui lisent la session — le garde et
+         * la coquille — provoquaient un second `GET /v1/me` qui n'existe pas en
+         * production. Les réponses de `mockFetch` étant ordonnées, la seconde
+         * partait au mauvais appelant, et l'écran recevait une liste de
+         * chauffeurs là où il attendait un compte.
+         *
+         * Un harnais qui ne met pas en cache comme l'application éprouve autre
+         * chose que l'application.
+         */
+        staleTime: 30_000,
+      },
       mutations: { retry: false },
     },
   })

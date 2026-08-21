@@ -1,8 +1,9 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { AppRoutes } from './App'
 import { session } from './lib/api'
-import { jsonResponse, mockFetch, render } from './test/render'
+import { jsonResponse, mockFetch, mockRoutes, render } from './test/render'
 
 /**
  * Le garde de session.
@@ -92,6 +93,37 @@ describe('RequireSession', () => {
 
     expect(
       await screen.findByRole('heading', { name: /Comparez les départs/ }),
+    ).toBeInTheDocument()
+  })
+})
+
+/**
+ * La déconnexion.
+ *
+ * **Elle ne ramenait nulle part.** Le jeton était bien révoqué et oublié, mais
+ * l'écran restait sur `/admin/…` — un back-office toujours affiché, dont chaque
+ * action échouerait. On se croit connecté jusqu'au premier clic.
+ */
+describe('Déconnexion', () => {
+  it('ramène à la connexion', async () => {
+    await session.start('jeton-admin')
+
+    mockRoutes({
+      '/auth/logout': () => jsonResponse({}),
+      '/admin/drivers': () =>
+        jsonResponse({
+          data: [],
+          meta: { page: 1, per_page: 20, total: 0, last_page: 1 },
+        }),
+      '/v1/me': () => jsonResponse(me(['ADMIN'])),
+    })
+
+    render(<AppRoutes />, { route: '/admin/drivers' })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Se déconnecter' }))
+
+    expect(
+      await screen.findByRole('button', { name: 'Recevoir un code' }),
     ).toBeInTheDocument()
   })
 })
