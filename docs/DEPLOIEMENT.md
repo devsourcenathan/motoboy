@@ -275,15 +275,26 @@ Deux corrections, complémentaires :
 
 | Ce qui change | Pourquoi |
 |---|---|
-| L'ordonnanceur et le worker tournent en `www-data` | Rien d'applicatif n'a besoin de root dans un conteneur, et plus rien ne crée de fichier que php-fpm ne pourra pas rouvrir |
-| …avec `HOME=/var/www/html` | **Indissociable du point précédent.** supervisord change d'utilisateur mais pas d'environnement : `HOME` restait `/root`, et libpq y cherchait un certificat client dans un répertoire que `www-data` ne peut pas traverser. La connexion à Neon échouait en boucle, le worker redémarrant chaque seconde |
-| Le secours écrit sur `stderr` | Le mode d'échec disparaît entièrement, y compris pour ce qu'on n'a pas prévu |
+| Le secours écrit sur `stderr` | Le mode d'échec disparaît entièrement : plus aucun canal ne vise un fichier, donc plus aucune permission à obtenir |
 
-Le fichier de certificat n'existe pas et n'a pas à exister : Neon n'exige pas de
-certificat client, il suffit que la sonde de libpq tombe quelque part de lisible.
-`php-fpm` échappait au problème par accident — sa directive `clear_env` vide
-l'environnement des workers, donc `HOME` n'y est pas défini du tout et la sonde
-est ignorée.
+### Une correction que j'ai retirée
+
+J'avais aussi fait passer l'ordonnanceur et le worker en `www-data` — du code
+applicatif n'a pas à tourner en root dans un conteneur. **Ça a cassé deux
+choses.** supervisord change d'utilisateur mais pas d'environnement : `HOME`
+restait `/root`, libpq y cherchait un certificat client dans un répertoire devenu
+illisible, et **chaque connexion à Neon échouait** — le worker sortait, était
+relancé, échouait à nouveau, chaque seconde. supervisord ne parvenait plus non
+plus à arrêter ses propres enfants.
+
+Le changement ne servait de toute façon plus à rien : il visait un `laravel.log`
+créé en root, et plus rien n'écrit dans ce fichier depuis que le secours pointe
+sur `stderr`. Ajouter `HOME` aurait consolidé un détour dont la raison d'être
+avait disparu.
+
+À reprendre le jour où l'on voudra vraiment quitter root — avec `HOME`, en
+vérifiant ce que supervisord sait signaler, et **sur un déploiement de recette**,
+pas sur celui qui sert les paiements.
 
 ⚠️ **Une panne de journalisation qui remplace l'erreur qu'elle devait consigner
 est le pire des masques** : elle transforme un diagnostic d'une minute en une
