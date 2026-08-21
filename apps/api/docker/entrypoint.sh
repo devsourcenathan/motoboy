@@ -185,6 +185,27 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     fi
 fi
 
+# ────────────────────── Ce qui tourne réellement ──────────────────────
+#
+# **La configuration effective, annoncée au démarrage.**
+#
+# `render.yaml` décrit une configuration ; le service en applique une autre dès
+# que le blueprint n'a pas été synchronisé. Les deux ont divergé sans que rien ne
+# le dise, et on a cherché pendant deux jours pourquoi un `SMS_DRIVER=log` écrit
+# dans le fichier ne produisait aucune ligne de journal — il n'était simplement
+# pas celui qui tournait.
+#
+# Trois valeurs suffisent à trancher ce genre de question en une seconde, et ce
+# sont celles qui décident si de l'argent bouge et si un SMS part. Aucune n'est
+# secrète : ce sont des noms de pilotes, jamais des clés.
+php_artisan tinker --execute="
+    echo 'Environnement : ' . app()->environment() . PHP_EOL;
+    echo 'SMS           : ' . config('sms.driver') . PHP_EOL;
+    echo 'Encaissement  : ' . config('payments.gateway') . PHP_EOL;
+    echo 'Décaissement  : ' . config('payments.payout_gateway') . PHP_EOL;
+    echo 'Journal       : ' . config('logging.default') . PHP_EOL;
+" 2>/dev/null || echo "Configuration effective : illisible."
+
 # ────────────────────────── Droits sur `storage` ──────────────────────────
 #
 # **Ce script tourne en root, et tout ce qu'il vient de créer lui appartient.**

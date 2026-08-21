@@ -251,6 +251,43 @@ fait passer par la CI, la fusion dans `main` déclenche le déploiement.
 
 ---
 
+## 4 ter. ⚠️ `render.yaml` décrit, le tableau de bord décide
+
+**Les variables d'un blueprint ne s'appliquent qu'à sa synchronisation.** Ajouter
+une clé dans `render.yaml` et redéployer ne change rien : le service continue
+d'utiliser ce que porte son onglet *Environment*.
+
+Ce piège a coûté deux jours. `LOG_EMERGENCY_PATH` déclarée dans le fichier n'a
+jamais pris effet, et l'on a cherché un défaut applicatif là où il n'y avait
+qu'une variable non appliquée. Le même écart peut porter sur `SMS_DRIVER`,
+`PAYMENT_GATEWAY` ou `PAYOUT_GATEWAY` — c'est-à-dire sur ce qui décide **si de
+l'argent bouge réellement**.
+
+Deux règles qui en découlent :
+
+1. Ce qui doit être vrai quoi qu'il arrive appartient à **l'image**, pas au
+   blueprint. `LOG_CHANNEL`, `APP_ENV` et `APP_DEBUG` sont dans le `Dockerfile`
+   pour cette raison.
+2. Après toute modification de `render.yaml`, **vérifiez la valeur dans le
+   tableau de bord** — ou synchronisez le blueprint.
+
+### La configuration effective est annoncée au démarrage
+
+L'entrypoint affiche désormais l'environnement, le pilote SMS, les deux
+passerelles et le canal de journal. Aucune n'est secrète — ce sont des noms de
+pilotes, jamais des clés — et elles tranchent en une seconde la question « qu'est-ce
+qui tourne vraiment ».
+
+```
+Environnement : production
+SMS           : log
+Encaissement  : notchpay
+Décaissement  : fake
+Journal       : stderr
+```
+
+---
+
 ## 4 quater. La journalisation
 
 `LOG_CHANNEL=stderr` : un conteneur journalise sur sa sortie d'erreur, que
@@ -276,8 +313,26 @@ journaliseur de secours, qui visait ce même fichier, a échoué aussi — et **
 échec-là** est remonté en 500, à la place de l'erreur qu'il devait consigner.
 
 Une candidature d'agence refusée ne disait donc rien d'autre que
-« permission denied » sur un fichier de journal. L'erreur réelle n'a jamais été
-écrite nulle part.
+« permission denied » sur un fichier de journal.
+
+**Et il n'y avait aucune autre erreur.** J'ai cherché deux jours ce qui cassait
+l'inscription en supposant que la panne de journalisation *masquait* un défaut :
+elle *était* le défaut. Le pilote SMS en mode `log` écrit le code par
+`Log::info` — cette écriture échouait, l'exception remontait, et une requête par
+ailleurs parfaitement valide rendait un 500.
+
+Ce qui explique les trois symptômes d'un coup : la durée de plusieurs secondes
+(la requête allait jusqu'au bout), l'OTP absent des journaux (la ligne qui
+échouait *était* celle de l'OTP), et le 500 sans message exploitable.
+
+⚠️ **Chaque tentative échouée a laissé une agence en base.** La transaction
+committe avant l'envoi du SMS : l'agence, ses conditions commerciales et le compte
+du responsable existaient déjà quand l'exception survenait. Les retrouver :
+
+```sql
+select reference, name, phone, status, created_at
+from agencies order by id desc limit 10;
+```
 
 Deux corrections, complémentaires :
 
