@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router'
+import { toInternational } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
 import { useCurrentUser, useRequestOtp, useVerifyOtp } from './useAuth'
 import { Logo } from '../../shared/ui'
@@ -48,8 +49,18 @@ export function SignInPage() {
         onSubmit={(event) => {
           event.preventDefault()
 
-          if (awaitingCode) verify.mutate({ phone: phone.trim(), code: code.trim() })
-          else request.mutate(phone.trim())
+          /*
+           * **Traduit à chaque envoi, sans exception.**
+           *
+           * Le contrat n'accepte que l'international, et le champ affiche un
+           * gabarit avec des espaces — `+237 6XX XX XX XX`. Le recopier tel
+           * quel se faisait refuser sur le format, ce qui ne se lit pas comme
+           * une faute de saisie mais comme un numéro inconnu.
+           */
+          const international = toInternational(phone)
+
+          if (awaitingCode) verify.mutate({ phone: international, code: code.trim() })
+          else request.mutate(international)
         }}
       >
         {/*

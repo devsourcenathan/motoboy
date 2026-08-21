@@ -11,6 +11,7 @@ use App\Modules\Agencies\Models\AgencyDocument;
 use App\Modules\Agencies\Support\AgencyContext;
 use App\Modules\Identity\Enums\Locale;
 use App\Modules\Identity\Models\User;
+use App\Modules\Identity\Rules\PhoneNumber;
 use App\Modules\Payouts\Models\PayoutAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,14 +32,30 @@ final class AgencyAccountController
      */
     public function register(Request $request, RegisterAgency $register): JsonResponse
     {
+        /*
+         * **Le format international, comme partout ailleurs.**
+         *
+         * Ces deux champs se contentaient de `string|max:20`, quand `login`,
+         * `register`, `resend` et `verify` exigent tous `+[indicatif]...`. Un
+         * numéro national y passait donc — puis le code émis pour lui était
+         * refusé à la vérification, sur le format, par le point d'entrée
+         * suivant. L'agence recevait bien son SMS et ne pouvait plus rien en
+         * faire : le compte créé portait un numéro qu'aucune connexion
+         * n'accepterait jamais.
+         *
+         * `manager_phone` devient un compte, donc la règle s'impose. `phone`
+         * est celui de l'agence, et l'on s'y tient aussi : c'est un numéro
+         * qu'on appellera, et deux formats coexistant en base finissent par se
+         * ressembler à un doublon.
+         */
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'legal_name' => ['nullable', 'string', 'max:200'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => PhoneNumber::rules(),
             'email' => ['nullable', 'email', 'max:255'],
             'manager_first_name' => ['required', 'string', 'max:100'],
             'manager_last_name' => ['required', 'string', 'max:100'],
-            'manager_phone' => ['required', 'string', 'max:20'],
+            'manager_phone' => PhoneNumber::rules(),
             'locale' => ['nullable', 'string', 'in:fr,en'],
         ]);
 

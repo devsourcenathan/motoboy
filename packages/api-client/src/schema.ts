@@ -28,11 +28,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /**
-                         * @description Format E.164
-                         * @example +237690000000
-                         */
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                         /** Format: email */
                         email?: string;
                         first_name: string;
@@ -94,7 +90,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                     };
                 };
             };
@@ -150,7 +146,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                         code: string;
                         purpose: components["schemas"]["OtpPurpose"];
                     };
@@ -210,7 +206,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                         purpose: components["schemas"]["OtpPurpose"];
                     };
                 };
@@ -2151,7 +2147,7 @@ export interface paths {
                         passengers: {
                             first_name: string;
                             last_name: string;
-                            phone?: string;
+                            phone?: string | null;
                             /**
                              * Format: int64
                              * @description Requis en mode SEATED, ignoré en mode CAPACITY
@@ -4433,13 +4429,13 @@ export interface paths {
                     "application/json": {
                         name: string;
                         legal_name?: string | null;
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                         /** Format: email */
                         email?: string | null;
                         manager_first_name: string;
                         manager_last_name: string;
-                        /** @description Reçoit le code de vérification. */
-                        manager_phone: string;
+                        /** @description Reçoit le code de vérification, et devient le compte. */
+                        manager_phone: components["schemas"]["PhoneNumber"];
                         locale?: components["schemas"]["Locale"];
                     };
                 };
@@ -4596,7 +4592,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        phone: string;
+                        phone: components["schemas"]["PhoneNumber"];
                         first_name: string;
                         last_name: string;
                         /** @enum {string} */
@@ -5433,6 +5429,21 @@ export interface components {
          * @enum {string}
          */
         OtpPurpose: "REGISTRATION" | "LOGIN" | "PHONE_CHANGE";
+        /**
+         * @description Format international (E.164), indicatif compris.
+         *
+         *     **Le format n'était écrit nulle part dans ce contrat**, et vivait
+         *     seulement dans les règles de validation du serveur. Sept points
+         *     d'entrée le recopiaient, trois avaient cessé de s'accorder : une
+         *     agence pouvait s'inscrire avec un numéro national, recevoir son code,
+         *     puis se le faire refuser sur le format à la vérification — avec un
+         *     compte déjà créé portant un numéro inutilisable.
+         *
+         *     Un numéro porte l'identité du compte **et** la destination des SMS.
+         *     Écrit ici, il oblige les clients comme le serveur.
+         * @example +237690000000
+         */
+        PhoneNumber: string;
         /**
          * @description Le Cameroun a deux langues officielles, et les régions du Nord-Ouest
          *     et du Sud-Ouest sont anglophones — Bamenda, Buea, Limbe sont des

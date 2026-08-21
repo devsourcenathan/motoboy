@@ -60,6 +60,24 @@ final class AgencyBackOfficeTest extends TestCase
         $this->manager = $this->userWithAgencyRole($this->agency);
     }
 
+    /**
+     * Même règle pour l'agent d'embarquement, et pour la même raison : son
+     * numéro devient un compte. `AgencyStaffController` retrouve d'ailleurs
+     * l'existant par `where('phone', ...)` — deux formats du même numéro y
+     * désigneraient deux personnes.
+     */
+    public function test_staff_creation_refuses_a_number_without_its_dialling_code(): void
+    {
+        $this->actingAs($this->manager)->postJson('/api/v1/agency/staff', [
+            'phone' => '651212331',
+            'first_name' => 'Bertin',
+            'last_name' => 'Mbarga',
+            'role' => 'AGENT',
+        ])->assertStatus(422)->assertJsonValidationErrors('phone');
+
+        $this->assertDatabaseMissing('users', ['phone' => '651212331']);
+    }
+
     public function test_an_agency_builds_its_network_until_trips_are_searchable(): void
     {
         $douala = City::query()->where('slug', 'douala')->firstOrFail();

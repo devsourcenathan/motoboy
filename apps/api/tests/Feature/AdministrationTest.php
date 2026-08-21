@@ -78,6 +78,35 @@ final class AdministrationTest extends TestCase
         $this->assertNull($manager->phone_verified_at);
     }
 
+    /**
+     * **Le numéro national était accepté ici, et refusé partout ensuite.**
+     *
+     * Une agence s'inscrivait avec `651212331`, recevait bien son code — puis
+     * `auth/otp/verify` le refusait sur le format. Le compte existait déjà,
+     * portait un numéro qu'aucune connexion n'accepterait, et rien à l'écran ne
+     * disait quoi corriger : le SMS était arrivé, après tout.
+     *
+     * Aucun test ne couvrait le cas parce que tous écrivaient l'international
+     * sans y penser. C'est exactement ainsi que deux règles cessent de
+     * s'accorder sans que rien ne le signale.
+     */
+    public function test_registration_refuses_a_number_without_its_dialling_code(): void
+    {
+        $this->postJson('/api/v1/agencies/register', [
+            'name' => 'Sans indicatif',
+            'phone' => '+237690000300',
+            'manager_first_name' => 'Awa',
+            'manager_last_name' => 'Nkeng',
+            'manager_phone' => '651212331',
+        ])->assertStatus(422)->assertJsonValidationErrors('manager_phone');
+
+        // Refusé **avant** toute écriture : la transaction d'inscription valide
+        // avant l'envoi du code, si bien qu'un échec tardif laisserait une
+        // agence orpheline en base à chaque tentative.
+        $this->assertDatabaseMissing('agencies', ['name' => 'Sans indicatif']);
+        $this->assertDatabaseMissing('users', ['phone' => '651212331']);
+    }
+
     public function test_a_verified_number_cannot_be_taken_over_by_a_new_agency(): void
     {
         $existing = User::factory()->create(['phone' => '+237690000200']);

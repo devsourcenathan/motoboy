@@ -1,3 +1,5 @@
+import { isInternational } from '@motoboy/shared'
+
 export type AuthIntent = 'signIn' | 'signUp'
 
 export interface CredentialsForm {
@@ -16,48 +18,23 @@ export interface CredentialsForm {
 
 export type CredentialsError = 'PHONE_INVALID' | 'NAME_MISSING' | null
 
-/**
- * Le numéro doit être au format international.
+/*
+ * Le téléphone est traduit dans `@motoboy/shared`.
  *
- * Il porte l'identité du compte **et** la destination des SMS — billet, alerte
- * d'annulation, code de vérification. Un numéro saisi sans indicatif part vers
- * nulle part, et le passager n'en saura rien : il attendra un code qui n'arrive
- * pas.
- *
- * Vérification volontairement **large** : le serveur reste seul juge, et un
- * filtre trop strict côté client refuserait des numéros valides que l'on ne
- * connaît pas encore (§29).
+ * **Le web ouvre la même session sur le même compte**, et n'avait pas cette
+ * traduction : son formulaire d'inscription d'agence envoyait le numéro tel
+ * quel. Deux traductions divergentes feraient de deux saisies identiques deux
+ * comptes distincts — d'où le partage plutôt qu'une seconde copie.
  */
-const E164 = /^\+[1-9]\d{7,14}$/
-
-export function normalisePhone(input: string): string {
-  // Les espaces et tirets sont naturels à la saisie et absents du format.
-  return input.replace(/[\s\-().]/g, '')
-}
-
-/** Indicatif du Cameroun, seul pays desservi au MVP. */
-export const DIALLING_CODE = '+237'
-
-/**
- * Compose le numéro international à partir de ce qui est tapé **sous**
- * l'indicatif affiché.
- *
- * Trois saisies mènent au même numéro, parce que les trois se produisent :
- * `690000001` (ce que l'écran demande), `0690000001` (le format national, avec
- * son zéro), et `+237690000001` (un numéro collé depuis un contact). Sans quoi
- * le passager obtiendrait `+237+237…` ou un zéro de trop, et attendrait un code
- * parti nulle part.
- */
-export function toInternational(input: string, code: string = DIALLING_CODE): string {
-  const digits = normalisePhone(input)
-
-  if (digits.startsWith('+')) return digits
-
-  return `${code}${digits.replace(/^0+/, '')}`
-}
+export {
+  DIALLING_CODE,
+  isInternational,
+  normalisePhone,
+  toInternational,
+} from '@motoboy/shared'
 
 export function validate(form: CredentialsForm, intent: AuthIntent): CredentialsError {
-  if (!E164.test(normalisePhone(form.phone))) return 'PHONE_INVALID'
+  if (!isInternational(form.phone)) return 'PHONE_INVALID'
 
   if (intent === 'signUp') {
     if (form.firstName.trim() === '' || form.lastName.trim() === '') return 'NAME_MISSING'

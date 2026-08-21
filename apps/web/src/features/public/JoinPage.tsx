@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router'
 import { unwrap } from '@motoboy/api-client'
+import { toInternational } from '@motoboy/shared'
 import { destinationFor } from '../auth/destination'
 import { useCurrentUser, useVerifyOtp } from '../auth/useAuth'
 import { api } from '../../lib/api'
@@ -44,10 +45,10 @@ function useRegisterAgency(locale: string) {
         await api.POST('/v1/agencies/register', {
           body: {
             name: form.name.trim(),
-            phone: form.phone.trim(),
+            phone: toInternational(form.phone),
             manager_first_name: form.manager_first_name.trim(),
             manager_last_name: form.manager_last_name.trim(),
-            manager_phone: form.manager_phone.trim(),
+            manager_phone: toInternational(form.manager_phone),
             locale: locale === 'en' ? 'en' : 'fr',
             // Les facultatifs ne sont pas envoyés vides : une chaîne vide n'est
             // pas « non renseigné », et se ferait refuser par la validation.
@@ -121,7 +122,10 @@ export function JoinPage() {
 
             if (awaitingCode) {
               verify.mutate({
-                phone: form.manager_phone.trim(),
+                // **La même traduction qu'à l'envoi, sans quoi les deux étapes
+                // désignent deux numéros** : le code est indexé sur celui que
+                // l'inscription a enregistré, et lui seul le retrouve.
+                phone: toInternational(form.manager_phone),
                 code: code.trim(),
                 purpose: 'REGISTRATION',
               })

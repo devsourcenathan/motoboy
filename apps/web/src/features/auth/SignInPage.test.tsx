@@ -137,4 +137,24 @@ describe('SignInPage', () => {
       await screen.findByRole('heading', { name: 'Espace professionnel' }),
     ).toBeInTheDocument()
   })
+  /**
+   * Le même piège sur la porte principale, et le gabarit du champ l'y invite :
+   * il affiche `+237 6XX XX XX XX`, espaces compris, que le contrat refuse. Un
+   * refus de format ne se lit pas comme une faute de frappe — il se lit comme un
+   * numéro inconnu, et l'on renonce.
+   */
+  it('traduit le numéro tapé avant de demander le code', async () => {
+    mockRoutes(routes())
+
+    render(<SignInPage />)
+
+    await userEvent.type(await screen.findByLabelText('Téléphone'), '0690 00 00 10')
+    await userEvent.click(screen.getByRole('button', { name: 'Recevoir un code' }))
+
+    // Le zéro national tombe, l'indicatif le remplace : `+2370690000010`
+    // désignerait un autre numéro, et personne ne verrait la différence.
+    expect(
+      await sentRequest((request) => request.url.includes('/auth/login')),
+    ).toMatchObject({ phone: '+237690000010' })
+  })
 })

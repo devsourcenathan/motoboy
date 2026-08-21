@@ -18,6 +18,7 @@ export * from './datetime.js'
 export * from './labels.js'
 export * from './tokens.js'
 export * from './brand.js'
+export * from './phone.js'
 
 /*
  * Les catalogues de traduction ne sont **pas** réexportés ici.

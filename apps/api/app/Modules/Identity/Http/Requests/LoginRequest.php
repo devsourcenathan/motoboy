@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Http\Requests;
 
+use App\Modules\Identity\Rules\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class LoginRequest extends FormRequest
@@ -12,7 +13,7 @@ final class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone' => ['required', 'string', 'regex:/^\+[1-9][0-9]{7,14}$/'],
+            'phone' => PhoneNumber::rules(),
         ];
     }
 }
