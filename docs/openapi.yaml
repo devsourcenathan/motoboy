@@ -4377,6 +4377,14 @@ components:
             **Il n'existait pas.** Les pièces partaient au stockage et rien ne
             les rendait : l'admission d'une agence se décidait sur la seule
             présence des types attendus.
+        is_image:
+          type: boolean
+          description: |
+            Vrai quand le fichier se réduit en vignette.
+
+            Le client ne peut pas le deviner : le chemin de stockage ne circule
+            pas, et tenter l'image pour se rabattre sur l'erreur ferait
+            télécharger chaque PDF en entier pour n'afficher qu'une icône.
 
     PayoutAccountInput:
       type: object

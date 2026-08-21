@@ -71,6 +71,11 @@ final class AdminAgencyController
                     // ouvrir, et l'admission se décide sur la seule présence des
                     // types attendus.
                     'url' => DocumentLink::for('agency', $doc->id),
+                    'is_image' => in_array(
+                        strtolower(pathinfo((string) $doc->file_path, PATHINFO_EXTENSION)),
+                        ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+                        true,
+                    ),
                 ])->all(),
             'payout_accounts' => $agency->payoutAccounts()->orderByDesc('created_at')->get()
                 ->map($this->account(...))->all(),

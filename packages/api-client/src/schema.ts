@@ -6129,6 +6129,14 @@ export interface components {
              *     présence des types attendus.
              */
             url?: string;
+            /**
+             * @description Vrai quand le fichier se réduit en vignette.
+             *
+             *     Le client ne peut pas le deviner : le chemin de stockage ne circule
+             *     pas, et tenter l'image pour se rabattre sur l'erreur ferait
+             *     télécharger chaque PDF en entier pour n'afficher qu'une icône.
+             */
+            is_image?: boolean;
         };
         PayoutAccountInput: {
             /** @enum {string} */

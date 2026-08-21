@@ -14,7 +14,7 @@ const dashboard = (over: Record<string, unknown> = {}) =>
   jsonResponse({
     users: 120,
     agencies: { total: 4, pending: 0, approved: 4 },
-    trips: { upcoming: 12 },
+    trips: { upcoming: 12, cancelled_30d: 0 },
     bookings: { confirmed: 30, cancelled: 2 },
     tickets_validated: 28,
     vehicles_active: 6,
@@ -25,36 +25,62 @@ const dashboard = (over: Record<string, unknown> = {}) =>
     ...over,
   })
 
-const urgency = (label: string) =>
-  screen.getByText(label).parentElement?.querySelector('p:last-of-type')?.className ?? ''
+const routes = (over: Record<string, unknown> = {}) => ({
+  '/admin/dashboard': () => dashboard(over),
+  // Le panneau d'activité récente lit le journal d'audit : sans cette route,
+  // c'est son échec qu'on testerait.
+  '/admin/audit-logs': () => jsonResponse({ data: [] }),
+})
 
 describe('DashboardPage', () => {
   /**
-   * **L'orange dit « votre action », et seulement elle.** Un compteur à zéro
-   * n'attend rien : le colorer crierait sans rien demander, et la couleur
-   * cesserait de vouloir dire quelque chose.
+   * **Un compteur qui appelle une décision doit mener à l'écran où on la
+   * prend.** Sans cela il faut retrouver l'onglet soi-même, et l'on finit par
+   * ne plus ouvrir cette page — ce qui est la pire chose qui puisse arriver à
+   * un tableau de bord.
+   *
+   * Éprouvé sur le lien plutôt que sur la couleur : l'ancienne version de ce
+   * test cherchait la chaîne « orange » dans une classe, ce qui la liait à
+   * `text-orange-500` — une couleur brute, hors du système de jetons. Le test
+   * défendait l'entorse.
    */
-  it('ne signale pas une file vide', async () => {
-    mockRoutes({ '/admin/dashboard': () => dashboard() })
+  it('mène à la file quand elle attend', async () => {
+    mockRoutes(routes({ agencies: { total: 5, pending: 2, approved: 3 } }))
 
     render(<DashboardPage />)
 
-    await screen.findByText('Agences à instruire')
+    const carte = await screen.findByRole('link', { name: /Agences à instruire/ })
 
-    expect(urgency('Agences à instruire')).not.toMatch(/orange/)
+    expect(carte).toHaveAttribute('href', '/admin/agencies')
   })
 
-  it('signale une file qui attend', async () => {
-    mockRoutes({
-      '/admin/dashboard': () =>
-        dashboard({ agencies: { total: 5, pending: 2, approved: 3 } }),
-    })
+  /**
+   * **Un compteur à zéro n'attend rien.** En faire un lien enverrait sur une
+   * file vide, et l'y envoyer deux fois suffit à ne plus cliquer.
+   */
+  it('ne mène nulle part quand la file est vide', async () => {
+    mockRoutes(routes())
 
     render(<DashboardPage />)
 
     await screen.findByText('Agences à instruire')
 
-    expect(urgency('Agences à instruire')).toMatch(/orange/)
+    expect(screen.queryByRole('link', { name: /Agences à instruire/ })).toBeNull()
+  })
+
+  /**
+   * **L'API comptait ces annulations et rien ne les affichait.** Une agence qui
+   * annule un départ sur cinq détruit la confiance dans la plateforme entière,
+   * pas seulement dans sa propre offre : le chiffre existait, invisible.
+   */
+  it('montre les départs annulés, que rien n’affichait', async () => {
+    mockRoutes(routes({ trips: { upcoming: 12, cancelled_30d: 3 } }))
+
+    render(<DashboardPage />)
+
+    const carte = (await screen.findByText(/Départs annulés/)).closest('div')
+
+    expect(carte).toHaveTextContent('3')
   })
 
   /**
@@ -63,7 +89,7 @@ describe('DashboardPage', () => {
    * cacherait une hausse des annulations derrière une hausse des ventes.
    */
   it('montre le remboursé sans le retrancher de l’encaissé', async () => {
-    mockRoutes({ '/admin/dashboard': () => dashboard() })
+    mockRoutes(routes())
 
     render(<DashboardPage />)
 
@@ -76,7 +102,7 @@ describe('DashboardPage', () => {
    * chauffeur, et c'est pourquoi cet écran n'est pas l'accueil du back-office.
    */
   it('avoue ne pas compter les chauffeurs', async () => {
-    mockRoutes({ '/admin/dashboard': () => dashboard() })
+    mockRoutes(routes())
 
     render(<DashboardPage />)
 

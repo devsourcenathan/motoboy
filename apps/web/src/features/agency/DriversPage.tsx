@@ -9,8 +9,8 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
-  Skeleton,
+  SheetForm,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import { useCreateDriver, useDrivers, useVehicles } from './useInventory'
@@ -43,7 +43,7 @@ export function DriversPage() {
         }
       />
 
-      {drivers.isPending ? <Skeleton /> : null}
+      {drivers.isPending ? <SkeletonTable columns={5} /> : null}
       {drivers.error ? <ErrorNote message={describeError(drivers.error)} /> : null}
 
       {drivers.data !== undefined && rows.length === 0 ? (
@@ -134,103 +134,96 @@ function DriverPanel({ onClose }: { onClose: () => void }) {
   const [vehicleId, setVehicleId] = useState('')
 
   return (
-    <Panel title={t('agency:inventory.drivers.newTitle')} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-
-          create.mutate(
-            {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
-              phone: phone.trim(),
-              license_number: licence.trim(),
-              ...(expiry === '' ? {} : { license_expires_at: expiry }),
-              ...(vehicleId === '' ? {} : { assigned_vehicle_id: Number(vehicleId) }),
-            },
-            { onSuccess: onClose },
-          )
-        }}
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('agency:inventory.drivers.firstName')}>
-            <input
-              className={INPUT}
-              required
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-            />
-          </Field>
-          <Field label={t('agency:inventory.drivers.lastName')}>
-            <input
-              className={INPUT}
-              required
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-            />
-          </Field>
-        </div>
-
-        <Field label={t('agency:inventory.drivers.phone')}>
+    <SheetForm
+      title={t('agency:inventory.drivers.newTitle')}
+      onClose={onClose}
+      submitLabel={t('agency:inventory.drivers.create')}
+      submitDisabled={firstName.trim() === '' || phone.trim() === ''}
+      pending={create.isPending}
+      error={create.error ? describeError(create.error) : undefined}
+      onSubmit={() => {
+        create.mutate(
+          {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            phone: phone.trim(),
+            license_number: licence.trim(),
+            ...(expiry === '' ? {} : { license_expires_at: expiry }),
+            ...(vehicleId === '' ? {} : { assigned_vehicle_id: Number(vehicleId) }),
+          },
+          { onSuccess: onClose },
+        )
+      }}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('agency:inventory.drivers.firstName')}>
           <input
             className={INPUT}
             required
-            type="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            placeholder={t('agency:inventory.drivers.phonePlaceholder')}
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
           />
         </Field>
-
-        <Field label={t('agency:inventory.drivers.licence')}>
+        <Field label={t('agency:inventory.drivers.lastName')}>
           <input
             className={INPUT}
             required
-            value={licence}
-            onChange={(event) => setLicence(event.target.value)}
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
           />
         </Field>
+      </div>
 
-        <Field
-          label={t('agency:inventory.drivers.licenceExpiry')}
-          hint={t('agency:inventory.drivers.licenceExpiryHint')}
-        >
-          <input
-            className={INPUT}
-            type="date"
-            value={expiry}
-            onChange={(event) => setExpiry(event.target.value)}
-          />
-        </Field>
-
-        {/*
-          L'affectation est un défaut, pas une contrainte : elle prérenseigne les
-          horaires. Un chauffeur peut conduire un autre véhicule un jour donné.
-        */}
-        <Field label={t('agency:inventory.drivers.usualVehicle')}>
-          <select
-            className={INPUT}
-            value={vehicleId}
-            onChange={(event) => setVehicleId(event.target.value)}
-          >
-            <option value="">{t('agency:inventory.drivers.none')}</option>
-            {(vehicles.data?.data ?? []).map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.registration}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        {create.error ? <ErrorNote message={describeError(create.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:inventory.drivers.create')}
-          disabled={create.isPending || firstName.trim() === '' || phone.trim() === ''}
+      <Field label={t('agency:inventory.drivers.phone')}>
+        <input
+          className={INPUT}
+          required
+          type="tel"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          placeholder={t('agency:inventory.drivers.phonePlaceholder')}
         />
-      </form>
-    </Panel>
+      </Field>
+
+      <Field label={t('agency:inventory.drivers.licence')}>
+        <input
+          className={INPUT}
+          required
+          value={licence}
+          onChange={(event) => setLicence(event.target.value)}
+        />
+      </Field>
+
+      <Field
+        label={t('agency:inventory.drivers.licenceExpiry')}
+        hint={t('agency:inventory.drivers.licenceExpiryHint')}
+      >
+        <input
+          className={INPUT}
+          type="date"
+          value={expiry}
+          onChange={(event) => setExpiry(event.target.value)}
+        />
+      </Field>
+
+      {/*
+        L'affectation est un défaut, pas une contrainte : elle prérenseigne les
+        horaires. Un chauffeur peut conduire un autre véhicule un jour donné.
+      */}
+      <Field label={t('agency:inventory.drivers.usualVehicle')}>
+        <select
+          className={INPUT}
+          value={vehicleId}
+          onChange={(event) => setVehicleId(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.drivers.none')}</option>
+          {(vehicles.data?.data ?? []).map((vehicle) => (
+            <option key={vehicle.id} value={vehicle.id}>
+              {vehicle.registration}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </SheetForm>
   )
 }

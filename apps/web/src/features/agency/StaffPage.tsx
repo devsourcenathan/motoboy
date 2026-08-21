@@ -13,8 +13,8 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
-  Skeleton,
+  SheetForm,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 
@@ -57,7 +57,7 @@ export function StaffPage() {
         action={<Button label={t('agency:staff.add')} onPress={() => setAdding(true)} />}
       />
 
-      {staff.isPending ? <Skeleton /> : null}
+      {staff.isPending ? <SkeletonTable columns={4} /> : null}
       {staff.error ? <ErrorNote message={describeError(staff.error)} /> : null}
 
       {staff.data !== undefined && rows.length === 0 ? (
@@ -186,75 +186,69 @@ function StaffPanel({ onClose }: { onClose: () => void }) {
   const chosen = PROFILES.find((entry) => entry.value === role)
 
   return (
-    <Panel title={t('agency:staff.addTitle')} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-          add.mutate()
-        }}
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('agency:staff.firstName')}>
-            <input
-              className={INPUT}
-              required
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-            />
-          </Field>
-          <Field label={t('agency:staff.lastName')}>
-            <input
-              className={INPUT}
-              required
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-            />
-          </Field>
-        </div>
-
-        <Field label={t('agency:staff.phone')} hint={t('agency:staff.phoneHint')}>
+    <SheetForm
+      title={t('agency:staff.addTitle')}
+      onClose={onClose}
+      submitLabel={t('agency:staff.submit')}
+      submitDisabled={phone.trim() === '' || firstName.trim() === ''}
+      pending={add.isPending}
+      error={add.error ? describeError(add.error) : undefined}
+      onSubmit={() => {
+        add.mutate()
+      }}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t('agency:staff.firstName')}>
           <input
             className={INPUT}
             required
-            type="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            placeholder="+237 6XX XX XX XX"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
           />
         </Field>
-
-        {/*
-          Le profil est expliqué sous le choix, pas seulement nommé : une agence
-          ne connaît pas nos rôles, et le mauvais choix donne le droit d'encaisser.
-        */}
-        <Field
-          label={t('agency:staff.role')}
-          hint={
-            chosen === undefined ? undefined : t(`agency:staff.roles.${chosen.key}Detail`)
-          }
-        >
-          <select
+        <Field label={t('agency:staff.lastName')}>
+          <input
             className={INPUT}
-            value={role}
-            onChange={(event) => setRole(event.target.value as typeof role)}
-          >
-            {PROFILES.map((entry) => (
-              <option key={entry.value} value={entry.value}>
-                {t(`agency:staff.roles.${entry.key}`)}
-              </option>
-            ))}
-          </select>
+            required
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+          />
         </Field>
+      </div>
 
-        {add.error ? <ErrorNote message={describeError(add.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:staff.submit')}
-          disabled={add.isPending || phone.trim() === '' || firstName.trim() === ''}
+      <Field label={t('agency:staff.phone')} hint={t('agency:staff.phoneHint')}>
+        <input
+          className={INPUT}
+          required
+          type="tel"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          placeholder="+237 6XX XX XX XX"
         />
-      </form>
-    </Panel>
+      </Field>
+
+      {/*
+        Le profil est expliqué sous le choix, pas seulement nommé : une agence
+        ne connaît pas nos rôles, et le mauvais choix donne le droit d'encaisser.
+      */}
+      <Field
+        label={t('agency:staff.role')}
+        hint={
+          chosen === undefined ? undefined : t(`agency:staff.roles.${chosen.key}Detail`)
+        }
+      >
+        <select
+          className={INPUT}
+          value={role}
+          onChange={(event) => setRole(event.target.value as typeof role)}
+        >
+          {PROFILES.map((entry) => (
+            <option key={entry.value} value={entry.value}>
+              {t(`agency:staff.roles.${entry.key}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </SheetForm>
   )
 }

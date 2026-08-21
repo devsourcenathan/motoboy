@@ -11,8 +11,8 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
-  Skeleton,
+  SheetForm,
+  SkeletonText,
 } from '../../shared/ui'
 import {
   useCreateRoute,
@@ -66,7 +66,19 @@ export function RoutesPage() {
         }
       />
 
-      {routes.isPending ? <Skeleton /> : null}
+      {/*
+        Des cartes empilées, pas un tableau : c'est ce que cette page rend, et
+        annoncer la mauvaise forme fait tressauter l'écran au chargement.
+      */}
+      {routes.isPending ? (
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2].map((index) => (
+            <Card key={index}>
+              <SkeletonText lines={2} />
+            </Card>
+          ))}
+        </div>
+      ) : null}
       {routes.error ? <ErrorNote message={describeError(routes.error)} /> : null}
 
       {routes.data !== undefined && rows.length === 0 ? (
@@ -201,83 +213,74 @@ function RoutePanel({ onClose }: { onClose: () => void }) {
   const rows = stations.data?.data ?? []
 
   return (
-    <Panel title={t('agency:inventory.routes.newTitle')} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
+    <SheetForm
+      title={t('agency:inventory.routes.newTitle')}
+      onClose={onClose}
+      submitLabel={t('agency:inventory.routes.create')}
+      submitDisabled={origin === '' || destination === ''}
+      pending={create.isPending}
+      error={create.error ? describeError(create.error) : undefined}
+      onSubmit={() => {
+        create.mutate(
+          {
+            origin_station_id: Number(origin),
+            destination_station_id: Number(destination),
+            ...(duration === '' ? {} : { reference_duration_minutes: Number(duration) }),
+          },
+          { onSuccess: onClose },
+        )
+      }}
+    >
+      <Field label={t('agency:inventory.routes.origin')}>
+        <select
+          className={INPUT}
+          required
+          value={origin}
+          onChange={(event) => setOrigin(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.routes.choose')}</option>
+          {rows.map((station) => (
+            <option key={station.id} value={station.id}>
+              {station.name} — {station.city}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-          create.mutate(
-            {
-              origin_station_id: Number(origin),
-              destination_station_id: Number(destination),
-              ...(duration === ''
-                ? {}
-                : { reference_duration_minutes: Number(duration) }),
-            },
-            { onSuccess: onClose },
-          )
-        }}
-      >
-        <Field label={t('agency:inventory.routes.origin')}>
-          <select
-            className={INPUT}
-            required
-            value={origin}
-            onChange={(event) => setOrigin(event.target.value)}
-          >
-            <option value="">{t('agency:inventory.routes.choose')}</option>
-            {rows.map((station) => (
+      <Field label={t('agency:inventory.routes.destination')}>
+        <select
+          className={INPUT}
+          required
+          value={destination}
+          onChange={(event) => setDestination(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.routes.choose')}</option>
+          {rows
+            // Une gare ne se relie pas à elle-même : l'écarter vaut mieux que
+            // de laisser choisir puis refuser.
+            .filter((station) => String(station.id) !== origin)
+            .map((station) => (
               <option key={station.id} value={station.id}>
                 {station.name} — {station.city}
               </option>
             ))}
-          </select>
-        </Field>
+        </select>
+      </Field>
 
-        <Field label={t('agency:inventory.routes.destination')}>
-          <select
-            className={INPUT}
-            required
-            value={destination}
-            onChange={(event) => setDestination(event.target.value)}
-          >
-            <option value="">{t('agency:inventory.routes.choose')}</option>
-            {rows
-              // Une gare ne se relie pas à elle-même : l'écarter vaut mieux que
-              // de laisser choisir puis refuser.
-              .filter((station) => String(station.id) !== origin)
-              .map((station) => (
-                <option key={station.id} value={station.id}>
-                  {station.name} — {station.city}
-                </option>
-              ))}
-          </select>
-        </Field>
-
-        <Field
-          label={t('agency:inventory.routes.duration')}
-          hint={t('agency:inventory.routes.durationHint')}
-        >
-          <input
-            className={INPUT}
-            type="number"
-            min={1}
-            max={2880}
-            value={duration}
-            onChange={(event) => setDuration(event.target.value)}
-          />
-        </Field>
-
-        {create.error ? <ErrorNote message={describeError(create.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:inventory.routes.create')}
-          disabled={origin === '' || destination === '' || create.isPending}
+      <Field
+        label={t('agency:inventory.routes.duration')}
+        hint={t('agency:inventory.routes.durationHint')}
+      >
+        <input
+          className={INPUT}
+          type="number"
+          min={1}
+          max={2880}
+          value={duration}
+          onChange={(event) => setDuration(event.target.value)}
         />
-      </form>
-    </Panel>
+      </Field>
+    </SheetForm>
   )
 }
 
@@ -295,140 +298,128 @@ function SchedulePanel({ route, onClose }: { route: AgencyRoute; onClose: () => 
   const [from, setFrom] = useState(new Date().toISOString().slice(0, 10))
 
   return (
-    <Panel
+    <SheetForm
       title={`Horaire — ${route.origin.station} → ${route.destination.station}`}
       onClose={onClose}
+      submitLabel={t('agency:inventory.routes.createSchedule')}
+      submitDisabled={days.length === 0 || vehicleId === '' || price === ''}
+      pending={create.isPending}
+      error={create.error ? describeError(create.error) : undefined}
+      onSubmit={() => {
+        create.mutate(
+          {
+            departure_time: time,
+            days_of_week: days,
+            default_vehicle_id: Number(vehicleId),
+            ...(driverId === '' ? {} : { default_driver_id: Number(driverId) }),
+            /*
+             * Un entier à l'entrée, un `Money` à la lecture : le contrat est
+             * asymétrique sur ce champ. On suit ce qu'il dit plutôt que ce
+             * qu'on suppose — le typage l'a rattrapé.
+             */
+            price: Number(price),
+            valid_from: from,
+          },
+          { onSuccess: onClose },
+        )
+      }}
     >
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-
-          create.mutate(
-            {
-              departure_time: time,
-              days_of_week: days,
-              default_vehicle_id: Number(vehicleId),
-              ...(driverId === '' ? {} : { default_driver_id: Number(driverId) }),
-              /*
-               * Un entier à l'entrée, un `Money` à la lecture : le contrat est
-               * asymétrique sur ce champ. On suit ce qu'il dit plutôt que ce
-               * qu'on suppose — le typage l'a rattrapé.
-               */
-              price: Number(price),
-              valid_from: from,
-            },
-            { onSuccess: onClose },
-          )
-        }}
-      >
-        <Field label={t('agency:inventory.routes.departureTime')}>
-          <input
-            className={INPUT}
-            type="time"
-            required
-            value={time}
-            onChange={(event) => setTime(event.target.value)}
-          />
-        </Field>
-
-        {/*
-          Les jours en boutons plutôt qu'en liste à cocher : un horaire se lit
-          d'un coup d'œil, et sept cases empilées prennent la moitié du panneau.
-        */}
-        <Field label={t('agency:inventory.routes.days')}>
-          <div className="mt-1 flex gap-1">
-            {DAYS.map((day) => (
-              <button
-                key={day.value}
-                type="button"
-                aria-pressed={days.includes(day.value)}
-                onClick={() =>
-                  setDays((current) =>
-                    current.includes(day.value)
-                      ? current.filter((value) => value !== day.value)
-                      : [...current, day.value].sort(),
-                  )
-                }
-                className={
-                  days.includes(day.value)
-                    ? 'h-9 w-9 rounded-full bg-ink-700 text-sm font-semibold text-neutral-0'
-                    : 'h-9 w-9 rounded-full bg-neutral-100 text-sm text-neutral-500'
-                }
-              >
-                {day.short}
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        <Field label={t('agency:inventory.routes.vehicle')}>
-          <select
-            className={INPUT}
-            required
-            value={vehicleId}
-            onChange={(event) => setVehicleId(event.target.value)}
-          >
-            <option value="">{t('agency:inventory.routes.choose')}</option>
-            {(vehicles.data?.data ?? []).map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.registration} — {vehicle.capacity} places
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label={t('agency:inventory.routes.driver')}>
-          <select
-            className={INPUT}
-            value={driverId}
-            onChange={(event) => setDriverId(event.target.value)}
-          >
-            <option value="">{t('agency:inventory.routes.unassigned')}</option>
-            {(drivers.data?.data ?? []).map((driver) => (
-              <option key={driver.id} value={driver.id}>
-                {driver.first_name} {driver.last_name}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label={t('agency:inventory.routes.price')}>
-          <input
-            className={INPUT}
-            type="number"
-            required
-            min={100}
-            step={100}
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            placeholder="6500"
-          />
-        </Field>
-
-        <Field
-          label={t('agency:inventory.routes.from')}
-          hint={t('agency:inventory.routes.fromHint')}
-        >
-          <input
-            className={INPUT}
-            type="date"
-            required
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-          />
-        </Field>
-
-        {create.error ? <ErrorNote message={describeError(create.error)} /> : null}
-
-        <Button
-          type="submit"
-          label={t('agency:inventory.routes.createSchedule')}
-          disabled={
-            days.length === 0 || vehicleId === '' || price === '' || create.isPending
-          }
+      <Field label={t('agency:inventory.routes.departureTime')}>
+        <input
+          className={INPUT}
+          type="time"
+          required
+          value={time}
+          onChange={(event) => setTime(event.target.value)}
         />
-      </form>
-    </Panel>
+      </Field>
+
+      {/*
+        Les jours en boutons plutôt qu'en liste à cocher : un horaire se lit
+        d'un coup d'œil, et sept cases empilées prennent la moitié du panneau.
+      */}
+      <Field label={t('agency:inventory.routes.days')}>
+        <div className="mt-1 flex gap-1">
+          {DAYS.map((day) => (
+            <button
+              key={day.value}
+              type="button"
+              aria-pressed={days.includes(day.value)}
+              onClick={() =>
+                setDays((current) =>
+                  current.includes(day.value)
+                    ? current.filter((value) => value !== day.value)
+                    : [...current, day.value].sort(),
+                )
+              }
+              className={
+                days.includes(day.value)
+                  ? 'h-9 w-9 rounded-full bg-ink-700 text-sm font-semibold text-neutral-0'
+                  : 'h-9 w-9 rounded-full bg-neutral-100 text-sm text-neutral-500'
+              }
+            >
+              {day.short}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      <Field label={t('agency:inventory.routes.vehicle')}>
+        <select
+          className={INPUT}
+          required
+          value={vehicleId}
+          onChange={(event) => setVehicleId(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.routes.choose')}</option>
+          {(vehicles.data?.data ?? []).map((vehicle) => (
+            <option key={vehicle.id} value={vehicle.id}>
+              {vehicle.registration} — {vehicle.capacity} places
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label={t('agency:inventory.routes.driver')}>
+        <select
+          className={INPUT}
+          value={driverId}
+          onChange={(event) => setDriverId(event.target.value)}
+        >
+          <option value="">{t('agency:inventory.routes.unassigned')}</option>
+          {(drivers.data?.data ?? []).map((driver) => (
+            <option key={driver.id} value={driver.id}>
+              {driver.first_name} {driver.last_name}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label={t('agency:inventory.routes.price')}>
+        <input
+          className={INPUT}
+          type="number"
+          required
+          min={100}
+          step={100}
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+          placeholder="6500"
+        />
+      </Field>
+
+      <Field
+        label={t('agency:inventory.routes.from')}
+        hint={t('agency:inventory.routes.fromHint')}
+      >
+        <input
+          className={INPUT}
+          type="date"
+          required
+          value={from}
+          onChange={(event) => setFrom(event.target.value)}
+        />
+      </Field>
+    </SheetForm>
   )
 }

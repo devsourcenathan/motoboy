@@ -174,6 +174,15 @@ final class AgencyAccountController
             // L'agence relit ce qu'elle a déposé : sans quoi elle ne peut pas
             // vérifier qu'elle n'a pas envoyé deux fois la mauvaise page.
             'url' => DocumentLink::for('agency', $document->id),
+            // **Une vignette n'a de sens que si le fichier en est une.** Le
+            // client ne peut pas le deviner : le chemin ne circule pas, et
+            // tenter l'image pour se rabattre sur l'erreur ferait télécharger
+            // chaque PDF en entier pour ne rien afficher.
+            'is_image' => in_array(
+                strtolower(pathinfo((string) $document->file_path, PATHINFO_EXTENSION)),
+                ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+                true,
+            ),
         ];
     }
 }

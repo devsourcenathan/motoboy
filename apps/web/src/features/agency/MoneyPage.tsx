@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { unwrap } from '@motoboy/api-client'
@@ -14,7 +14,9 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Panel,
+  Actions,
+  Sheet,
+  SheetForm,
   Skeleton,
   Table,
 } from '../../shared/ui'
@@ -234,112 +236,139 @@ export function MoneyPage() {
   )
 }
 
+/**
+ * Déclarer un compte de versement.
+ *
+ * **Une mutation, comme partout ailleurs.** Cet écran appelait l'API à la main
+ * — un `.then()`, une erreur rangée dans un état local, aucune notion d'attente
+ * — quand les onze autres passent par `useMutation`. Deux façons de parler au
+ * serveur dans un même produit finissent par diverger sur ce qui compte : ici,
+ * rien ne montrait l'envoi en cours, et rien n'invalidait la liste derrière.
+ *
+ * Deux états, et le panneau change de nature entre eux : tant que rien n'est
+ * envoyé c'est un formulaire, une fois déclaré c'est un accusé de réception —
+ * qui n'a pas de bouton « envoyer », seulement de quoi refermer.
+ */
+/**
+ * Déclarer un compte de versement.
+ *
+ * `invalidateQueries` sur la liste : sans cela, le compte déclaré n'apparaît pas
+ * derrière le panneau qu'on vient de fermer, et l'on redéclare le même — ce que
+ * le code précédent faisait, faute de passer par une mutation.
+ */
+function useDeclarePayoutAccount() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (body: {
+      type: 'MOBILE_MONEY' | 'BANK'
+      operator?: 'MTN' | 'ORANGE'
+      account_number: string
+      account_name: string
+    }) => unwrap(await api.POST('/v1/agency/payout-accounts', { body })),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ['agency', 'payout-accounts'] }),
+  })
+}
+
 function AccountPanel({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const [type, setType] = useState<'MOBILE_MONEY' | 'BANK'>('MOBILE_MONEY')
   const [operator, setOperator] = useState<'MTN' | 'ORANGE'>('MTN')
   const [number, setNumber] = useState('')
   const [name, setName] = useState('')
-  const [error, setError] = useState<unknown>(null)
-  const [sent, setSent] = useState(false)
 
-  return (
-    <Panel title={t('agency:money.payoutAccount')} onClose={onClose}>
-      {sent ? (
+  const declare = useDeclarePayoutAccount()
+
+  if (declare.isSuccess) {
+    return (
+      <Sheet
+        title={t('agency:money.payoutAccount')}
+        onClose={onClose}
+        footer={
+          <Actions>
+            <Button label="Fermer" onPress={onClose} />
+          </Actions>
+        }
+      >
         <p className="rounded-lg bg-success-50 p-3 text-sm text-success-700">
           Déclaré. MOTOBOY vérifie ce compte avant qu’un virement puisse y partir ; le
           compte précédent reste actif jusque-là.
         </p>
-      ) : (
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault()
-            setError(null)
+      </Sheet>
+    )
+  }
 
-            void api
-              .POST('/v1/agency/payout-accounts', {
-                body: {
-                  type,
-                  ...(type === 'MOBILE_MONEY' ? { operator } : {}),
-                  account_number: number.trim(),
-                  account_name: name.trim(),
-                },
-              })
-              .then((response) => {
-                if (response.error !== undefined) {
-                  setError(response.error)
+  return (
+    <SheetForm
+      title={t('agency:money.payoutAccount')}
+      onClose={onClose}
+      submitLabel={t('agency:money.declare')}
+      submitDisabled={number.trim() === '' || name.trim() === ''}
+      pending={declare.isPending}
+      error={declare.error ? describeError(declare.error) : undefined}
+      onSubmit={() =>
+        declare.mutate({
+          type,
+          ...(type === 'MOBILE_MONEY' ? { operator } : {}),
+          account_number: number.trim(),
+          account_name: name.trim(),
+        })
+      }
+    >
+      {/*
+        Dit avant la saisie : une erreur de numéro envoie l'argent à un
+        inconnu, sans recours. C'est pour cela que MOTOBOY vérifie, et
+        l'expliquer évite qu'une agence s'inquiète du délai.
+      */}
+      <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
+        Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé ne
+        se récupère pas.
+      </p>
 
-                  return
-                }
-
-                setSent(true)
-              })
-          }}
+      <Field label={t('agency:money.type')}>
+        <select
+          className={INPUT}
+          value={type}
+          onChange={(event) => setType(event.target.value as typeof type)}
         >
-          {/*
-            Dit avant la saisie : une erreur de numéro envoie l'argent à un
-            inconnu, sans recours. C'est pour cela que MOTOBOY vérifie, et
-            l'expliquer évite qu'une agence s'inquiète du délai.
-          */}
-          <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-700">
-            Ce compte est vérifié par MOTOBOY avant d’être utilisé. Un virement mal dirigé
-            ne se récupère pas.
-          </p>
+          <option value="MOBILE_MONEY">{t('agency:money.mobileMoney')}</option>
+          <option value="BANK">{t('agency:money.bank')}</option>
+        </select>
+      </Field>
 
-          <Field label={t('agency:money.type')}>
-            <select
-              className={INPUT}
-              value={type}
-              onChange={(event) => setType(event.target.value as typeof type)}
-            >
-              <option value="MOBILE_MONEY">{t('agency:money.mobileMoney')}</option>
-              <option value="BANK">{t('agency:money.bank')}</option>
-            </select>
-          </Field>
+      {type === 'MOBILE_MONEY' ? (
+        <Field label={t('agency:money.operator')}>
+          <select
+            className={INPUT}
+            value={operator}
+            onChange={(event) => setOperator(event.target.value as typeof operator)}
+          >
+            <option value="MTN">MTN</option>
+            <option value="ORANGE">Orange</option>
+          </select>
+        </Field>
+      ) : null}
 
-          {type === 'MOBILE_MONEY' ? (
-            <Field label={t('agency:money.operator')}>
-              <select
-                className={INPUT}
-                value={operator}
-                onChange={(event) => setOperator(event.target.value as typeof operator)}
-              >
-                <option value="MTN">MTN</option>
-                <option value="ORANGE">Orange</option>
-              </select>
-            </Field>
-          ) : null}
+      <Field label={t('agency:money.number')}>
+        <input
+          className={INPUT}
+          required
+          maxLength={50}
+          value={number}
+          onChange={(event) => setNumber(event.target.value)}
+        />
+      </Field>
 
-          <Field label={t('agency:money.number')}>
-            <input
-              className={INPUT}
-              required
-              maxLength={50}
-              value={number}
-              onChange={(event) => setNumber(event.target.value)}
-            />
-          </Field>
-
-          <Field label={t('agency:money.holder')} hint={t('agency:money.holderHint')}>
-            <input
-              className={INPUT}
-              required
-              maxLength={150}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </Field>
-
-          {error === null ? null : <ErrorNote message={describeError(error)} />}
-
-          <Button
-            type="submit"
-            label={t('agency:money.declare')}
-            disabled={number.trim() === '' || name.trim() === ''}
-          />
-        </form>
-      )}
-    </Panel>
+      <Field label={t('agency:money.holder')} hint={t('agency:money.holderHint')}>
+        <input
+          className={INPUT}
+          required
+          maxLength={150}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </Field>
+    </SheetForm>
   )
 }

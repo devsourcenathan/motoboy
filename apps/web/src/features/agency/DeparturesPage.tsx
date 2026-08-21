@@ -3,15 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { formatMoney } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
 import {
-  Button,
   Cell,
   EmptyState,
   ErrorNote,
   Field,
   INPUT,
   PageHeader,
-  Panel,
-  Skeleton,
+  SheetForm,
+  SkeletonTable,
   Table,
 } from '../../shared/ui'
 import { useAgencyTrips, useCancelTrip } from './useOperations'
@@ -57,7 +56,7 @@ export function DeparturesPage() {
         </Field>
       </div>
 
-      {trips.isPending ? <Skeleton /> : null}
+      {trips.isPending ? <SkeletonTable columns={6} /> : null}
       {trips.error ? <ErrorNote message={describeError(trips.error)} /> : null}
 
       {trips.data !== undefined && rows.length === 0 ? (
@@ -128,59 +127,53 @@ function CancelPanel({ reference, onClose }: { reference: string; onClose: () =>
   const [note, setNote] = useState('')
 
   return (
-    <Panel title={`Annuler ${reference}`} onClose={onClose}>
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault()
-          cancel.mutate({ reference, reason, note }, { onSuccess: onClose })
-        }}
+    <SheetForm
+      title={`Annuler ${reference}`}
+      onClose={onClose}
+      submitLabel={t('agency:departures.cancel')}
+      submitVariant="danger"
+      submitDisabled={cancel.isPending}
+      pending={cancel.isPending}
+      error={cancel.error ? describeError(cancel.error) : undefined}
+      onSubmit={() => {
+        cancel.mutate({ reference, reason, note }, { onSuccess: onClose })
+      }}
+    >
+      {/*
+        Dit avant de demander le motif, pas après : c'est l'information qui
+        décide, et la découvrir une fois le geste fait serait trop tard.
+      */}
+      <p className="rounded-lg bg-danger-soft p-3 text-sm text-danger-strong">
+        Tous les passagers de ce départ seront remboursés intégralement, sans frais, et
+        prévenus. L’annulation ne se reprend pas.
+      </p>
+
+      <Field
+        label={t('agency:departures.reason')}
+        hint={t('agency:departures.reasonHint')}
       >
-        {/*
-          Dit avant de demander le motif, pas après : c'est l'information qui
-          décide, et la découvrir une fois le geste fait serait trop tard.
-        */}
-        <p className="rounded-lg bg-danger-soft p-3 text-sm text-danger-strong">
-          Tous les passagers de ce départ seront remboursés intégralement, sans frais, et
-          prévenus. L’annulation ne se reprend pas.
-        </p>
-
-        <Field
-          label={t('agency:departures.reason')}
-          hint={t('agency:departures.reasonHint')}
+        <select
+          className={INPUT}
+          value={reason}
+          onChange={(event) => setReason(event.target.value as typeof reason)}
         >
-          <select
-            className={INPUT}
-            value={reason}
-            onChange={(event) => setReason(event.target.value as typeof reason)}
-          >
-            {REASONS.map((entry) => (
-              <option key={entry.value} value={entry.value}>
-                {t(`agency:departures.reasons.${entry.labelKey}`)}
-              </option>
-            ))}
-          </select>
-        </Field>
+          {REASONS.map((entry) => (
+            <option key={entry.value} value={entry.value}>
+              {t(`agency:departures.reasons.${entry.labelKey}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-        <Field label={t('agency:departures.note')}>
-          <textarea
-            className={INPUT}
-            rows={3}
-            maxLength={500}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-          />
-        </Field>
-
-        {cancel.error ? <ErrorNote message={describeError(cancel.error)} /> : null}
-
-        <Button
-          type="submit"
-          variant="danger"
-          label={t('agency:departures.cancel')}
-          disabled={cancel.isPending}
+      <Field label={t('agency:departures.note')}>
+        <textarea
+          className={INPUT}
+          rows={3}
+          maxLength={500}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
         />
-      </form>
-    </Panel>
+      </Field>
+    </SheetForm>
   )
 }
