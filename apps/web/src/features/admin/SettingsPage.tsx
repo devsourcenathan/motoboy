@@ -7,7 +7,7 @@ import {
   Field,
   INPUT,
   PageHeader,
-  Skeleton,
+  SkeletonText,
 } from '../../shared/ui'
 import {
   useSettings,
@@ -41,7 +41,19 @@ export function SettingsPage() {
         subtitle="Ces deux valeurs s’appliquent à toute la plateforme, immédiatement."
       />
 
-      {settings.isPending ? <Skeleton rows={3} /> : null}
+      {/*
+        Deux cartes de réglage, pas trois barres : la page rend des panneaux, et
+        annoncer une liste fait tressauter l'écran au chargement.
+      */}
+      {settings.isPending ? (
+        <div className="flex flex-col gap-6">
+          {[0, 1].map((index) => (
+            <Card key={index}>
+              <SkeletonText lines={3} />
+            </Card>
+          ))}
+        </div>
+      ) : null}
       {settings.error ? <ErrorNote message={describeError(settings.error)} /> : null}
 
       {data === undefined ? null : (

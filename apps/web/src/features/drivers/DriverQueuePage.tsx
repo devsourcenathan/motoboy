@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import type { DriverDocumentType, DriverStatus } from '@motoboy/api-client/types'
 import { describeError } from '../../lib/errors'
-import { Badge } from '../../shared/ui'
+import {
+  Actions,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorNote,
+  Field,
+  INPUT,
+  PageHeader,
+  SkeletonText,
+} from '../../shared/ui'
 import { useDecideDriver, useDriverQueue, type AdminDriverRow } from './useDrivers'
 
 /**
@@ -48,13 +59,10 @@ export function DriverQueuePage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-ink-700">Dossiers de chauffeur</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Personne d’autre ne vérifie ces pièces. Un dossier validé met quelqu’un au
-          volant avec des passagers.
-        </p>
-      </header>
+      <PageHeader
+        title="Dossiers de chauffeur"
+        subtitle="Personne d’autre ne vérifie ces pièces. Un dossier validé met quelqu’un au volant avec des passagers."
+      />
 
       <nav className="mb-4 flex gap-1 border-b border-neutral-300">
         {TABS.map((tab) => (
@@ -73,23 +81,40 @@ export function DriverQueuePage() {
         ))}
       </nav>
 
-      {queue.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}
-
-      {queue.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">
-          {describeError(queue.error)}
-        </p>
+      {/*
+        **Un squelette à la forme des fiches, pas le mot « Chargement… ».**
+        Cet écran n'utilisait aucune primitive partagée : son attente était une
+        phrase, son erreur un paragraphe nu, son vide un encadré à lui. Trois
+        façons de dire ce que le reste du produit dit d'une seule.
+      */}
+      {queue.isPending ? (
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((index) => (
+            <Card key={index}>
+              <SkeletonText lines={3} />
+            </Card>
+          ))}
+        </div>
       ) : null}
+
+      {queue.error ? <ErrorNote message={describeError(queue.error)} /> : null}
 
       {queue.data?.data.length === 0 ? (
-        <p className="rounded-lg bg-neutral-0 p-8 text-center text-sm text-neutral-500">
-          {status === 'PENDING'
-            ? 'Aucun dossier n’attend de décision.'
-            : 'Aucun dossier.'}
-        </p>
+        <EmptyState
+          title={
+            status === 'PENDING'
+              ? 'Aucun dossier n’attend de décision'
+              : 'Aucun dossier dans cet état'
+          }
+          body={
+            status === 'PENDING'
+              ? 'Les candidatures arrivent depuis l’application : un chauffeur indépendant dépose son permis, sa carte grise et son assurance.'
+              : undefined
+          }
+        />
       ) : null}
 
-      <ul className="space-y-3">
+      <ul className="flex flex-col gap-3">
         {queue.data?.data.map((row) => (
           <DriverCard key={row.id} row={row} />
         ))}
@@ -169,22 +194,19 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
 
       {row.status === 'PENDING' ? (
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            disabled={!complete || decide.isPending}
-            onClick={() => decide.mutate({ id: row.id, decision: 'approve' })}
-            className="rounded-lg bg-success-500 px-4 py-2 text-sm font-semibold text-neutral-0 hover:bg-success-700 disabled:opacity-40"
-          >
-            Valider
-          </button>
-          <button
-            type="button"
+          <Button
+            label="Valider"
+            icon="check"
+            disabled={!complete}
+            loading={decide.isPending}
+            onPress={() => decide.mutate({ id: row.id, decision: 'approve' })}
+          />
+          <Button
+            label="Refuser"
+            variant="secondary"
             disabled={decide.isPending}
-            onClick={() => setAsking('reject')}
-            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-          >
-            Refuser
-          </button>
+            onPress={() => setAsking('reject')}
+          />
 
           {/*
             Le bouton reste inerte tant qu'il manque une pièce, et le dit. Rien
@@ -203,14 +225,12 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
 
       {row.status === 'APPROVED' ? (
         <div className="mt-5">
-          <button
-            type="button"
+          <Button
+            label="Suspendre"
+            variant="danger"
             disabled={decide.isPending}
-            onClick={() => setAsking('suspend')}
-            className="rounded-lg border border-danger px-4 py-2 text-sm font-medium text-danger hover:bg-danger-soft"
-          >
-            Suspendre
-          </button>
+            onPress={() => setAsking('suspend')}
+          />
         </div>
       ) : null}
 
@@ -225,46 +245,39 @@ function DriverCard({ row }: { row: AdminDriverRow }) {
             )
           }}
         >
-          <label
-            className="block text-xs font-medium text-neutral-700"
-            htmlFor={`r-${row.id}`}
-          >
-            Motif — il sera lu par le chauffeur
-          </label>
-          <textarea
-            id={`r-${row.id}`}
-            required
-            maxLength={500}
-            rows={2}
-            autoFocus
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-            placeholder="Permis illisible, plaque ne correspondant pas à la carte grise…"
-          />
-          <div className="mt-3 flex gap-2">
-            <button
-              type="submit"
-              disabled={decide.isPending}
-              className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-neutral-0 disabled:opacity-50"
-            >
-              {asking === 'reject' ? 'Refuser le dossier' : 'Suspendre le chauffeur'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAsking(null)}
-              className="rounded-lg px-4 py-2 text-sm text-neutral-700"
-            >
-              Annuler
-            </button>
+          <Field label="Motif — il sera lu par le chauffeur">
+            <textarea
+              required
+              maxLength={500}
+              rows={2}
+              autoFocus
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              className={INPUT}
+              placeholder="Permis illisible, plaque ne correspondant pas à la carte grise…"
+            />
+          </Field>
+
+          <div className="mt-3">
+            <Actions>
+              <Button label="Annuler" variant="ghost" onPress={() => setAsking(null)} />
+              <Button
+                label={
+                  asking === 'reject' ? 'Refuser le dossier' : 'Suspendre le chauffeur'
+                }
+                variant="danger"
+                type="submit"
+                loading={decide.isPending}
+              />
+            </Actions>
           </div>
         </form>
       )}
 
       {decide.error ? (
-        <p className="mt-3 text-sm whitespace-pre-line text-danger">
-          {describeError(decide.error)}
-        </p>
+        <div className="mt-3">
+          <ErrorNote message={describeError(decide.error)} />
+        </div>
       ) : null}
     </li>
   )

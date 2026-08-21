@@ -146,13 +146,22 @@ describe('DriverQueuePage', () => {
     )
   })
 
+  /**
+   * **Une page vide se lit comme un bogue.** Rien ne dit si le chargement est
+   * fini, si le filtre ne rend rien, ou si l'écran est cassé — d'où le titre,
+   * et d'où la phrase qui situe d'où viennent les candidatures.
+   */
   it('dit qu’il n’y a rien à instruire plutôt que de rester vide', async () => {
     mockFetch(page())
 
     render(<DriverQueuePage />)
 
     expect(
-      await screen.findByText('Aucun dossier n’attend de décision.'),
+      await screen.findByText(/candidatures arrivent depuis l’application/),
+    ).toBeInTheDocument()
+
+    expect(
+      await screen.findByText('Aucun dossier n’attend de décision'),
     ).toBeInTheDocument()
   })
 

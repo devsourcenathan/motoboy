@@ -1313,3 +1313,52 @@ Trois squelettes de tableau annonçaient une colonne de moins que leur tableau,
 la colonne d'action venant d'y être ajoutée. Vérifié en recomptant chaque
 en-tête, comme la première fois — c'est la seconde fois que ce décalage se
 produit, et toujours en ajoutant une colonne.
+
+---
+
+## 23. L'administration, et la ligne entière — 21 août 2026
+
+### Fermer une ligne
+
+Une agence pouvait arrêter un horaire, pas une ligne. Il fallait les arrêter un
+par un, et en oublier un suffisait à continuer de vendre une route qui ne roule
+plus.
+
+`routes.is_active` était là depuis la première migration et **filtré nulle
+part** : `Schedule::scopeGeneratable` vérifiait le drapeau de l'horaire, jamais
+celui de son itinéraire. La colonne promettait ce que rien ne tenait. Elle fait
+maintenant partie de la portée, ce que « generatable » a toujours voulu dire.
+
+Les gares restent hors du correctif : un itinéraire **est** la paire qu'il
+relie, et le réattacher déplacerait des départs vendus sous des passagers qui
+ont acheté un Douala–Bafoussam.
+
+### Quatre écrans qui n'utilisaient aucune primitive partagée
+
+La file des chauffeurs, les reversements, les comptes de versement et le suivi
+avaient chacun leur en-tête, leur « Chargement… » en texte, leur erreur en
+paragraphe nu et leur encadré de vide. Quatre façons de dire ce que le reste du
+produit dit d'une seule — et c'est ce qui faisait paraître l'administration
+moins finie que l'espace agence.
+
+| Ce qui existait | Ce qui remplace |
+|---|---|
+| `<header>` maison | `PageHeader` |
+| « Chargement… » | Un squelette à la forme de ce qui arrive |
+| `<p className="…text-danger">` | `ErrorNote`, qui porte `role="alert"` |
+| Encadré de vide écrit sur place | `EmptyState`, avec ce qu'il faut faire |
+| Boutons en classes Tailwind | `Button`, qui porte l'attente |
+
+Le dernier point n'est pas cosmétique : **valider un dossier de chauffeur ne
+montrait aucune attente**. Sur un réseau lent, rien ne distinguait « en cours »
+de « mon clic n'a pas été pris », au moment précis où l'on met quelqu'un au
+volant avec des passagers.
+
+L'erreur de la page de connexion passe aussi par `ErrorNote` : c'est le seul
+écran où l'on ne peut rien faire d'autre qu'attendre, et son erreur n'était pas
+annoncée.
+
+### Un piège de nommage
+
+Nommer la mutation `close` compilait sans rien dire et échouait à l'usage :
+`window.close` existe, et TypeScript résolvait silencieusement le global.

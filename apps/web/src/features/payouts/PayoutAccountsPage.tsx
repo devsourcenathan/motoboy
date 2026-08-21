@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { describeError } from '../../lib/errors'
-import { Badge } from '../../shared/ui'
+import { Badge, ErrorNote, PageHeader, SkeletonTable } from '../../shared/ui'
 import {
   usePayoutAccounts,
   useVerifyPayoutAccount,
@@ -27,23 +27,14 @@ export function PayoutAccountsPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-ink-700">Comptes de versement</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Une erreur de saisie envoie l’argent à un inconnu, sans recours. Vérifiez que le
-          nom du compte correspond au bénéficiaire.
-        </p>
-      </header>
+      <PageHeader
+        title="Comptes de versement"
+        subtitle="Une erreur de saisie envoie l’argent à un inconnu, sans recours. Vérifiez que le nom du compte correspond au bénéficiaire."
+      />
 
-      {accounts.isPending ? (
-        <p className="text-sm text-neutral-500">Chargement…</p>
-      ) : null}
+      {accounts.isPending ? <SkeletonTable columns={4} rows={3} /> : null}
 
-      {accounts.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">
-          {describeError(accounts.error)}
-        </p>
-      ) : null}
+      {accounts.error ? <ErrorNote message={describeError(accounts.error)} /> : null}
 
       {accounts.data && pending.length === 0 ? (
         <p className="mb-6 rounded-lg bg-success-50 p-4 text-sm text-success-700">
@@ -153,11 +144,7 @@ function AccountRow({ row }: { row: AdminPayoutAccountRow }) {
         </div>
       )}
 
-      {verify.error ? (
-        <p className="mt-3 text-sm whitespace-pre-line text-danger">
-          {describeError(verify.error)}
-        </p>
-      ) : null}
+      {verify.error ? <ErrorNote message={describeError(verify.error)} /> : null}
     </li>
   )
 }

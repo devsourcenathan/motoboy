@@ -5,7 +5,7 @@ import type { Payout } from '@motoboy/api-client/types'
 import { formatMoney } from '@motoboy/shared'
 import { api } from '../../lib/api'
 import { describeError } from '../../lib/errors'
-import { Button } from '../../shared/ui'
+import { Button, EmptyState, ErrorNote, SkeletonTable } from '../../shared/ui'
 
 function usePayouts() {
   return useQuery({
@@ -110,11 +110,7 @@ export function PayoutQueuePage() {
           />
         </div>
 
-        {build.error ? (
-          <p className="mt-2 text-sm whitespace-pre-line text-danger">
-            {describeError(build.error)}
-          </p>
-        ) : null}
+        {build.error ? <ErrorNote message={describeError(build.error)} /> : null}
 
         {result === undefined ? null : (
           <div className="mt-2 text-sm">
@@ -142,18 +138,12 @@ export function PayoutQueuePage() {
         )}
       </header>
 
-      {payouts.isPending ? <p className="text-sm text-neutral-500">Chargement…</p> : null}
+      {payouts.isPending ? <SkeletonTable columns={4} rows={3} /> : null}
 
-      {payouts.error ? (
-        <p className="text-sm whitespace-pre-line text-danger">
-          {describeError(payouts.error)}
-        </p>
-      ) : null}
+      {payouts.error ? <ErrorNote message={describeError(payouts.error)} /> : null}
 
       {payouts.data?.data.length === 0 ? (
-        <p className="rounded-lg bg-neutral-0 p-8 text-center text-sm text-neutral-500">
-          Aucun reversement en attente.
-        </p>
+        <EmptyState title="Aucun reversement en attente" />
       ) : null}
 
       <ul className="space-y-3">
@@ -304,9 +294,7 @@ function PayoutCard({ payout }: { payout: Payout }) {
       )}
 
       {approve.error || send.error ? (
-        <p className="mt-3 text-sm whitespace-pre-line text-danger">
-          {describeError(approve.error ?? send.error)}
-        </p>
+        <ErrorNote message={describeError(approve.error ?? send.error)} />
       ) : null}
     </li>
   )

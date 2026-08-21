@@ -10,8 +10,9 @@ import {
   Field,
   INPUT,
   PageHeader,
+  SkeletonText,
+  SkeletonTable,
   Sheet,
-  Skeleton,
   Table,
 } from '../../shared/ui'
 import {
@@ -84,7 +85,7 @@ export function AgenciesPage() {
         ))}
       </nav>
 
-      {queue.isPending ? <Skeleton rows={4} /> : null}
+      {queue.isPending ? <SkeletonTable columns={4} rows={4} /> : null}
       {queue.error ? <ErrorNote message={describeError(queue.error)} /> : null}
 
       {queue.isSuccess && rows.length === 0 ? (
@@ -179,7 +180,7 @@ function AgencyPanel({ reference, onClose }: { reference: string; onClose: () =>
 
   return (
     <Sheet title={agency?.name ?? 'Dossier'} onClose={onClose}>
-      {detail.isPending ? <Skeleton rows={3} /> : null}
+      {detail.isPending ? <SkeletonText lines={5} /> : null}
       {detail.error ? <ErrorNote message={describeError(detail.error)} /> : null}
 
       {agency === undefined ? null : (

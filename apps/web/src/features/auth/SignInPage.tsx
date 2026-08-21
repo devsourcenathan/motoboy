@@ -4,7 +4,7 @@ import { Link, Navigate } from 'react-router'
 import { toInternational } from '@motoboy/shared'
 import { describeError } from '../../lib/errors'
 import { useCurrentUser, useRequestOtp, useVerifyOtp } from './useAuth'
-import { Logo } from '../../shared/ui'
+import { ErrorNote, Logo } from '../../shared/ui'
 import { destinationFor } from './destination'
 
 /**
@@ -138,10 +138,15 @@ export function SignInPage() {
           </p>
         )}
 
+        {/*
+          `ErrorNote` plutôt qu'un paragraphe : il porte `role="alert"`, et une
+          erreur muette laisse attendre une réponse qui est déjà là — sur le
+          seul écran où l'on ne peut rien faire d'autre qu'attendre.
+        */}
         {request.error || verify.error ? (
-          <p className="mt-4 text-sm whitespace-pre-line text-danger">
-            {describeError(request.error ?? verify.error)}
-          </p>
+          <div className="mt-4">
+            <ErrorNote message={describeError(request.error ?? verify.error)} />
+          </div>
         ) : null}
       </form>
     </main>
