@@ -74,6 +74,29 @@ export function mockRoutes(routes: Record<string, () => Response>): void {
   mock.mockImplementation((input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : String((input as Request).url)
 
+    /*
+     * **La route la plus précise gagne, jamais la première déclarée.**
+     *
+     * L'appariement se faisait par `includes` dans l'ordre d'insertion, ce qui
+     * rendait le résultat dépendant de la position : l'URL
+     * `…/agency/trips/TR-ABC123/validations` contient `/agency/trips`, si bien
+     * que la route générique répondait à la place de la spécifique. Le test
+     * passait quand même — la requête partait bien — mais l'écran recevait une
+     * réponse d'un autre endpoint et plantait au rendu suivant.
+     *
+     * Un appariement par la **fin du chemin** tranche : `/validations` termine
+     * cette URL, `/agency/trips` non. La chaîne de requête est retirée d'abord,
+     * pour que `/admin/drivers` continue de répondre à
+     * `/admin/drivers?status=PENDING`.
+     */
+    const path = url.split('?')[0] ?? url
+
+    for (const [pattern, respond] of Object.entries(routes)) {
+      if (path.endsWith(pattern)) return Promise.resolve(respond())
+    }
+
+    // À défaut, l'ancien appariement large : certains motifs visent un segment
+    // au milieu du chemin, et les réécrire tous n'apporterait rien ici.
     for (const [pattern, respond] of Object.entries(routes)) {
       if (url.includes(pattern)) return Promise.resolve(respond())
     }

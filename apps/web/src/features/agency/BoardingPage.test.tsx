@@ -64,7 +64,14 @@ describe('BoardingPage', () => {
    * autrement.
    */
   it('marque une validation manuelle comme telle', async () => {
-    mockRoutes(routes({ '/validations': () => jsonResponse({ results: [] }) }))
+    mockRoutes(
+      routes({
+        '/validations': () =>
+          jsonResponse({
+            results: [{ ticket_reference: 'TCK-111111', status: 'ACCEPTED' }],
+          }),
+      }),
+    )
 
     render(<BoardingPage />)
 
@@ -77,5 +84,16 @@ describe('BoardingPage', () => {
     ).toMatchObject({
       validations: [expect.objectContaining({ method: 'MANUAL' })],
     })
+
+    /*
+     * **Le résultat est lu, pas seulement envoyé.**
+     *
+     * Ce test s'arrêtait à la requête partie. L'écran plantait pourtant au
+     * rendu suivant — il recevait la réponse d'un autre endpoint, `mockRoutes`
+     * appariant par `includes` : `…/agency/trips/TR-ABC123/validations`
+     * contient `/agency/trips`. Vitest le signalait en « unhandled error », le
+     * test passait quand même, et seule la CI l'a fait échouer.
+     */
+    expect(await screen.findByText(/Billet validé/)).toBeInTheDocument()
   })
 })

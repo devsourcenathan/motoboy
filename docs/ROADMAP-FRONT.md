@@ -1218,3 +1218,48 @@ const routes = (extra = {}) => ({ ...extra, '/agency/routes': ... })
 Un test qui croyait remplacer une réponse obtenait donc l'autre — **sans erreur,
 et en passant pour la mauvaise raison**. Découvert en écrivant un test qui ne
 voyait pas ses propres données. Corrigé dans les sept fichiers concernés.
+
+---
+
+## 21. Une route de test qui répondait pour une autre — 21 août 2026
+
+La CI a échoué sur une **erreur non gérée** que la suite locale ne signalait
+pas : `BoardingPage` lisait `validate.data.results[0]` sur une réponse qui n'avait
+pas de `results`.
+
+### Ce qui se passait
+
+`mockRoutes` appariait par `url.includes(pattern)`, **dans l'ordre
+d'insertion**. L'URL `…/agency/trips/TR-ABC123/validations` contient
+`/agency/trips` : la route générique répondait donc à la place de la spécifique,
+et l'écran recevait la liste des départs là où il attendait un résultat de
+validation.
+
+L'appariement dépendait donc de la **position** des clés, ce qui rendait les deux
+ordres possibles fautifs, chacun à sa façon :
+
+| Ordre | Ce qui casse |
+|---|---|
+| `extra` en premier | Une clé identique dans les défauts l'écrase — le test croit remplacer, il n'a rien remplacé |
+| `extra` en dernier | Un défaut plus court apparie d'abord — la route générique répond pour la spécifique |
+
+C'est en corrigeant le premier cas (§20) que j'ai créé le second.
+
+### La correction
+
+L'appariement se fait désormais par **la fin du chemin**, chaîne de requête
+retirée : `/validations` termine cette URL, `/agency/trips` non. L'ordre des clés
+cesse d'avoir un effet. L'appariement large reste en second recours, pour les
+motifs qui visent un segment au milieu d'un chemin.
+
+### Ce que le test ne vérifiait pas
+
+Il s'arrêtait à **la requête partie**, sans jamais regarder la réponse traitée.
+Le composant plantait au rendu suivant, Vitest le signalait en « unhandled
+error » — et le test passait quand même. Il vérifie maintenant que l'écran
+affiche « Billet validé », ce qui transforme le défaut en échec franc : remis
+l'ancien appariement, le test échoue.
+
+⚠️ **Et ma vérification masquait le symptôme.** Je filtrais la sortie de Vitest
+sur `Test Files|Tests |FAIL`, jamais sur `Errors`. Une erreur non gérée n'est
+rien d'autre qu'un défaut qui n'a pas encore trouvé son assertion.
